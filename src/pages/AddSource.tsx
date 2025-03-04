@@ -16,6 +16,7 @@ const AddSource = () => {
   const [storeUrl, setStoreUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [apiSecret, setApiSecret] = useState("");
+  const [callbackUrl, setCallbackUrl] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -62,7 +63,7 @@ const AddSource = () => {
       let credentials: any = {};
       
       if (selectedSource === "Shopify") {
-        credentials = { apiKey };
+        credentials = { apiKey, callbackUrl };
       } else if (selectedSource === "WooCommerce") {
         credentials = { apiKey, apiSecret };
       }
@@ -108,6 +109,8 @@ const AddSource = () => {
           setApiKey={setApiKey}
           apiSecret={apiSecret}
           setApiSecret={setApiSecret}
+          callbackUrl={callbackUrl}
+          setCallbackUrl={setCallbackUrl}
           onBack={handleBack}
           onSubmit={handleSubmit}
         />

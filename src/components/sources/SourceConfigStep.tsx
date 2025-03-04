@@ -18,6 +18,8 @@ interface SourceConfigStepProps {
   setApiKey: (value: string) => void;
   apiSecret: string;
   setApiSecret: (value: string) => void;
+  callbackUrl: string;
+  setCallbackUrl: (value: string) => void;
   onBack: () => void;
   onSubmit: (e: React.FormEvent) => void;
 }
@@ -33,6 +35,8 @@ const SourceConfigStep: React.FC<SourceConfigStepProps> = ({
   setApiKey,
   apiSecret,
   setApiSecret,
+  callbackUrl,
+  setCallbackUrl,
   onBack,
   onSubmit
 }) => {
@@ -47,6 +51,8 @@ const SourceConfigStep: React.FC<SourceConfigStepProps> = ({
             setStoreUrl={setStoreUrl}
             apiKey={apiKey}
             setApiKey={setApiKey}
+            callbackUrl={callbackUrl}
+            setCallbackUrl={setCallbackUrl}
           />
         );
       case "WooCommerce":

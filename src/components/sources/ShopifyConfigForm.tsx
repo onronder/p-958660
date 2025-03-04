@@ -10,6 +10,8 @@ interface ShopifyConfigFormProps {
   setStoreUrl: (value: string) => void;
   apiKey: string;
   setApiKey: (value: string) => void;
+  callbackUrl: string;
+  setCallbackUrl: (value: string) => void;
 }
 
 const ShopifyConfigForm: React.FC<ShopifyConfigFormProps> = ({
@@ -18,7 +20,9 @@ const ShopifyConfigForm: React.FC<ShopifyConfigFormProps> = ({
   storeUrl,
   setStoreUrl,
   apiKey,
-  setApiKey
+  setApiKey,
+  callbackUrl,
+  setCallbackUrl
 }) => {
   return (
     <div className="grid gap-4">
@@ -56,6 +60,19 @@ const ShopifyConfigForm: React.FC<ShopifyConfigFormProps> = ({
         />
         <p className="text-xs text-muted-foreground">
           Found in your Shopify Admin under Apps &gt; Develop apps &gt; Create an app
+        </p>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="callbackUrl">Callback URL</Label>
+        <Input
+          id="callbackUrl"
+          placeholder="https://your-app.com/shopify/callback"
+          value={callbackUrl}
+          onChange={(e) => setCallbackUrl(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          The URL Shopify will redirect to after authentication
         </p>
       </div>
     </div>
