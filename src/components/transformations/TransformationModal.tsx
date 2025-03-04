@@ -322,7 +322,7 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
         status: "Active",
         last_modified: new Date().toISOString().split('T')[0],
         user_id: user.id,
-        skip_transformation,
+        skip_transformation: skipTransformation,
         expression: skipTransformation ? undefined : derivedColumns.map(col => col.expression).join(';')
       };
       
