@@ -1,15 +1,16 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { sourceOptions, addSource } from "@/services/sourceDataService";
 import { SourceType } from "@/components/sources/SourceTypeCard";
 import SourceSelectionStep from "@/components/sources/SourceSelectionStep";
 import SourceConfigStep from "@/components/sources/SourceConfigStep";
+import ShopifyOAuthCallback from "@/components/sources/ShopifyOAuthCallback";
 
 const AddSource = () => {
-  const [step, setStep] = useState<"select-source" | "configure">("select-source");
+  const [step, setStep] = useState<"select-source" | "configure" | "oauth-callback">("select-source");
   const [selectedSource, setSelectedSource] = useState<SourceType | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sourceName, setSourceName] = useState("");
@@ -18,8 +19,17 @@ const AddSource = () => {
   const [apiSecret, setApiSecret] = useState("");
   const [callbackUrl, setCallbackUrl] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+
+  useEffect(() => {
+    // Check if we're in an OAuth callback scenario
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.has('code') && searchParams.has('shop')) {
+      setStep("oauth-callback");
+    }
+  }, [location]);
 
   const handleSourceSelection = (sourceType: SourceType) => {
     setSelectedSource(sourceType);
@@ -37,6 +47,11 @@ const AddSource = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (selectedSource === "Shopify") {
+      // This is now handled by the ShopifyConfigForm component
+      return;
+    }
     
     if (!sourceName || !storeUrl || !apiKey) {
       toast({
@@ -62,9 +77,7 @@ const AddSource = () => {
       // Prepare credentials object based on source type
       let credentials: any = {};
       
-      if (selectedSource === "Shopify") {
-        credentials = { apiKey, callbackUrl };
-      } else if (selectedSource === "WooCommerce") {
+      if (selectedSource === "WooCommerce") {
         credentials = { apiKey, apiSecret };
       }
       
@@ -89,32 +102,46 @@ const AddSource = () => {
     }
   };
 
-  return (
-    <div className="space-y-8">
-      {step === "select-source" ? (
+  // Render the appropriate step
+  const renderStep = () => {
+    if (step === "oauth-callback") {
+      return <ShopifyOAuthCallback />;
+    }
+    
+    if (step === "select-source") {
+      return (
         <SourceSelectionStep 
           sourceOptions={sourceOptions}
           onSourceSelect={handleSourceSelection}
           onBack={handleBack}
         />
-      ) : (
-        <SourceConfigStep
-          selectedSource={selectedSource as SourceType}
-          isSubmitting={isSubmitting}
-          sourceName={sourceName}
-          setSourceName={setSourceName}
-          storeUrl={storeUrl}
-          setStoreUrl={setStoreUrl}
-          apiKey={apiKey}
-          setApiKey={setApiKey}
-          apiSecret={apiSecret}
-          setApiSecret={setApiSecret}
-          callbackUrl={callbackUrl}
-          setCallbackUrl={setCallbackUrl}
-          onBack={handleBack}
-          onSubmit={handleSubmit}
-        />
-      )}
+      );
+    }
+    
+    return (
+      <SourceConfigStep
+        selectedSource={selectedSource as SourceType}
+        isSubmitting={isSubmitting}
+        sourceName={sourceName}
+        setSourceName={setSourceName}
+        storeUrl={storeUrl}
+        setStoreUrl={setStoreUrl}
+        apiKey={apiKey}
+        setApiKey={setApiKey}
+        apiSecret={apiSecret}
+        setApiSecret={setApiSecret}
+        callbackUrl={callbackUrl}
+        setCallbackUrl={setCallbackUrl}
+        onBack={handleBack}
+        onSubmit={handleSubmit}
+        onComplete={() => navigate("/sources")}
+      />
+    );
+  };
+
+  return (
+    <div className="space-y-8">
+      {renderStep()}
     </div>
   );
 };

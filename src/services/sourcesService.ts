@@ -47,3 +47,29 @@ export const formatDate = (dateString?: string) => {
     timeStyle: 'short' 
   }).format(date);
 };
+
+export const testShopifyConnection = async (sourceId: string, storeUrl: string, credentials: any) => {
+  try {
+    // For Shopify, use the edge function to test the connection
+    if (credentials.access_token) {
+      const { data, error } = await supabase.functions.invoke("shopify-oauth", {
+        body: {
+          pathname: "/shopify-oauth/test-connection",
+          store_name: storeUrl,
+          access_token: credentials.access_token
+        }
+      });
+      
+      if (error || !data.success) {
+        throw new Error(error?.message || "Connection test failed");
+      }
+      
+      return true;
+    }
+    
+    throw new Error("Missing required credentials for testing");
+  } catch (error) {
+    console.error("Error testing connection:", error);
+    throw error;
+  }
+};

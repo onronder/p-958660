@@ -2,8 +2,9 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Source } from "@/types/source";
-import { fetchUserSources, deleteSource } from "@/services/sourcesService";
+import { fetchUserSources, deleteSource, testShopifyConnection } from "@/services/sourcesService";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useSources = () => {
   const [sources, setSources] = useState<Source[]>([]);
@@ -40,13 +41,28 @@ export const useSources = () => {
   };
 
   const handleTestConnection = async (sourceId: string) => {
+    const source = sources.find(s => s.id === sourceId);
+    if (!source) {
+      toast({
+        title: "Error",
+        description: "Source not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       toast({
         title: "Testing connection...",
         description: "Please wait while we verify the connection.",
       });
       
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (source.source_type === "Shopify" && source.credentials?.access_token) {
+        await testShopifyConnection(sourceId, source.url, source.credentials);
+      } else {
+        // For other source types or if no OAuth token is available, use a simple delay for now
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
       
       toast({
         title: "Connection Successful",

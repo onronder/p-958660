@@ -2,16 +2,17 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ShopifyConfigFormProps {
   sourceName: string;
   setSourceName: (value: string) => void;
   storeUrl: string;
   setStoreUrl: (value: string) => void;
-  apiKey: string;
-  setApiKey: (value: string) => void;
-  callbackUrl: string;
-  setCallbackUrl: (value: string) => void;
+  onComplete: () => void;
 }
 
 const ShopifyConfigForm: React.FC<ShopifyConfigFormProps> = ({
@@ -19,11 +20,69 @@ const ShopifyConfigForm: React.FC<ShopifyConfigFormProps> = ({
   setSourceName,
   storeUrl,
   setStoreUrl,
-  apiKey,
-  setApiKey,
-  callbackUrl,
-  setCallbackUrl
+  onComplete
 }) => {
+  const [isLoading, setIsLoading] = React.useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  const handleConnectClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (!storeUrl) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid Shopify store name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Format the store URL if needed
+    const formattedStoreUrl = storeUrl.includes(".myshopify.com") 
+      ? storeUrl 
+      : `${storeUrl}.myshopify.com`;
+    
+    try {
+      setIsLoading(true);
+      
+      // Call the Supabase edge function to get auth URL
+      const { data, error } = await supabase.functions.invoke("shopify-oauth", {
+        body: {
+          pathname: "/shopify-oauth/authenticate",
+          store_name: formattedStoreUrl,
+        }
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (!data.auth_url) {
+        throw new Error("Failed to generate authorization URL");
+      }
+      
+      // Save the current state to localStorage so we can retrieve it after redirect
+      localStorage.setItem('shopifyOAuthState', JSON.stringify({
+        sourceName,
+        storeUrl: formattedStoreUrl,
+        userId: user?.id
+      }));
+      
+      // Redirect to Shopify authorization page
+      window.location.href = data.auth_url;
+    } catch (error) {
+      console.error("Error initiating OAuth:", error);
+      toast({
+        title: "Connection Error",
+        description: "Failed to connect to Shopify. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="grid gap-4">
       <div className="space-y-2">
@@ -45,35 +104,18 @@ const ShopifyConfigForm: React.FC<ShopifyConfigFormProps> = ({
           onChange={(e) => setStoreUrl(e.target.value)}
         />
         <p className="text-xs text-muted-foreground">
-          The full URL of your Shopify store
+          Enter your store name (e.g., mystore.myshopify.com)
         </p>
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="apiKey">Admin API Access Token</Label>
-        <Input
-          id="apiKey"
-          type="password"
-          placeholder="shpat_..."
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-        />
-        <p className="text-xs text-muted-foreground">
-          Found in your Shopify Admin under Apps &gt; Develop apps &gt; Create an app
-        </p>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="callbackUrl">Callback URL</Label>
-        <Input
-          id="callbackUrl"
-          placeholder="https://your-app.com/shopify/callback"
-          value={callbackUrl}
-          onChange={(e) => setCallbackUrl(e.target.value)}
-        />
-        <p className="text-xs text-muted-foreground">
-          The URL Shopify will redirect to after authentication
-        </p>
+      <div className="mt-2">
+        <Button 
+          onClick={handleConnectClick} 
+          disabled={isLoading}
+          className="w-full"
+        >
+          {isLoading ? "Connecting..." : "Connect to Shopify"}
+        </Button>
       </div>
     </div>
   );

@@ -22,6 +22,7 @@ interface SourceConfigStepProps {
   setCallbackUrl: (value: string) => void;
   onBack: () => void;
   onSubmit: (e: React.FormEvent) => void;
+  onComplete?: () => void;
 }
 
 const SourceConfigStep: React.FC<SourceConfigStepProps> = ({
@@ -38,7 +39,8 @@ const SourceConfigStep: React.FC<SourceConfigStepProps> = ({
   callbackUrl,
   setCallbackUrl,
   onBack,
-  onSubmit
+  onSubmit,
+  onComplete
 }) => {
   const renderConfigForm = () => {
     switch (selectedSource) {
@@ -49,10 +51,7 @@ const SourceConfigStep: React.FC<SourceConfigStepProps> = ({
             setSourceName={setSourceName}
             storeUrl={storeUrl}
             setStoreUrl={setStoreUrl}
-            apiKey={apiKey}
-            setApiKey={setApiKey}
-            callbackUrl={callbackUrl}
-            setCallbackUrl={setCallbackUrl}
+            onComplete={onComplete || (() => {})}
           />
         );
       case "WooCommerce":
@@ -84,26 +83,32 @@ const SourceConfigStep: React.FC<SourceConfigStepProps> = ({
       </div>
       
       <Card>
-        <form onSubmit={onSubmit}>
-          <CardHeader>
-            <CardTitle>Connection Details</CardTitle>
-            <CardDescription>
-              Enter the required information to connect to your {selectedSource} account.
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>{renderConfigForm()}</CardContent>
-          
-          <CardFooter className="flex justify-between">
-            <Button type="button" variant="outline" onClick={onBack}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Connect Source
-            </Button>
-          </CardFooter>
-        </form>
+        {selectedSource === "Shopify" ? (
+          <CardContent className="pt-6">
+            {renderConfigForm()}
+          </CardContent>
+        ) : (
+          <form onSubmit={onSubmit}>
+            <CardHeader>
+              <CardTitle>Connection Details</CardTitle>
+              <CardDescription>
+                Enter the required information to connect to your {selectedSource} account.
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent>{renderConfigForm()}</CardContent>
+            
+            <CardFooter className="flex justify-between">
+              <Button type="button" variant="outline" onClick={onBack}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Connect Source
+              </Button>
+            </CardFooter>
+          </form>
+        )}
       </Card>
     </div>
   );

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import SourceStatusBadge from "@/components/SourceStatusBadge";
 import { Source } from "@/types/source";
-import { formatDate } from "@/services/sourcesService";
+import { formatDate, testShopifyConnection } from "@/services/sourcesService";
 
 interface SourceCardProps {
   source: Source;
@@ -18,6 +18,14 @@ const SourceCard: React.FC<SourceCardProps> = ({
   onTestConnection, 
   onDelete 
 }) => {
+  const handleTestConnection = () => {
+    // Use the new test function for Shopify sources
+    if (source.source_type === "Shopify" && source.credentials?.access_token) {
+      // The onTestConnection function will handle the OAuth testing
+    }
+    onTestConnection(source.id);
+  };
+
   return (
     <Card className="p-6">
       <div className="flex items-start justify-between">
@@ -47,7 +55,7 @@ const SourceCard: React.FC<SourceCardProps> = ({
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => onTestConnection(source.id)}
+          onClick={handleTestConnection}
         >
           Test Connection
         </Button>
