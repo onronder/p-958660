@@ -53,13 +53,14 @@ const ShopifyOAuthCallback: React.FC = () => {
           hasUserId: Boolean(savedState.userId)
         });
         
-        // Exchange authorization code for access token
-        console.log("Exchanging authorization code for access token...");
+        // Exchange authorization code for access token by directly calling the edge function endpoint
+        console.log("Calling edge function for token exchange...");
+        const callbackUrl = `${location.pathname}${location.search}`;
         const { data: tokenData, error: tokenError } = await supabase.functions.invoke("shopify-oauth", {
           body: {
-            pathname: "/shopify-oauth/callback",
             code,
-            shop
+            shop,
+            callback: true
           }
         });
         
@@ -81,7 +82,7 @@ const ShopifyOAuthCallback: React.FC = () => {
         console.log("Saving token to database...");
         const { data: saveData, error: saveError } = await supabase.functions.invoke("shopify-oauth", {
           body: {
-            pathname: "/shopify-oauth/save-token",
+            action: "save_token",
             user_id: savedState.userId,
             store_name: shop,
             access_token: tokenData.access_token,

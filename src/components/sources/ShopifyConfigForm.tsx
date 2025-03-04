@@ -48,11 +48,12 @@ const ShopifyConfigForm: React.FC<ShopifyConfigFormProps> = ({
       console.log("Starting OAuth flow with store:", formattedStoreUrl);
       
       // Call the Supabase edge function to get auth URL
-      console.log("Calling Supabase edge function for authentication URL");
+      // The key fix: Use the correct function name without the pathname in the invoke parameters
+      console.log("Calling Supabase edge function 'shopify-oauth' for authentication URL");
       const { data, error } = await supabase.functions.invoke("shopify-oauth", {
         body: {
-          pathname: "/shopify-oauth/authenticate",
           store_name: formattedStoreUrl,
+          action: "authenticate" // Use action instead of pathname
         }
       });
       

@@ -41,33 +41,13 @@ serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   try {
+    // Get the request URL and determine the requested action
     const { pathname } = new URL(req.url);
     console.log("Request to endpoint:", pathname);
-    
-    // Handle different endpoints
-    if (pathname === "/shopify-oauth/authenticate") {
-      const requestData = await req.json();
-      const { store_name } = requestData;
-      
-      console.log("Authenticate request for store:", store_name);
-      
-      if (!store_name) {
-        return new Response(
-          JSON.stringify({ error: "Store name is required" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-        );
-      }
-      
-      // Generate OAuth URL
-      const authUrl = `https://${store_name}/admin/oauth/authorize?client_id=${SHOPIFY_CLIENT_ID}&scope=read_orders,read_products,read_customers&redirect_uri=${FLOWTECHS_REDIRECT_URI}`;
-      console.log("Generated auth URL (domain only for security):", new URL(authUrl).origin);
-      
-      return new Response(
-        JSON.stringify({ auth_url: authUrl }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    } 
-    else if (pathname === "/shopify-oauth/callback") {
+
+    // Check if this is a direct URL call (callback) or an action from the frontend
+    if (pathname.includes("/callback")) {
+      // Handle the OAuth callback
       const url = new URL(req.url);
       const code = url.searchParams.get('code');
       const shop = url.searchParams.get('shop');
@@ -122,107 +102,125 @@ serve(async (req) => {
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    }
-    else if (pathname === "/shopify-oauth/save-token") {
-      const { user_id, store_name, access_token, source_name } = await req.json();
+    } else {
+      // Handle action-based requests from the frontend
+      const requestData = await req.json();
+      const { action, store_name, user_id, access_token, source_name } = requestData;
       
-      console.log("Save token request for store:", store_name);
+      console.log("Received action:", action);
       
-      if (!user_id || !store_name || !access_token) {
-        console.error("Missing required parameters:", { 
-          hasUserId: Boolean(user_id), 
-          hasStoreName: Boolean(store_name), 
-          hasAccessToken: Boolean(access_token) 
-        });
-        return new Response(
-          JSON.stringify({ error: "Missing required parameters" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-        );
-      }
-      
-      // Save the connection details to the database
-      console.log("Saving connection to database...");
-      const { data, error } = await supabase
-        .from('sources')
-        .insert({
-          user_id: user_id,
-          name: source_name || `Shopify - ${store_name}`,
-          url: store_name,
-          source_type: 'Shopify',
-          status: 'Active',
-          credentials: { access_token }
-        })
-        .select('id');
-      
-      if (error) {
-        console.error("Error saving token:", error);
-        return new Response(
-          JSON.stringify({ error: "Failed to save connection", details: error }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-        );
-      }
-      
-      console.log("Successfully saved connection with ID:", data[0].id);
-      
-      return new Response(
-        JSON.stringify({ success: true, source_id: data[0].id }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    else if (pathname === "/shopify-oauth/test-connection") {
-      const { store_name, access_token } = await req.json();
-      
-      console.log("Test connection request for store:", store_name);
-      
-      if (!store_name || !access_token) {
-        console.error("Missing store name or access token");
-        return new Response(
-          JSON.stringify({ error: "Missing store name or access token" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-        );
-      }
-      
-      // Test the connection by making a simple API call to Shopify
-      console.log("Testing connection to Shopify API...");
-      const testResponse = await fetch(`https://${store_name}/admin/api/2024-01/shop.json`, {
-        headers: { 'X-Shopify-Access-Token': access_token }
-      });
-      
-      const testStatus = testResponse.status;
-      console.log("Test connection status:", testStatus);
-      
-      if (!testResponse.ok) {
-        console.error("Connection test failed with status:", testStatus);
-        let errorJson;
-        try {
-          errorJson = await testResponse.json();
-        } catch (e) {
-          errorJson = { message: "Could not parse error response" };
+      if (action === "authenticate") {
+        // Generate OAuth URL for authentication
+        if (!store_name) {
+          console.error("Missing store_name parameter");
+          return new Response(
+            JSON.stringify({ error: "Store name is required" }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+          );
         }
         
+        console.log("Generating auth URL for store:", store_name);
+        
+        // Generate OAuth URL
+        const authUrl = `https://${store_name}/admin/oauth/authorize?client_id=${SHOPIFY_CLIENT_ID}&scope=read_orders,read_products,read_customers&redirect_uri=${FLOWTECHS_REDIRECT_URI}`;
+        console.log("Generated auth URL (domain only for security):", new URL(authUrl).origin);
+        
         return new Response(
-          JSON.stringify({ 
-            error: "Connection test failed", 
-            status: testStatus,
-            details: errorJson
-          }),
+          JSON.stringify({ auth_url: authUrl }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } else if (action === "save_token") {
+        // Save token to database
+        if (!user_id || !store_name || !access_token) {
+          console.error("Missing required parameters for saving token");
+          return new Response(
+            JSON.stringify({ error: "Missing required parameters" }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+          );
+        }
+        
+        console.log("Saving connection to database for store:", store_name);
+        
+        // Save the connection details to the database
+        const { data, error } = await supabase
+          .from('sources')
+          .insert({
+            user_id: user_id,
+            name: source_name || `Shopify - ${store_name}`,
+            url: store_name,
+            source_type: 'Shopify',
+            status: 'Active',
+            credentials: { access_token }
+          })
+          .select('id');
+        
+        if (error) {
+          console.error("Error saving token:", error);
+          return new Response(
+            JSON.stringify({ error: "Failed to save connection", details: error }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+          );
+        }
+        
+        console.log("Successfully saved connection with ID:", data[0].id);
+        
+        return new Response(
+          JSON.stringify({ success: true, source_id: data[0].id }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } else if (action === "test_connection") {
+        // Test connection to Shopify
+        if (!store_name || !access_token) {
+          console.error("Missing store name or access token for testing");
+          return new Response(
+            JSON.stringify({ error: "Missing store name or access token" }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+          );
+        }
+        
+        console.log("Testing connection to Shopify API for store:", store_name);
+        
+        // Test the connection by making a simple API call to Shopify
+        const testResponse = await fetch(`https://${store_name}/admin/api/2024-01/shop.json`, {
+          headers: { 'X-Shopify-Access-Token': access_token }
+        });
+        
+        const testStatus = testResponse.status;
+        console.log("Test connection status:", testStatus);
+        
+        if (!testResponse.ok) {
+          console.error("Connection test failed with status:", testStatus);
+          let errorJson;
+          try {
+            errorJson = await testResponse.json();
+          } catch (e) {
+            errorJson = { message: "Could not parse error response" };
+          }
+          
+          return new Response(
+            JSON.stringify({ 
+              error: "Connection test failed", 
+              status: testStatus,
+              details: errorJson
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+          );
+        }
+        
+        console.log("Connection test successful");
+        
+        return new Response(
+          JSON.stringify({ success: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } else {
+        console.error("Unknown action requested:", action);
+        return new Response(
+          JSON.stringify({ error: "Unknown action" }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
         );
       }
-      
-      console.log("Connection test successful");
-      
-      return new Response(
-        JSON.stringify({ success: true }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
-
-    console.error("Endpoint not found:", pathname);
-    return new Response(
-      JSON.stringify({ error: "Not found" }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
-    );
   } 
   catch (error) {
     console.error("Error in edge function:", error);
