@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      dashboard_metrics: {
+        Row: {
+          id: string
+          last_updated: string | null
+          metric_name: string
+          metric_value: number
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          last_updated?: string | null
+          metric_name: string
+          metric_value: number
+          user_id: string
+        }
+        Update: {
+          id?: string
+          last_updated?: string | null
+          metric_name?: string
+          metric_value?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      job_summary: {
+        Row: {
+          failed_jobs: number
+          id: string
+          last_updated: string | null
+          successful_jobs: number
+          total_jobs: number
+          user_id: string
+        }
+        Insert: {
+          failed_jobs?: number
+          id?: string
+          last_updated?: string | null
+          successful_jobs?: number
+          total_jobs?: number
+          user_id: string
+        }
+        Update: {
+          failed_jobs?: number
+          id?: string
+          last_updated?: string | null
+          successful_jobs?: number
+          total_jobs?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company: string | null

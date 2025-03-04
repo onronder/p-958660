@@ -1,64 +1,116 @@
 
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PieChart, Clock, Database, Upload } from "lucide-react";
-
-const statsData = [
-  {
-    title: "Service Uptime",
-    value: "99.8%",
-    description: "Last 24 hours",
-    icon: PieChart,
-    iconColor: "text-green-500",
-  },
-  {
-    title: "New Data Rows",
-    value: "10,345",
-    description: "Rows pulled from Shopify",
-    icon: Database,
-    iconColor: "text-blue-500",
-  },
-  {
-    title: "Pull Duration",
-    value: "00:15:30",
-    description: "Last pull",
-    icon: Clock,
-    iconColor: "text-yellow-500",
-  },
-  {
-    title: "Upload Status",
-    value: "85%",
-    description: "Uploaded successfully",
-    icon: Upload,
-    iconColor: "text-purple-500",
-  },
-];
-
-const recentJobs = [
-  {
-    source: "Orders",
-    startDate: "2023-11-22",
-    duration: "00:15:30",
-    rowsProcessed: 10345,
-    status: "Success",
-  },
-  {
-    source: "Products",
-    startDate: "2023-11-22",
-    duration: "00:10:15",
-    rowsProcessed: 3345,
-    status: "Success",
-  },
-  {
-    source: "Customers",
-    startDate: "2023-11-21",
-    duration: "00:12:45",
-    rowsProcessed: 1234,
-    status: "Failed",
-  },
-];
+import { useDashboardData } from "@/hooks/useDashboardData";
+import DashboardMetricCard from "@/components/DashboardMetricCard";
+import RecentJobsTable, { Job } from "@/components/RecentJobsTable";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const { dashboardData, isLoading, isError } = useDashboardData();
+  const [recentJobs, setRecentJobs] = useState<Job[]>([]);
+
+  // Sample job data - in a real application, this would come from the API
+  useEffect(() => {
+    // Mock data for recent jobs
+    const mockJobs: Job[] = [
+      {
+        source: "Orders",
+        startDate: "2023-11-22",
+        duration: "00:15:30",
+        rowsProcessed: 10345,
+        status: "Success",
+      },
+      {
+        source: "Products",
+        startDate: "2023-11-22",
+        duration: "00:10:15",
+        rowsProcessed: 3345,
+        status: "Success",
+      },
+      {
+        source: "Customers",
+        startDate: "2023-11-21",
+        duration: "00:12:45",
+        rowsProcessed: 1234,
+        status: "Failed",
+      },
+    ];
+    setRecentJobs(mockJobs);
+  }, []);
+
+  const statsData = [
+    {
+      title: "Service Uptime",
+      value: "99.8%",
+      description: "Last 24 hours",
+      icon: PieChart,
+      iconColor: "text-green-500",
+    },
+    {
+      title: "New Data Rows",
+      value: dashboardData.metrics.totalDataProcessed.toFixed(1) + "GB",
+      description: "Data processed",
+      icon: Database,
+      iconColor: "text-blue-500",
+    },
+    {
+      title: "API Calls",
+      value: dashboardData.metrics.totalApiCalls.toLocaleString(),
+      description: "Last 30 days",
+      icon: Clock,
+      iconColor: "text-yellow-500",
+    },
+    {
+      title: "Active Connections",
+      value: dashboardData.metrics.activeConnections,
+      description: "Current connections",
+      icon: Upload,
+      iconColor: "text-purple-500",
+    },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-8">
+        <div className="bg-red-50 rounded-lg p-4 flex items-start space-x-4 mb-4">
+          <div className="text-red-500 mt-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-red-800">
+              There was an error loading the dashboard data. Please try again later.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div className="bg-blue-50 rounded-lg p-4 flex items-start space-x-4 mb-4">
@@ -90,56 +142,26 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statsData.map((stat, index) => (
-          <Card key={index} className="p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{stat.title}</p>
-                <h2 className="text-3xl font-bold mt-1">{stat.value}</h2>
-                <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
-              </div>
-              <div className={`p-2 rounded-full ${stat.iconColor} bg-opacity-10`}>
-                <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
-              </div>
-            </div>
-          </Card>
+          <DashboardMetricCard
+            key={index}
+            title={stat.title}
+            value={stat.value}
+            description={stat.description}
+            icon={stat.icon}
+            iconColor={stat.iconColor}
+          />
         ))}
       </div>
 
       <Card>
         <div className="p-6">
-          <h3 className="text-xl font-semibold mb-4">Recent Jobs</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Source</TableHead>
-                <TableHead>Start Date</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Rows Processed</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentJobs.map((job, index) => (
-                <TableRow key={index}>
-                  <TableCell>{job.source}</TableCell>
-                  <TableCell>{job.startDate}</TableCell>
-                  <TableCell>{job.duration}</TableCell>
-                  <TableCell>{job.rowsProcessed.toLocaleString()}</TableCell>
-                  <TableCell>
-                    <span 
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        job.status === "Success" 
-                          ? "bg-green-100 text-green-800" 
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {job.status}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold">Recent Jobs</h3>
+            <div className="text-sm text-muted-foreground">
+              {dashboardData.jobSummary.totalJobs} Total Jobs • {dashboardData.jobSummary.successfulJobs} Successful • {dashboardData.jobSummary.failedJobs} Failed
+            </div>
+          </div>
+          <RecentJobsTable jobs={recentJobs} />
         </div>
       </Card>
     </div>
