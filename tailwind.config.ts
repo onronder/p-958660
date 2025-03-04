@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -43,6 +44,30 @@ export default {
         card: {
           DEFAULT: "#FFFFFF",
           foreground: "#141413",
+        },
+        blue: {
+          50: "#e6f1fe",
+          100: "#cce3fd",
+          200: "#99c7fb",
+          300: "#66abf9",
+          400: "#338ff7",
+          500: "#0066ff",
+          600: "#0052cc",
+          700: "#003d99",
+          800: "#002966",
+          900: "#001433",
+        },
+        green: {
+          50: "#e6f7ef",
+          100: "#ccefdf",
+          200: "#99dfbf",
+          300: "#66cf9f",
+          400: "#33bf7f",
+          500: "#00af5f",
+          600: "#008c4c",
+          700: "#006939",
+          800: "#004626",
+          900: "#002313",
         },
       },
       borderRadius: {
