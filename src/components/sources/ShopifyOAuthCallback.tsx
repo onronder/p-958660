@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
@@ -14,16 +14,25 @@ interface OAuthState {
 
 const ShopifyOAuthCallback: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        // Log the full callback URL (without sensitive parameters)
+        console.log("OAuth callback URL path:", location.pathname + location.search.replace(/code=[^&]+/, "code=REDACTED"));
+        
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const shop = urlParams.get('shop');
+        
+        console.log("OAuth callback parameters received:", { 
+          hasCode: Boolean(code), 
+          shop: shop 
+        });
         
         if (!code || !shop) {
           throw new Error("Missing required parameters");
@@ -31,13 +40,21 @@ const ShopifyOAuthCallback: React.FC = () => {
         
         // Get saved state from localStorage
         const savedStateJSON = localStorage.getItem('shopifyOAuthState');
+        console.log("Retrieved saved state from localStorage:", Boolean(savedStateJSON));
+        
         if (!savedStateJSON) {
           throw new Error("No saved state found");
         }
         
         const savedState: OAuthState = JSON.parse(savedStateJSON);
+        console.log("Parsed saved state:", { 
+          hasSourceName: Boolean(savedState.sourceName),
+          storeUrl: savedState.storeUrl,
+          hasUserId: Boolean(savedState.userId)
+        });
         
         // Exchange authorization code for access token
+        console.log("Exchanging authorization code for access token...");
         const { data: tokenData, error: tokenError } = await supabase.functions.invoke("shopify-oauth", {
           body: {
             pathname: "/shopify-oauth/callback",
@@ -46,11 +63,22 @@ const ShopifyOAuthCallback: React.FC = () => {
           }
         });
         
-        if (tokenError || !tokenData.access_token) {
-          throw new Error(tokenError?.message || "Failed to obtain access token");
+        if (tokenError) {
+          console.error("Token exchange error:", tokenError);
+          throw new Error(tokenError.message || "Failed to obtain access token");
+        }
+        
+        console.log("Token exchange response:", {
+          success: Boolean(tokenData),
+          hasAccessToken: Boolean(tokenData?.access_token)
+        });
+        
+        if (!tokenData || !tokenData.access_token) {
+          throw new Error("Failed to obtain access token");
         }
         
         // Save the token to the database
+        console.log("Saving token to database...");
         const { data: saveData, error: saveError } = await supabase.functions.invoke("shopify-oauth", {
           body: {
             pathname: "/shopify-oauth/save-token",
@@ -62,8 +90,14 @@ const ShopifyOAuthCallback: React.FC = () => {
         });
         
         if (saveError) {
-          throw new Error(saveError.message);
+          console.error("Error saving token:", saveError);
+          throw new Error(saveError.message || "Failed to save connection");
         }
+        
+        console.log("Token saved successfully:", { 
+          success: Boolean(saveData?.success),
+          sourceId: saveData?.source_id
+        });
         
         // Clean up
         localStorage.removeItem('shopifyOAuthState');
@@ -74,10 +108,11 @@ const ShopifyOAuthCallback: React.FC = () => {
         });
         
         // Redirect to the sources page
+        console.log("Redirecting to sources page...");
         navigate("/sources");
       } catch (error) {
         console.error("OAuth callback error:", error);
-        setError(error.message);
+        setError(error.message || "An unknown error occurred");
         toast({
           title: "Connection Failed",
           description: error.message || "Failed to complete Shopify authentication",
@@ -87,7 +122,7 @@ const ShopifyOAuthCallback: React.FC = () => {
     };
     
     handleCallback();
-  }, [navigate, toast]);
+  }, [navigate, toast, location]);
 
   if (error) {
     return (

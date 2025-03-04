@@ -45,8 +45,10 @@ const ShopifyConfigForm: React.FC<ShopifyConfigFormProps> = ({
     
     try {
       setIsLoading(true);
+      console.log("Starting OAuth flow with store:", formattedStoreUrl);
       
       // Call the Supabase edge function to get auth URL
+      console.log("Calling Supabase edge function for authentication URL");
       const { data, error } = await supabase.functions.invoke("shopify-oauth", {
         body: {
           pathname: "/shopify-oauth/authenticate",
@@ -55,27 +57,34 @@ const ShopifyConfigForm: React.FC<ShopifyConfigFormProps> = ({
       });
       
       if (error) {
+        console.error("Edge function error:", error);
         throw new Error(error.message);
       }
       
-      if (!data.auth_url) {
+      console.log("Edge function response:", data);
+      
+      if (!data || !data.auth_url) {
+        console.error("Invalid response from edge function:", data);
         throw new Error("Failed to generate authorization URL");
       }
       
       // Save the current state to localStorage so we can retrieve it after redirect
-      localStorage.setItem('shopifyOAuthState', JSON.stringify({
+      const stateData = {
         sourceName,
         storeUrl: formattedStoreUrl,
         userId: user?.id
-      }));
+      };
+      console.log("Saving OAuth state to localStorage:", stateData);
+      localStorage.setItem('shopifyOAuthState', JSON.stringify(stateData));
       
       // Redirect to Shopify authorization page
+      console.log("Redirecting to Shopify auth URL:", data.auth_url);
       window.location.href = data.auth_url;
     } catch (error) {
       console.error("Error initiating OAuth:", error);
       toast({
         title: "Connection Error",
-        description: "Failed to connect to Shopify. Please try again.",
+        description: `Failed to connect to Shopify: ${error.message || "Unknown error"}`,
         variant: "destructive",
       });
     } finally {
