@@ -1,26 +1,34 @@
 
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
 
-interface RegisterProps {
-  onRegister: () => void;
-}
-
-const Register = ({ onRegister }: RegisterProps) => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [passwordError, setPasswordError] = useState("");
-  const { signUp } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if we have the access token in the URL
+    const hash = window.location.hash;
+    if (!hash || !hash.includes("access_token")) {
+      toast({
+        title: "Invalid or expired reset link",
+        description: "Please request a new password reset link",
+        variant: "destructive",
+      });
+      navigate("/forgot-password");
+    }
+  }, [navigate, toast]);
 
   const validatePassword = () => {
     if (password !== confirmPassword) {
@@ -45,17 +53,31 @@ const Register = ({ onRegister }: RegisterProps) => {
     setIsLoading(true);
     
     try {
-      // Split name into first and last name
-      const nameParts = name.trim().split(/\s+/);
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts.slice(1).join(" ") || "";
-      
-      const { error } = await signUp(email, password, firstName, lastName);
-      
-      if (!error) {
-        onRegister();
-        navigate("/login");
+      const { error } = await supabase.auth.updateUser({
+        password: password,
+      });
+
+      if (error) {
+        toast({
+          title: "Error resetting password",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
       }
+
+      toast({
+        title: "Password reset successful",
+        description: "Your password has been updated. You can now login with your new password.",
+      });
+      
+      navigate("/login");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -67,44 +89,21 @@ const Register = ({ onRegister }: RegisterProps) => {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary">FlowTechs</h1>
           <p className="text-secondary-foreground mt-2">
-            Create an account to get started with FlowTechs
+            Set your new password
           </p>
         </div>
         
         <Card className="glass-card">
           <CardHeader>
-            <CardTitle>Create an account</CardTitle>
+            <CardTitle>Reset Password</CardTitle>
             <CardDescription>
-              Fill in the details below to register
+              Enter your new password below
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">New Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -118,7 +117,7 @@ const Register = ({ onRegister }: RegisterProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -135,23 +134,17 @@ const Register = ({ onRegister }: RegisterProps) => {
                 )}
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
+            <CardFooter>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating account...
+                    Updating password...
                   </>
                 ) : (
-                  "Create Account"
+                  "Reset Password"
                 )}
               </Button>
-              <p className="text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link to="/login" className="text-primary hover:underline">
-                  Sign in
-                </Link>
-              </p>
             </CardFooter>
           </form>
         </Card>
@@ -160,4 +153,4 @@ const Register = ({ onRegister }: RegisterProps) => {
   );
 };
 
-export default Register;
+export default ResetPassword;
