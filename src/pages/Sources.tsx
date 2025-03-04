@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import SourceStatusBadge from "@/components/SourceStatusBadge";
 import { InfoIcon } from "lucide-react";
-import { Source } from "@/types/source";
+import { Source, SourceStatus } from "@/types/source";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Sources = () => {
@@ -46,7 +45,15 @@ const Sources = () => {
         return;
       }
       
-      setSources(data || []);
+      const validSources = data?.map(source => {
+        const status = validateSourceStatus(source.status);
+        return {
+          ...source,
+          status
+        } as Source;
+      }) || [];
+      
+      setSources(validSources);
     } catch (error) {
       console.error("Error fetching sources:", error);
       toast({
@@ -59,6 +66,13 @@ const Sources = () => {
     }
   };
 
+  const validateSourceStatus = (status: string): SourceStatus => {
+    const validStatuses: SourceStatus[] = ["Active", "Inactive", "Pending", "Failed"];
+    return validStatuses.includes(status as SourceStatus) 
+      ? (status as SourceStatus) 
+      : "Inactive"; // Default fallback
+  };
+
   const handleTestConnection = async (sourceId: string) => {
     try {
       toast({
@@ -66,8 +80,6 @@ const Sources = () => {
         description: "Please wait while we verify the connection.",
       });
       
-      // In a real implementation, this would call an API endpoint that tests the connection
-      // For now, we'll simulate the API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast({
