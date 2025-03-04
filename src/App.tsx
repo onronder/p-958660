@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import FlowTechsSidebar from "@/components/FlowTechsSidebar";
 import Dashboard from "./pages/Dashboard";
 import Sources from "./pages/Sources";
+import AddSource from "./pages/AddSource";
 import Transform from "./pages/Transform";
 import Destinations from "./pages/Destinations";
 import Jobs from "./pages/Jobs";
@@ -43,6 +44,7 @@ const AppRoutes = () => {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/sources" element={<Sources />} />
+                <Route path="/sources/add" element={<AddSource />} />
                 <Route path="/transform" element={<Transform />} />
                 <Route path="/destinations" element={<Destinations />} />
                 <Route path="/jobs" element={<Jobs />} />
