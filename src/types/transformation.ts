@@ -36,3 +36,8 @@ export interface TransformationFunction {
   syntax: string;
   example: string;
 }
+
+export interface DerivedColumn {
+  name: string;
+  expression: string;
+}
