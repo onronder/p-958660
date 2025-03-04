@@ -1,8 +1,9 @@
 
 import React from "react";
+import { SourceStatus } from "@/types/source";
 
 interface SourceStatusBadgeProps {
-  status: "Active" | "Inactive" | "Pending" | "Failed";
+  status: SourceStatus;
 }
 
 const SourceStatusBadge: React.FC<SourceStatusBadgeProps> = ({ status }) => {

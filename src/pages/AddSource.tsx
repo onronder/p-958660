@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { SourceStatus } from "@/types/source";
 
 type SourceType = "Shopify" | "WooCommerce" | "Custom API" | "Google Sheets";
 
@@ -47,6 +50,7 @@ const AddSource = () => {
   const [apiSecret, setApiSecret] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleSourceSelection = (sourceType: SourceType) => {
     setSelectedSource(sourceType);
@@ -73,24 +77,45 @@ const AddSource = () => {
       });
       return;
     }
+
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to add a source.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       setIsSubmitting(true);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Prepare credentials object based on source type
+      let credentials: any = {};
       
-      // In a real implementation, this would call an API endpoint or Supabase:
-      /*
-      await supabase.from('sources').insert({
-        name: sourceName,
-        url: storeUrl,
-        source_type: selectedSource,
-        status: 'Pending',
-        user_id: user.id,
-        credentials: { apiKey, apiSecret } // This would be encrypted
-      });
-      */
+      if (selectedSource === "Shopify") {
+        credentials = { apiKey };
+      } else if (selectedSource === "WooCommerce") {
+        credentials = { apiKey, apiSecret };
+      }
+      
+      // Insert new source into Supabase
+      const { data, error } = await supabase
+        .from('sources')
+        .insert({
+          user_id: user.id,
+          name: sourceName,
+          url: storeUrl,
+          source_type: selectedSource,
+          status: 'Pending' as SourceStatus,
+          credentials
+        })
+        .select();
+      
+      if (error) {
+        console.error("Error adding source:", error);
+        throw error;
+      }
       
       toast({
         title: "Source Connected",

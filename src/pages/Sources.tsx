@@ -8,68 +8,45 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import SourceStatusBadge from "@/components/SourceStatusBadge";
 import { InfoIcon } from "lucide-react";
-
-interface Source {
-  id: string;
-  name: string;
-  url: string;
-  source_type: string;
-  status: "Active" | "Inactive" | "Pending" | "Failed";
-  last_sync?: string;
-}
+import { Source } from "@/types/source";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Sources = () => {
   const [sources, setSources] = useState<Source[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchSources();
-  }, []);
+    if (user) {
+      fetchSources();
+    }
+  }, [user]);
 
   const fetchSources = async () => {
     try {
       setIsLoading(true);
       
-      // In a real implementation, this would fetch from the sources table
-      // For now, we'll use the static data but in the future it would be:
-      // const { data, error } = await supabase.from('sources').select('*').eq('user_id', user.id);
+      if (!user) {
+        return;
+      }
       
-      // Using static data for demonstration
-      const mockSources: Source[] = [
-        {
-          id: "1",
-          name: "Fashion Boutique",
-          url: "https://fashion-boutique.myshopify.com",
-          source_type: "Shopify",
-          status: "Active",
-          last_sync: "2023-06-20T15:30:00Z"
-        },
-        {
-          id: "2",
-          name: "Tech Gadgets",
-          url: "https://tech-gadgets.myshopify.com",
-          source_type: "Shopify",
-          status: "Inactive"
-        },
-        {
-          id: "3",
-          name: "Home Decor",
-          url: "https://home-decor.myshopify.com",
-          source_type: "Shopify",
-          status: "Active",
-          last_sync: "2023-06-19T10:15:00Z"
-        },
-        {
-          id: "4",
-          name: "Garden Supplies",
-          url: "https://garden-world.woocommerce.com",
-          source_type: "WooCommerce",
-          status: "Pending"
-        },
-      ];
+      const { data, error } = await supabase
+        .from('sources')
+        .select('*')
+        .eq('user_id', user.id);
       
-      setSources(mockSources);
+      if (error) {
+        console.error("Error fetching sources:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load sources. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setSources(data || []);
     } catch (error) {
       console.error("Error fetching sources:", error);
       toast({
@@ -89,10 +66,8 @@ const Sources = () => {
         description: "Please wait while we verify the connection.",
       });
       
-      // In a real implementation, this would be:
-      // await supabase.functions.invoke('test-source-connection', { body: { sourceId } });
-      
-      // Simulate API call delay
+      // In a real implementation, this would call an API endpoint that tests the connection
+      // For now, we'll simulate the API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast({
@@ -104,6 +79,33 @@ const Sources = () => {
       toast({
         title: "Connection Failed",
         description: "Unable to connect to the source. Please check credentials.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteSource = async (sourceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('sources')
+        .delete()
+        .eq('id', sourceId);
+        
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Source Deleted",
+        description: "The source has been deleted successfully.",
+      });
+      
+      fetchSources();
+    } catch (error) {
+      console.error("Error deleting source:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete source. Please try again.",
         variant: "destructive",
       });
     }
@@ -194,7 +196,12 @@ const Sources = () => {
                   <Button variant="ghost" size="icon" className="h-8 w-8">
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-destructive"
+                    onClick={() => handleDeleteSource(source.id)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
