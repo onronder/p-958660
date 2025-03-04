@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -136,9 +135,7 @@ const functionCategories: Record<FunctionCategory, TransformationFunction[]> = {
   ]
 };
 
-// Mock data for fields, in real implementation this would come from the API
 const mockFields = (sourceId: string): TransformationField[] => {
-  // In a real implementation, fetch fields from the API based on source ID
   return [
     { id: "1", name: "order_id", category: "Orders", selected: false },
     { id: "2", name: "customer_id", category: "Orders", selected: false },
@@ -167,7 +164,6 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
   const [activeTab, setActiveTab] = useState("fields");
   const [selectedFunction, setSelectedFunction] = useState<FunctionCategory>("Arithmetic");
   
-  // Form state
   const [name, setName] = useState("");
   const [sourceId, setSourceId] = useState("");
   const [fields, setFields] = useState<TransformationField[]>([]);
@@ -179,16 +175,13 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
   const [previewData, setPreviewData] = useState<any[]>([]);
   const [showPreview, setShowPreview] = useState(false);
 
-  // Initialize form with existing transformation data if editing
   useEffect(() => {
     if (transformation) {
       setName(transformation.name);
       setSourceId(transformation.source_id);
-      // In a real implementation, we would fetch the fields and their selection state
       fetchFields(transformation.source_id);
       setSkipTransformation(transformation.skip_transformation || false);
       
-      // In a real implementation, we would fetch the expression and parse it into derived columns
       if (transformation.expression) {
         setDerivedColumns([{ name: "derived_column", expression: transformation.expression }]);
       }
@@ -200,14 +193,6 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
     
     try {
       setIsLoading(true);
-      // In a real implementation, we would fetch fields from the API
-      // const { data, error } = await supabase.functions.invoke("get-source-fields", {
-      //   body: { source_id: sourceId }
-      // });
-      
-      // if (error) throw error;
-      
-      // For now, we'll use mock data
       const fetchedFields = mockFields(sourceId);
       setFields(fetchedFields);
     } catch (error) {
@@ -260,10 +245,8 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
   };
 
   const validateExpressions = (): boolean => {
-    // Skip validation if transformation is skipped
     if (skipTransformation) return true;
     
-    // Check if at least one field is selected
     const hasSelectedFields = fields.some(field => field.selected);
     if (!hasSelectedFields) {
       toast({
@@ -274,9 +257,7 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
       return false;
     }
     
-    // Check derived columns if not skipping transformations
     if (!skipTransformation && derivedColumns.length > 0) {
-      // Check if any derived column is empty
       const hasEmptyDerivedColumn = derivedColumns.some(
         col => !col.name.trim() || !col.expression.trim()
       );
@@ -296,18 +277,6 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
     try {
       setIsLoading(true);
       
-      // In a real implementation, we would call the API to get a preview
-      // const { data, error } = await supabase.functions.invoke("transformation-preview", {
-      //   body: { 
-      //     source_id: sourceId,
-      //     fields: fields.filter(f => f.selected),
-      //     derived_columns: skipTransformation ? [] : derivedColumns,
-      //   }
-      // });
-      
-      // if (error) throw error;
-      
-      // For now, we'll use mock data
       const mockPreviewData = [
         { order_id: "1001", total_price: 99.99, derived_price: 119.99 },
         { order_id: "1002", total_price: 149.99, derived_price: 179.99 },
@@ -354,13 +323,8 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
         last_modified: new Date().toISOString().split('T')[0],
         user_id: user.id,
         skip_transformation,
-        // In a real implementation, we would build the expression properly
         expression: skipTransformation ? undefined : derivedColumns.map(col => col.expression).join(';')
       };
-      
-      // In a real implementation, we would call the API to save the transformation
-      // const { data, error } = await supabase.from('transformations').upsert(newTransformation);
-      // if (error) throw error;
       
       onSave(newTransformation);
       
@@ -382,7 +346,6 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
     }
   };
 
-  // Group fields by category
   const fieldsByCategory = fields.reduce<Record<string, TransformationField[]>>((acc, field) => {
     if (!acc[field.category]) {
       acc[field.category] = [];
