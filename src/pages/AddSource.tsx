@@ -1,44 +1,12 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { SourceStatus } from "@/types/source";
-
-type SourceType = "Shopify" | "WooCommerce" | "Custom API" | "Google Sheets";
-
-const sourceOptions: { id: SourceType; title: string; description: string; availableStatus: "available" | "coming-soon" }[] = [
-  {
-    id: "Shopify",
-    title: "Shopify",
-    description: "Connect to your Shopify store to import products, orders, and customer data",
-    availableStatus: "available",
-  },
-  {
-    id: "WooCommerce",
-    title: "WooCommerce",
-    description: "Import data from your WordPress WooCommerce store",
-    availableStatus: "available",
-  },
-  {
-    id: "Custom API",
-    title: "Custom API",
-    description: "Connect to a custom RESTful API endpoint",
-    availableStatus: "coming-soon",
-  },
-  {
-    id: "Google Sheets",
-    title: "Google Sheets",
-    description: "Import data from Google Sheets spreadsheets",
-    availableStatus: "coming-soon",
-  },
-];
+import { sourceOptions, addSource } from "@/services/sourceDataService";
+import { SourceType } from "@/components/sources/SourceTypeCard";
+import SourceSelectionStep from "@/components/sources/SourceSelectionStep";
+import SourceConfigStep from "@/components/sources/SourceConfigStep";
 
 const AddSource = () => {
   const [step, setStep] = useState<"select-source" | "configure">("select-source");
@@ -99,23 +67,8 @@ const AddSource = () => {
         credentials = { apiKey, apiSecret };
       }
       
-      // Insert new source into Supabase
-      const { data, error } = await supabase
-        .from('sources')
-        .insert({
-          user_id: user.id,
-          name: sourceName,
-          url: storeUrl,
-          source_type: selectedSource,
-          status: 'Pending' as SourceStatus,
-          credentials
-        })
-        .select();
-      
-      if (error) {
-        console.error("Error adding source:", error);
-        throw error;
-      }
+      // Insert new source using the service
+      await addSource(user.id, sourceName, storeUrl, selectedSource as SourceType, credentials);
       
       toast({
         title: "Source Connected",
@@ -135,184 +88,30 @@ const AddSource = () => {
     }
   };
 
-  const renderSourceSelection = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-primary">Add New Source</h1>
-        <Button variant="outline" onClick={handleBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Sources
-        </Button>
-      </div>
-      
-      <p className="text-muted-foreground">
-        Select the type of data source you want to connect to FlowTechs.
-      </p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {sourceOptions.map((source) => (
-          <Card 
-            key={source.id}
-            className={`cursor-pointer hover:border-primary transition-all ${
-              source.availableStatus === "coming-soon" ? "opacity-60" : ""
-            }`}
-            onClick={() => source.availableStatus === "available" && handleSourceSelection(source.id)}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                {source.title}
-                {source.availableStatus === "coming-soon" && (
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                    Coming Soon
-                  </span>
-                )}
-              </CardTitle>
-              <CardDescription>{source.description}</CardDescription>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderConfiguration = () => {
-    let fields;
-    
-    if (selectedSource === "Shopify") {
-      fields = (
-        <>
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="sourceName">Source Name</Label>
-              <Input
-                id="sourceName"
-                placeholder="My Shopify Store"
-                value={sourceName}
-                onChange={(e) => setSourceName(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="storeUrl">Store URL</Label>
-              <Input
-                id="storeUrl"
-                placeholder="mystore.myshopify.com"
-                value={storeUrl}
-                onChange={(e) => setStoreUrl(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                The full URL of your Shopify store
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="apiKey">Admin API Access Token</Label>
-              <Input
-                id="apiKey"
-                type="password"
-                placeholder="shpat_..."
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Found in your Shopify Admin under Apps &gt; Develop apps &gt; Create an app
-              </p>
-            </div>
-          </div>
-        </>
-      );
-    } else if (selectedSource === "WooCommerce") {
-      fields = (
-        <>
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="sourceName">Source Name</Label>
-              <Input
-                id="sourceName"
-                placeholder="My WooCommerce Store"
-                value={sourceName}
-                onChange={(e) => setSourceName(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="storeUrl">Store URL</Label>
-              <Input
-                id="storeUrl"
-                placeholder="https://example.com"
-                value={storeUrl}
-                onChange={(e) => setStoreUrl(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="apiKey">Consumer Key</Label>
-              <Input
-                id="apiKey"
-                type="password"
-                placeholder="ck_..."
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="apiSecret">Consumer Secret</Label>
-              <Input
-                id="apiSecret"
-                type="password"
-                placeholder="cs_..."
-                value={apiSecret}
-                onChange={(e) => setApiSecret(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Found in WooCommerce &gt; Settings &gt; Advanced &gt; REST API
-              </p>
-            </div>
-          </div>
-        </>
-      );
-    }
-
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-primary">Configure {selectedSource}</h1>
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Sources
-          </Button>
-        </div>
-        
-        <Card>
-          <form onSubmit={handleSubmit}>
-            <CardHeader>
-              <CardTitle>Connection Details</CardTitle>
-              <CardDescription>
-                Enter the required information to connect to your {selectedSource} account.
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent>{fields}</CardContent>
-            
-            <CardFooter className="flex justify-between">
-              <Button type="button" variant="outline" onClick={handleBack}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Connect Source
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-8">
-      {step === "select-source" ? renderSourceSelection() : renderConfiguration()}
+      {step === "select-source" ? (
+        <SourceSelectionStep 
+          sourceOptions={sourceOptions}
+          onSourceSelect={handleSourceSelection}
+          onBack={handleBack}
+        />
+      ) : (
+        <SourceConfigStep
+          selectedSource={selectedSource as SourceType}
+          isSubmitting={isSubmitting}
+          sourceName={sourceName}
+          setSourceName={setSourceName}
+          storeUrl={storeUrl}
+          setStoreUrl={setStoreUrl}
+          apiKey={apiKey}
+          setApiKey={setApiKey}
+          apiSecret={apiSecret}
+          setApiSecret={setApiSecret}
+          onBack={handleBack}
+          onSubmit={handleSubmit}
+        />
+      )}
     </div>
   );
 };
