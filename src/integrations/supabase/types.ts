@@ -155,6 +155,39 @@ export type Database = {
           },
         ]
       }
+      job_runs: {
+        Row: {
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          job_id: string
+          rows_processed: number | null
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          job_id: string
+          rows_processed?: number | null
+          started_at?: string
+          status: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          job_id?: string
+          rows_processed?: number | null
+          started_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       job_summary: {
         Row: {
           failed_jobs: number
@@ -185,36 +218,102 @@ export type Database = {
       jobs: {
         Row: {
           created_at: string | null
+          destination_id: string | null
           duration: unknown | null
+          frequency: string | null
           id: string
           job_type: string | null
+          last_run: string | null
+          name: string | null
+          next_run: string | null
           rows_processed: number | null
+          schedule: string | null
+          source_id: string | null
           source_name: string
           start_date: string | null
           status: string | null
+          transformation_id: string | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
+          destination_id?: string | null
           duration?: unknown | null
+          frequency?: string | null
           id?: string
           job_type?: string | null
+          last_run?: string | null
+          name?: string | null
+          next_run?: string | null
           rows_processed?: number | null
+          schedule?: string | null
+          source_id?: string | null
           source_name: string
           start_date?: string | null
           status?: string | null
+          transformation_id?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
+          destination_id?: string | null
           duration?: unknown | null
+          frequency?: string | null
           id?: string
           job_type?: string | null
+          last_run?: string | null
+          name?: string | null
+          next_run?: string | null
           rows_processed?: number | null
+          schedule?: string | null
+          source_id?: string | null
           source_name?: string
           start_date?: string | null
           status?: string | null
+          transformation_id?: string | null
+          updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          link: string | null
+          read: boolean
+          related_id: string | null
+          severity: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          related_id?: string | null
+          severity: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          related_id?: string | null
+          severity?: string
+          title?: string
+          user_id?: string
         }
         Relationships: []
       }

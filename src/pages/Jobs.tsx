@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -43,7 +42,6 @@ const Jobs = () => {
   const [isCreatingJob, setIsCreatingJob] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  // New job form state
   const [jobName, setJobName] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [jobFrequency, setJobFrequency] = useState<JobFrequency>("Daily");
@@ -66,7 +64,6 @@ const Jobs = () => {
   };
 
   const loadSources = async () => {
-    // Mock data for now - this would fetch from your API
     setSources([
       { id: "1", name: "Fashion Boutique" },
       { id: "2", name: "Tech Gadgets" },
@@ -105,14 +102,6 @@ const Jobs = () => {
         setJobs([newJob, ...jobs]);
         setIsDialogOpen(false);
         resetForm();
-        
-        await createNotification(
-          "Job Created",
-          `Your job "${jobName}" has been scheduled.`,
-          "success",
-          "job",
-          { showToast: true }
-        );
       }
     } catch (error) {
       console.error("Error creating job:", error);
@@ -130,14 +119,6 @@ const Jobs = () => {
     const updatedJob = await toggleJobStatus(job.id, job.status);
     if (updatedJob) {
       setJobs(jobs.map(j => j.id === job.id ? updatedJob : j));
-      
-      await createNotification(
-        `Job ${updatedJob.status === "Active" ? "Activated" : "Paused"}`,
-        `Job "${job.name}" has been ${updatedJob.status === "Active" ? "activated" : "paused"}.`,
-        "info",
-        "job",
-        { showToast: true }
-      );
     }
   };
 
@@ -151,28 +132,12 @@ const Jobs = () => {
     
     if (success) {
       loadJobs(); // Refresh jobs list to get updated last_run and next_run
-      
-      await createNotification(
-        "Job Executed",
-        `Job "${job.name}" was manually executed.`,
-        "info",
-        "job",
-        { showToast: false }
-      );
     }
   };
 
   const handleDeleteJob = async (jobId: string, jobName: string) => {
     if (await deleteJob(jobId)) {
       setJobs(jobs.filter(j => j.id !== jobId));
-      
-      await createNotification(
-        "Job Deleted",
-        `Job "${jobName}" has been deleted.`,
-        "info",
-        "job",
-        { showToast: true }
-      );
     }
   };
 

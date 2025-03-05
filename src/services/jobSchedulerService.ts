@@ -1,327 +1,346 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Job, JobFrequency, JobStatus } from "@/types/job";
+import { Job, JobFrequency, JobStatus, JobRun } from "@/types/job";
 import { toast } from "@/hooks/use-toast";
-import { NotificationSeverity, NotificationCategory } from "@/types/notification";
+import { format, addHours, addDays, addMonths, parseISO, setHours, setMinutes } from "date-fns";
+import { createNotification } from "./notificationService";
 
-export const createJob = async (job: Omit<Job, "id" | "created_at" | "updated_at" | "user_id">): Promise<Job | null> => {
+// Create a new job
+export const createJob = async (jobData: Omit<Job, "id" | "created_at" | "updated_at" | "user_id" | "last_run">): Promise<Job | null> => {
   try {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
-
-    const { data, error } = await supabase.from("jobs").insert({
-      ...job,
+    
+    const jobToCreate = {
+      ...jobData,
       user_id: userData.user.id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }).select();
-
-    if (error) throw error;
-    if (!data || data.length === 0) return null;
-
-    // Create notification about job creation
-    await createNotification({
-      title: "Job Created",
-      description: `New job "${job.name}" has been scheduled.`,
-      severity: "info",
-      category: "job",
-      related_id: data[0].id
-    });
-
-    return data[0];
+      status: jobData.status || "Active" as JobStatus,
+    };
+    
+    const { data, error } = await supabase
+      .from("jobs")
+      .insert(jobToCreate)
+      .select("*")
+      .single();
+    
+    if (error) {
+      console.error("Error creating job:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create job. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    // Create notification for job creation
+    await createNotification(
+      "Job Created",
+      `Your job "${data.name}" has been scheduled.`,
+      "success",
+      "job",
+      { related_id: data.id }
+    );
+    
+    return data as Job;
   } catch (error) {
     console.error("Error creating job:", error);
-    toast({
-      title: "Error creating job",
-      description: error instanceof Error ? error.message : "An unknown error occurred",
-      variant: "destructive",
-    });
     return null;
   }
 };
 
-export const updateJob = async (id: string, updates: Partial<Job>): Promise<Job | null> => {
+// Toggle job status (Active/Paused)
+export const toggleJobStatus = async (jobId: string, currentStatus: JobStatus): Promise<Job | null> => {
   try {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) throw new Error("User not authenticated");
-
-    const { data, error } = await supabase.from("jobs")
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .eq("user_id", userData.user.id)
-      .select();
-
-    if (error) throw error;
-    if (!data || data.length === 0) return null;
-
-    // Create notification about job update
-    await createNotification({
-      title: "Job Updated",
-      description: `Job "${data[0].name}" has been updated.`,
-      severity: "info",
-      category: "job",
-      related_id: id
-    });
-
-    return data[0];
-  } catch (error) {
-    console.error("Error updating job:", error);
-    toast({
-      title: "Error updating job",
-      description: error instanceof Error ? error.message : "An unknown error occurred",
-      variant: "destructive",
-    });
-    return null;
-  }
-};
-
-export const toggleJobStatus = async (id: string, currentStatus: JobStatus): Promise<Job | null> => {
-  const newStatus = currentStatus === "Active" ? "Paused" : "Active";
-  return updateJob(id, { status: newStatus });
-};
-
-export const deleteJob = async (id: string): Promise<boolean> => {
-  try {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) throw new Error("User not authenticated");
-
-    // Get job name before deleting
-    const { data: jobData } = await supabase.from("jobs")
-      .select("name")
-      .eq("id", id)
-      .eq("user_id", userData.user.id)
+    const newStatus = currentStatus === "Active" ? "Paused" : "Active";
+    
+    const { data, error } = await supabase
+      .from("jobs")
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .eq("id", jobId)
+      .select("*")
       .single();
-
-    const { error } = await supabase.from("jobs")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", userData.user.id);
-
-    if (error) throw error;
-
-    // Create notification about job deletion
-    if (jobData) {
-      await createNotification({
-        title: "Job Deleted",
-        description: `Job "${jobData.name}" has been deleted.`,
-        severity: "info",
-        category: "job"
+    
+    if (error) {
+      console.error("Error toggling job status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update job status. Please try again.",
+        variant: "destructive",
       });
+      return null;
     }
+    
+    return data as Job;
+  } catch (error) {
+    console.error("Error toggling job status:", error);
+    return null;
+  }
+};
 
+// Delete a job
+export const deleteJob = async (jobId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from("jobs")
+      .delete()
+      .eq("id", jobId);
+    
+    if (error) {
+      console.error("Error deleting job:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete job. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
     return true;
   } catch (error) {
     console.error("Error deleting job:", error);
-    toast({
-      title: "Error deleting job",
-      description: error instanceof Error ? error.message : "An unknown error occurred",
-      variant: "destructive",
-    });
     return false;
   }
 };
 
+// Fetch all jobs
 export const fetchJobs = async (): Promise<Job[]> => {
   try {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
-
-    const { data, error } = await supabase.from("jobs")
+    
+    const { data, error } = await supabase
+      .from("jobs")
       .select("*")
       .eq("user_id", userData.user.id)
       .order("created_at", { ascending: false });
-
-    if (error) throw error;
-    return data || [];
+    
+    if (error) {
+      console.error("Error fetching jobs:", error);
+      return [];
+    }
+    
+    return data as Job[];
   } catch (error) {
     console.error("Error fetching jobs:", error);
-    toast({
-      title: "Error fetching jobs",
-      description: error instanceof Error ? error.message : "An unknown error occurred",
-      variant: "destructive",
-    });
     return [];
   }
 };
 
-// Function to calculate next run time based on frequency and schedule
+// Calculate next run time based on frequency and schedule
 export const calculateNextRun = (frequency: JobFrequency, schedule: string): string => {
   const now = new Date();
-  let nextRun = new Date();
-
+  
   switch (frequency) {
     case "Once":
-      // For one-time jobs, we use the schedule as the exact date/time
-      nextRun = new Date(schedule);
-      break;
+      return schedule; // For one-time jobs, the schedule is the exact date/time
+      
     case "Hourly":
-      // For hourly, we add one hour
-      nextRun.setHours(nextRun.getHours() + 1);
-      break;
+      // Schedule next run at the next hour
+      return addHours(now, 1).toISOString();
+      
     case "Daily":
-      // For daily, we use the time from schedule and set it for the next day
-      const [dailyHours, dailyMinutes] = schedule.split(':').map(Number);
-      nextRun.setDate(nextRun.getDate() + 1);
-      nextRun.setHours(dailyHours, dailyMinutes, 0, 0);
-      break;
+      // Parse the time (e.g., "08:30") and set it for tomorrow
+      try {
+        const [hours, minutes] = schedule.split(":").map(Number);
+        let nextRun = new Date(now);
+        nextRun = setHours(nextRun, hours);
+        nextRun = setMinutes(nextRun, minutes);
+        
+        // If the time has already passed today, schedule for tomorrow
+        if (nextRun <= now) {
+          nextRun = addDays(nextRun, 1);
+        }
+        
+        return nextRun.toISOString();
+      } catch (error) {
+        console.error("Error calculating daily schedule:", error);
+        return addDays(now, 1).toISOString();
+      }
+      
     case "Weekly":
-      // For weekly, schedule format is "DAY HH:MM" (e.g., "Monday 08:00")
-      const [weekDay, weekTime] = schedule.split(' ');
-      const [weekHours, weekMinutes] = weekTime.split(':').map(Number);
-      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      const targetDay = days.indexOf(weekDay);
-      let daysToAdd = (targetDay + 7 - now.getDay()) % 7;
-      if (daysToAdd === 0) daysToAdd = 7; // Next week if today is the target day
-      nextRun.setDate(nextRun.getDate() + daysToAdd);
-      nextRun.setHours(weekHours, weekMinutes, 0, 0);
-      break;
+      // Parse the day and time (e.g., "Monday 08:30")
+      try {
+        const [day, time] = schedule.split(" ");
+        const [hours, minutes] = time.split(":").map(Number);
+        
+        const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const today = now.getDay();
+        const targetDay = daysOfWeek.indexOf(day);
+        
+        // Calculate days until the next occurrence of the target day
+        let daysUntilTarget = targetDay - today;
+        if (daysUntilTarget <= 0) {
+          daysUntilTarget += 7;
+        }
+        
+        let nextRun = addDays(now, daysUntilTarget);
+        nextRun = setHours(nextRun, hours);
+        nextRun = setMinutes(nextRun, minutes);
+        
+        return nextRun.toISOString();
+      } catch (error) {
+        console.error("Error calculating weekly schedule:", error);
+        return addDays(now, 7).toISOString();
+      }
+      
     case "Monthly":
-      // For monthly, schedule format is "DAY HH:MM" (e.g., "15 08:00")
-      const [monthDay, monthTime] = schedule.split(' ');
-      const [monthHours, monthMinutes] = monthTime.split(':').map(Number);
-      nextRun.setMonth(nextRun.getMonth() + 1);
-      nextRun.setDate(parseInt(monthDay));
-      nextRun.setHours(monthHours, monthMinutes, 0, 0);
-      break;
+      // Parse the day of month and time (e.g., "15 08:30")
+      try {
+        const [dayOfMonth, time] = schedule.split(" ");
+        const [hours, minutes] = time.split(":").map(Number);
+        
+        // Create date for the next occurrence of the specified day of month
+        let nextRun = new Date(now.getFullYear(), now.getMonth(), parseInt(dayOfMonth));
+        
+        // If that day has already passed this month, move to next month
+        if (nextRun <= now) {
+          nextRun = new Date(now.getFullYear(), now.getMonth() + 1, parseInt(dayOfMonth));
+        }
+        
+        nextRun = setHours(nextRun, hours);
+        nextRun = setMinutes(nextRun, minutes);
+        
+        return nextRun.toISOString();
+      } catch (error) {
+        console.error("Error calculating monthly schedule:", error);
+        return addMonths(now, 1).toISOString();
+      }
+      
+    default:
+      return now.toISOString();
   }
-
-  return nextRun.toISOString();
 };
 
-// Function to trigger job execution
+// Trigger a job execution immediately
 export const triggerJobExecution = async (jobId: string): Promise<boolean> => {
   try {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) throw new Error("User not authenticated");
-
-    // Get the job details
     const { data: jobData, error: jobError } = await supabase
       .from("jobs")
       .select("*")
       .eq("id", jobId)
-      .eq("user_id", userData.user.id)
       .single();
-
-    if (jobError || !jobData) throw new Error(jobError?.message || "Job not found");
-
-    // Insert a new entry in the job_runs table using RPC call
-    const { data: runData, error: runError } = await supabase.rpc("insert_job_run", {
-      p_job_id: jobId,
-      p_status: "Running",
-      p_user_id: userData.user.id
-    });
-
-    if (runError) throw runError;
     
-    const runId = runData?.id;
-    if (!runId) throw new Error("Failed to create job run");
-
-    // Call appropriate function based on job configuration
-    try {
-      // If job has transformation_id, apply the transformation
-      if (jobData.transformation_id) {
-        const response = await supabase.functions.invoke('apply-transformation', {
-          body: { transformation_id: jobData.transformation_id }
-        });
-        
-        if (!response.data.success) {
-          throw new Error(response.data.error || "Error applying transformation");
-        }
-      }
-      
-      // If job has destination_id, export to destination
-      if (jobData.destination_id) {
-        const response = await supabase.functions.invoke('export-to-destination', {
-          body: { destination_id: jobData.destination_id }
-        });
-        
-        if (!response.data || response.data.error) {
-          throw new Error(response.data?.error || "Error exporting to destination");
-        }
-      }
-      
-      // Update job run status to Success using RPC call
-      await supabase.rpc("update_job_run_success", {
-        p_run_id: runId,
-        p_rows_processed: Math.floor(Math.random() * 10000) // Mock data for demo purposes
+    if (jobError || !jobData) {
+      console.error("Error fetching job:", jobError);
+      toast({
+        title: "Error",
+        description: "Failed to trigger job execution. Job not found.",
+        variant: "destructive",
       });
-      
-      // Update job last_run and next_run
-      const nextRun = calculateNextRun(jobData.frequency, jobData.schedule);
-      await updateJob(jobId, {
+      return false;
+    }
+    
+    const job = jobData as Job;
+    
+    // Create a job run record
+    const { data: jobRun, error: runError } = await supabase
+      .from("job_runs")
+      .insert({
+        job_id: job.id,
+        status: "Running",
+        user_id: job.user_id,
+      })
+      .select("*")
+      .single();
+    
+    if (runError || !jobRun) {
+      console.error("Error creating job run:", runError);
+      return false;
+    }
+    
+    // Update job's last_run time
+    await supabase
+      .from("jobs")
+      .update({
         last_run: new Date().toISOString(),
-        next_run: nextRun,
-        status: jobData.frequency === "Once" ? "Completed" : "Active"
-      });
+        next_run: calculateNextRun(job.frequency, job.schedule),
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", job.id);
+    
+    // Process the job based on its type
+    let success = false;
+    let rowsProcessed = 0;
+    let errorMessage = '';
+    
+    try {
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Different processing based on job type or associated resources
+      if (job.transformation_id) {
+        // Process transformation job
+        console.log(`Processing transformation job for transformation: ${job.transformation_id}`);
+        rowsProcessed = Math.floor(Math.random() * 1000) + 100; // Simulate rows processed
+        success = true;
+      } else if (job.destination_id) {
+        // Process export job
+        console.log(`Processing export job for destination: ${job.destination_id}`);
+        rowsProcessed = Math.floor(Math.random() * 500) + 50; // Simulate rows processed
+        success = true;
+      } else {
+        // Generic job processing
+        console.log(`Processing generic job: ${job.name}`);
+        rowsProcessed = Math.floor(Math.random() * 200) + 20; // Simulate rows processed
+        success = true;
+      }
+    } catch (error) {
+      console.error("Error processing job:", error);
+      success = false;
+      errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    }
+    
+    // Update job run with results
+    if (success) {
+      const { error: updateError } = await supabase
+        .from("job_runs")
+        .update({
+          status: "Success",
+          completed_at: new Date().toISOString(),
+          rows_processed: rowsProcessed
+        })
+        .eq("id", jobRun.id);
+      
+      if (updateError) {
+        console.error("Error updating job run:", updateError);
+      }
       
       // Create success notification
-      await createNotification({
-        title: "Job Succeeded",
-        description: `Job "${jobData.name}" completed successfully.`,
-        severity: "success",
-        category: "job",
-        related_id: jobId
-      });
+      await createNotification(
+        "Job Completed",
+        `Job "${job.name}" completed successfully. Processed ${rowsProcessed} rows.`,
+        "success",
+        "job",
+        { related_id: job.id }
+      );
+    } else {
+      const { error: updateError } = await supabase
+        .from("job_runs")
+        .update({
+          status: "Failed",
+          completed_at: new Date().toISOString(),
+          error_message: errorMessage
+        })
+        .eq("id", jobRun.id);
       
-      return true;
-    } catch (error) {
-      // Update job run status to Failed using RPC call
-      await supabase.rpc("update_job_run_failed", {
-        p_run_id: runId,
-        p_error_message: error instanceof Error ? error.message : "Unknown error"
-      });
+      if (updateError) {
+        console.error("Error updating job run:", updateError);
+      }
       
       // Create failure notification
-      await createNotification({
-        title: "Job Failed",
-        description: `Job "${jobData.name}" failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        severity: "error",
-        category: "job",
-        related_id: jobId
-      });
-      
-      throw error;
+      await createNotification(
+        "Job Failed",
+        `Job "${job.name}" failed: ${errorMessage}`,
+        "error",
+        "job",
+        { related_id: job.id }
+      );
     }
+    
+    return success;
   } catch (error) {
-    console.error("Error executing job:", error);
-    toast({
-      title: "Error executing job",
-      description: error instanceof Error ? error.message : "An unknown error occurred",
-      variant: "destructive",
-    });
-    return false;
-  }
-};
-
-// Helper function to create notification
-export const createNotification = async (notification: {
-  title: string;
-  description: string;
-  severity: NotificationSeverity;
-  category: NotificationCategory;
-  read?: boolean;
-  link?: string;
-  related_id?: string;
-}): Promise<boolean> => {
-  try {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) throw new Error("User not authenticated");
-
-    const { error } = await supabase.rpc("create_notification", {
-      p_title: notification.title,
-      p_description: notification.description,
-      p_severity: notification.severity,
-      p_category: notification.category,
-      p_read: notification.read || false,
-      p_link: notification.link,
-      p_related_id: notification.related_id,
-      p_user_id: userData.user.id
-    });
-
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error("Error creating notification:", error);
+    console.error("Error triggering job execution:", error);
     return false;
   }
 };

@@ -9,17 +9,17 @@ export const fetchNotifications = async (days = 7): Promise<Notification[]> => {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
 
-    // Calculate date 7 days ago
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-
     const { data, error } = await supabase.rpc("get_user_notifications", {
       p_days: days,
       p_user_id: userData.user.id
     });
 
-    if (error) throw error;
-    return data || [];
+    if (error) {
+      console.error("Error fetching notifications:", error);
+      return [];
+    }
+    
+    return (data || []) as Notification[];
   } catch (error) {
     console.error("Error fetching notifications:", error);
     return [];
@@ -32,12 +32,16 @@ export const markNotificationAsRead = async (id: string): Promise<boolean> => {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
 
-    const { error } = await supabase.rpc("mark_notification_read", {
+    const { data, error } = await supabase.rpc("mark_notification_read", {
       p_notification_id: id,
       p_user_id: userData.user.id
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error marking notification as read:", error);
+      return false;
+    }
+    
     return true;
   } catch (error) {
     console.error("Error marking notification as read:", error);
@@ -51,11 +55,15 @@ export const markAllNotificationsAsRead = async (): Promise<boolean> => {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
 
-    const { error } = await supabase.rpc("mark_all_notifications_read", {
+    const { data, error } = await supabase.rpc("mark_all_notifications_read", {
       p_user_id: userData.user.id
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error marking all notifications as read:", error);
+      return false;
+    }
+    
     return true;
   } catch (error) {
     console.error("Error marking all notifications as read:", error);
@@ -90,7 +98,10 @@ export const createNotification = async (
       p_user_id: userData.user.id
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error creating notification:", error);
+      return null;
+    }
 
     // Show toast notification if requested
     if (options?.showToast !== false) {
@@ -101,7 +112,7 @@ export const createNotification = async (
       });
     }
 
-    return data || null;
+    return data as Notification;
   } catch (error) {
     console.error("Error creating notification:", error);
     return null;
@@ -114,12 +125,16 @@ export const deleteOldNotifications = async (days = 7): Promise<boolean> => {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
 
-    const { error } = await supabase.rpc("delete_old_notifications", {
+    const { data, error } = await supabase.rpc("delete_old_notifications", {
       p_days: days,
       p_user_id: userData.user.id
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error deleting old notifications:", error);
+      return false;
+    }
+    
     return true;
   } catch (error) {
     console.error("Error deleting old notifications:", error);
@@ -133,12 +148,16 @@ export const countUnreadNotifications = async (): Promise<number> => {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
 
-    const { count, error } = await supabase.rpc("count_unread_notifications", {
+    const { data, error } = await supabase.rpc("count_unread_notifications", {
       p_user_id: userData.user.id
     });
 
-    if (error) throw error;
-    return count || 0;
+    if (error) {
+      console.error("Error counting unread notifications:", error);
+      return 0;
+    }
+    
+    return data || 0;
   } catch (error) {
     console.error("Error counting unread notifications:", error);
     return 0;
