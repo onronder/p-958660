@@ -22,19 +22,30 @@ const DestinationsGrid: React.FC<DestinationsGridProps> = ({
   isTesting,
   isExporting,
 }) => {
+  if (!Array.isArray(destinations)) {
+    console.error('DestinationsGrid: destinations is not an array');
+    return (
+      <div className="p-6 text-center">
+        <p className="text-muted-foreground">Unable to display destinations. Please try again later.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {destinations.map((destination) => (
-        <DestinationCard
-          key={destination.id}
-          destination={destination}
-          onTestConnection={() => onTestConnection(destination)}
-          onDelete={() => onDelete(destination.id)}
-          onExport={() => onExport(destination.id)}
-          onRetry={() => onRetry(destination.id)}
-          isExporting={isExporting(destination.id)}
-          isTesting={isTesting(destination.id)}
-        />
+        destination && destination.id ? (
+          <DestinationCard
+            key={destination.id}
+            destination={destination}
+            onTestConnection={() => onTestConnection(destination)}
+            onDelete={() => onDelete(destination.id)}
+            onExport={() => onExport(destination.id)}
+            onRetry={() => onRetry(destination.id)}
+            isExporting={isExporting(destination.id)}
+            isTesting={isTesting(destination.id)}
+          />
+        ) : null
       ))}
     </div>
   );

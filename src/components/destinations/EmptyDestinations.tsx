@@ -8,6 +8,11 @@ interface EmptyDestinationsProps {
 }
 
 const EmptyDestinations: React.FC<EmptyDestinationsProps> = ({ onAddClick }) => {
+  if (typeof onAddClick !== 'function') {
+    console.error('EmptyDestinations: onAddClick is not a function');
+    return null;
+  }
+  
   return (
     <EmptyStateCard
       icon={Database}
