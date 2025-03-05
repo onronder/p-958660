@@ -5,7 +5,8 @@ import { useApiKeys } from "./settings/useApiKeys";
 import { useWebhooks } from "./settings/useWebhooks";
 import { useState } from "react";
 
-export { Profile, SecuritySettings, ApiKey, Webhook } from "./settings/useSettingsBase";
+// Use 'export type' to explicitly mark type re-exports
+export type { Profile, SecuritySettings, ApiKey, Webhook } from "./settings/useSettingsBase";
 
 export function useSettings() {
   const [isLoading, setIsLoading] = useState(false);
