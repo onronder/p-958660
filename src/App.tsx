@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,15 +29,8 @@ const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
-  const [isChecking, setIsChecking] = useState(true);
   
-  useEffect(() => {
-    if (!isLoading) {
-      setIsChecking(false);
-    }
-  }, [isLoading]);
-
-  if (isLoading || isChecking) {
+  if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
@@ -52,6 +46,22 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AppLayout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="flex min-h-screen bg-background">
+      <FlowTechsSidebar />
+      <main className="flex-1 ml-64 p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-end mb-6">
+            <NotificationSidebar />
+          </div>
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+};
+
 const AppRoutes = () => {
   const { user, isLoading } = useAuth();
 
@@ -64,7 +74,7 @@ const AppRoutes = () => {
     }
   }, []);
 
-  console.log("AppRoutes rendering, user:", !!user, "isLoading:", isLoading);
+  console.log("AppRoutes rendering, user:", user ? "logged in" : "not logged in", "isLoading:", isLoading);
 
   if (isLoading) {
     return (
@@ -76,212 +86,124 @@ const AppRoutes = () => {
 
   return (
     <Routes>
+      {/* Auth Routes - accessible when not logged in */}
       <Route path="/login" element={
         user ? <Navigate to="/" replace /> : <Login onLogin={() => {}} />
       } />
+      
       <Route path="/register" element={
         user ? <Navigate to="/" replace /> : <Register onRegister={() => {}} />
       } />
+      
       <Route path="/forgot-password" element={
         user ? <Navigate to="/" replace /> : <ForgotPassword />
       } />
+      
       <Route path="/reset-password" element={
         user ? <Navigate to="/" replace /> : <ResetPassword />
       } />
 
+      {/* Protected Routes - require authentication */}
       <Route path="/" element={
         <ProtectedRoute>
-          <div className="flex min-h-screen bg-background">
-            <FlowTechsSidebar />
-            <main className="flex-1 ml-64 p-8">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex justify-end mb-6">
-                  <NotificationSidebar />
-                </div>
-                <Dashboard />
-              </div>
-            </main>
-          </div>
+          <AppLayout>
+            <Dashboard />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/sources" element={
         <ProtectedRoute>
-          <div className="flex min-h-screen bg-background">
-            <FlowTechsSidebar />
-            <main className="flex-1 ml-64 p-8">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex justify-end mb-6">
-                  <NotificationSidebar />
-                </div>
-                <Sources />
-              </div>
-            </main>
-          </div>
+          <AppLayout>
+            <Sources />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/sources/add" element={
         <ProtectedRoute>
-          <div className="flex min-h-screen bg-background">
-            <FlowTechsSidebar />
-            <main className="flex-1 ml-64 p-8">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex justify-end mb-6">
-                  <NotificationSidebar />
-                </div>
-                <AddSource />
-              </div>
-            </main>
-          </div>
+          <AppLayout>
+            <AddSource />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/transform" element={
         <ProtectedRoute>
-          <div className="flex min-h-screen bg-background">
-            <FlowTechsSidebar />
-            <main className="flex-1 ml-64 p-8">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex justify-end mb-6">
-                  <NotificationSidebar />
-                </div>
-                <Transform />
-              </div>
-            </main>
-          </div>
+          <AppLayout>
+            <Transform />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/destinations" element={
         <ProtectedRoute>
-          <div className="flex min-h-screen bg-background">
-            <FlowTechsSidebar />
-            <main className="flex-1 ml-64 p-8">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex justify-end mb-6">
-                  <NotificationSidebar />
-                </div>
-                <Destinations />
-              </div>
-            </main>
-          </div>
+          <AppLayout>
+            <Destinations />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/jobs" element={
         <ProtectedRoute>
-          <div className="flex min-h-screen bg-background">
-            <FlowTechsSidebar />
-            <main className="flex-1 ml-64 p-8">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex justify-end mb-6">
-                  <NotificationSidebar />
-                </div>
-                <Jobs />
-              </div>
-            </main>
-          </div>
+          <AppLayout>
+            <Jobs />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/analytics" element={
         <ProtectedRoute>
-          <div className="flex min-h-screen bg-background">
-            <FlowTechsSidebar />
-            <main className="flex-1 ml-64 p-8">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex justify-end mb-6">
-                  <NotificationSidebar />
-                </div>
-                <Analytics />
-              </div>
-            </main>
-          </div>
+          <AppLayout>
+            <Analytics />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/storage" element={
         <ProtectedRoute>
-          <div className="flex min-h-screen bg-background">
-            <FlowTechsSidebar />
-            <main className="flex-1 ml-64 p-8">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex justify-end mb-6">
-                  <NotificationSidebar />
-                </div>
-                <Storage />
-              </div>
-            </main>
-          </div>
+          <AppLayout>
+            <Storage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/insights" element={
         <ProtectedRoute>
-          <div className="flex min-h-screen bg-background">
-            <FlowTechsSidebar />
-            <main className="flex-1 ml-64 p-8">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex justify-end mb-6">
-                  <NotificationSidebar />
-                </div>
-                <Insights />
-              </div>
-            </main>
-          </div>
+          <AppLayout>
+            <Insights />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/notifications" element={
         <ProtectedRoute>
-          <div className="flex min-h-screen bg-background">
-            <FlowTechsSidebar />
-            <main className="flex-1 ml-64 p-8">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex justify-end mb-6">
-                  <NotificationSidebar />
-                </div>
-                <Notifications />
-              </div>
-            </main>
-          </div>
+          <AppLayout>
+            <Notifications />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/settings" element={
         <ProtectedRoute>
-          <div className="flex min-h-screen bg-background">
-            <FlowTechsSidebar />
-            <main className="flex-1 ml-64 p-8">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex justify-end mb-6">
-                  <NotificationSidebar />
-                </div>
-                <Settings />
-              </div>
-            </main>
-          </div>
+          <AppLayout>
+            <Settings />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/help" element={
         <ProtectedRoute>
-          <div className="flex min-h-screen bg-background">
-            <FlowTechsSidebar />
-            <main className="flex-1 ml-64 p-8">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex justify-end mb-6">
-                  <NotificationSidebar />
-                </div>
-                <Help />
-              </div>
-            </main>
-          </div>
+          <AppLayout>
+            <Help />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
-      <Route path="*" element={user ? <Navigate to="/" replace /> : <Navigate to="/login" replace />} />
+      {/* Catch-all route - redirects to login or home based on auth state */}
+      <Route path="*" element={
+        user ? <Navigate to="/" replace /> : <Navigate to="/login" replace />
+      } />
     </Routes>
   );
 };

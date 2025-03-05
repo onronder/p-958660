@@ -24,8 +24,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log("AuthProvider: Initializing auth state");
+    
     // Initialize session from supabase
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("AuthProvider: Initial session:", session ? "exists" : "none");
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
@@ -33,21 +36,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        console.log("AuthProvider: Auth state changed:", event, session ? "session exists" : "no session");
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
       }
     );
 
-    // Fetch profile when user exists
-    if (user) {
-      fetchProfile();
-    }
-
     return () => {
       subscription.unsubscribe();
     };
+  }, []);
+
+  // Fetch profile when user exists
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    } else {
+      setProfile(null);
+    }
   }, [user?.id]);
 
   async function fetchProfile() {
@@ -73,12 +81,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("AuthContext: Attempting sign in for:", email);
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error("AuthContext: Sign in error:", error);
         toast({
           title: "Login failed",
           description: error.message,
@@ -87,8 +97,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error };
       }
 
+      console.log("AuthContext: Sign in successful:", data.user?.email);
       return { error: null };
     } catch (error: any) {
+      console.error("AuthContext: Sign in exception:", error);
       toast({
         title: "Login error",
         description: error.message,
@@ -100,7 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log("AuthContext: Attempting sign up for:", email);
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -112,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
+        console.error("AuthContext: Sign up error:", error);
         toast({
           title: "Registration failed",
           description: error.message,
@@ -120,6 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error };
       }
 
+      console.log("AuthContext: Sign up successful. Email confirmation required:", data.user?.email);
       toast({
         title: "Registration successful",
         description: "Please check your email to confirm your account.",
@@ -127,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { error: null };
     } catch (error: any) {
+      console.error("AuthContext: Sign up exception:", error);
       toast({
         title: "Registration error",
         description: error.message,
@@ -137,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    console.log("AuthContext: Signing out");
     await supabase.auth.signOut();
     setProfile(null);
   };
