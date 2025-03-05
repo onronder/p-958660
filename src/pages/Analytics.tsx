@@ -100,9 +100,10 @@ const Analytics = () => {
         </Card>
       )}
 
-      {safeAnalyticsData && safeAnalyticsData.last_updated && (
+      {/* Only show last updated if it exists and is a valid value */}
+      {safeAnalyticsData && 'last_updated' in safeAnalyticsData && safeAnalyticsData.last_updated && (
         <div className="text-xs text-right text-gray-500">
-          Last updated: {new Date(safeAnalyticsData.last_updated).toLocaleString()}
+          Last updated: {new Date(safeAnalyticsData.last_updated as string).toLocaleString()}
         </div>
       )}
     </div>
