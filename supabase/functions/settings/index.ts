@@ -1,446 +1,282 @@
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseServiceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const supabase = createClient(supabaseUrl, supabaseServiceRole);
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    // Get the authorization header from the request
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase environment variables')
     }
 
-    // Extract the token from the header
-    const token = authHeader.split(' ')[1];
+    // Initialize the Supabase client
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    
+    // Get request body
+    const requestData = await req.json()
+    const { action, userId, data } = requestData
+    
+    console.log(`Processing settings action: ${action} for user ${userId}`)
 
-    // Verify the token and get the user
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const url = new URL(req.url);
-    const path = url.pathname.split('/').pop();
-
-    // Handle different settings-related endpoints
-    if (req.method === 'GET') {
-      if (path === 'profile') {
+    // Handle different actions
+    let result = null
+    
+    switch (action) {
+      case 'get_profile':
         // Get user profile
-        const { data, error } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        return new Response(JSON.stringify({ profile: data }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else if (path === 'security') {
-        // Get user security settings
-        const { data, error } = await supabase
-          .from('user_security')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error && error.code !== 'PGRST116') { // PGRST116 means no rows returned
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        // If no security record exists, create one
-        if (!data) {
-          const { data: newSecurityData, error: insertError } = await supabase
-            .from('user_security')
-            .insert([{ user_id: user.id }])
-            .select()
-            .single();
-
-          if (insertError) {
-            return new Response(JSON.stringify({ error: insertError.message }), {
-              status: 500,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-          }
-
-          return new Response(JSON.stringify({ security: newSecurityData }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        return new Response(JSON.stringify({ security: data }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else if (path === 'api-keys') {
-        // Get user API keys
-        const { data, error } = await supabase
-          .from('api_keys')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        return new Response(JSON.stringify({ apiKeys: data }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else if (path === 'webhooks') {
-        // Get user webhooks
-        const { data, error } = await supabase
-          .from('webhooks')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        return new Response(JSON.stringify({ webhooks: data }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    } else if (req.method === 'POST') {
-      const body = await req.json();
-
-      if (path === 'update-profile') {
-        // Update user profile
-        const { data, error } = await supabase
-          .from('profiles')
-          .update(body)
-          .eq('id', user.id)
-          .select()
-          .single();
-
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        return new Response(JSON.stringify({ profile: data }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else if (path === 'change-password') {
-        // Change user password
-        const { oldPassword, newPassword } = body;
-
-        // Validate old password
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: user.email || '',
-          password: oldPassword,
-        });
-
-        if (signInError) {
-          return new Response(JSON.stringify({ error: 'Current password is incorrect' }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        // Update password
-        const { error: updateError } = await supabase.auth.admin.updateUserById(
-          user.id,
-          { password: newPassword }
-        );
-
-        if (updateError) {
-          return new Response(JSON.stringify({ error: updateError.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        // Update last password change timestamp
-        await supabase
-          .from('user_security')
-          .update({ last_password_change: new Date().toISOString() })
-          .eq('user_id', user.id);
-
-        return new Response(JSON.stringify({ success: true, message: 'Password updated successfully' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else if (path === 'toggle-2fa') {
-        // Toggle 2FA
-        const { enabled } = body;
-
-        const { data, error } = await supabase
-          .from('user_security')
-          .update({ two_factor_enabled: enabled })
-          .eq('user_id', user.id)
-          .select()
-          .single();
-
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        return new Response(JSON.stringify({ 
-          success: true, 
-          message: `Two-factor authentication ${enabled ? 'enabled' : 'disabled'} successfully`,
-          security: data
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else if (path === 'create-api-key') {
-        // Create new API key
-        const { name, expiresAt } = body;
-
-        // Generate a secure API key
-        const { data: apiKeyData, error: apiKeyError } = await supabase.rpc('generate_api_key');
+          .eq('id', userId)
+          .single()
         
-        if (apiKeyError) {
-          return new Response(JSON.stringify({ error: apiKeyError.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+        if (profileError) throw profileError
+        
+        // Check if user has security settings
+        const { data: securitySettings, error: securityError } = await supabase
+          .from('user_security')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle()
+        
+        if (securityError) throw securityError
+        
+        // If no security settings exist, create default ones
+        if (!securitySettings) {
+          const { error: createSecurityError } = await supabase
+            .from('user_security')
+            .insert({
+              user_id: userId,
+              two_factor_enabled: false,
+            })
+          
+          if (createSecurityError) throw createSecurityError
         }
+        
+        result = { profile }
+        break
 
-        // Insert the new API key
-        const { data, error } = await supabase
-          .from('api_keys')
-          .insert([{
-            user_id: user.id,
-            name,
-            api_key: apiKeyData,
-            expires_at: expiresAt,
-          }])
-          .select()
-          .single();
-
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        return new Response(JSON.stringify({ 
-          success: true, 
-          message: 'API key created successfully',
-          apiKey: data 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else if (path === 'delete-api-key') {
-        // Delete API key
-        const { id } = body;
-
-        const { error } = await supabase
-          .from('api_keys')
-          .delete()
-          .eq('id', id)
-          .eq('user_id', user.id); // Ensure the API key belongs to the user
-
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        return new Response(JSON.stringify({ 
-          success: true, 
-          message: 'API key deleted successfully' 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else if (path === 'create-webhook') {
-        // Create new webhook
-        const { name, endpoint_url, event_type } = body;
-
-        // Generate a secure secret key for the webhook
-        const secretKey = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-          .map(b => b.toString(16).padStart(2, '0'))
-          .join('');
-
-        // Insert the new webhook
-        const { data, error } = await supabase
-          .from('webhooks')
-          .insert([{
-            user_id: user.id,
-            name,
-            endpoint_url,
-            event_type,
-            secret_key: secretKey,
-          }])
-          .select()
-          .single();
-
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        return new Response(JSON.stringify({ 
-          success: true, 
-          message: 'Webhook created successfully',
-          webhook: data 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else if (path === 'update-webhook') {
-        // Update webhook
-        const { id, name, endpoint_url, event_type, active } = body;
-
-        const { data, error } = await supabase
-          .from('webhooks')
-          .update({
-            name,
-            endpoint_url,
-            event_type,
-            active,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', id)
-          .eq('user_id', user.id) // Ensure the webhook belongs to the user
-          .select()
-          .single();
-
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        return new Response(JSON.stringify({ 
-          success: true, 
-          message: 'Webhook updated successfully',
-          webhook: data 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else if (path === 'delete-webhook') {
-        // Delete webhook
-        const { id } = body;
-
-        const { error } = await supabase
-          .from('webhooks')
-          .delete()
-          .eq('id', id)
-          .eq('user_id', user.id); // Ensure the webhook belongs to the user
-
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        return new Response(JSON.stringify({ 
-          success: true, 
-          message: 'Webhook deleted successfully' 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else if (path === 'update-preferences') {
-        // Update user preferences
-        const { data, error } = await supabase
+      case 'update_profile':
+        const { data: updatedProfile, error: updateError } = await supabase
           .from('profiles')
-          .update({
-            timezone: body.timezone,
-            language: body.language,
-            dark_mode: body.dark_mode,
-            notifications_enabled: body.notifications_enabled,
-            auto_logout_minutes: body.auto_logout_minutes,
-          })
-          .eq('id', user.id)
+          .update(data)
+          .eq('id', userId)
           .select()
-          .single();
+          .single()
+        
+        if (updateError) throw updateError
+        
+        result = { profile: updatedProfile }
+        break
 
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
+      case 'update_security':
+        const { data: security, error: updateSecurityError } = await supabase
+          .from('user_security')
+          .update({
+            ...data,
+            updated_at: new Date(),
+          })
+          .eq('user_id', userId)
+          .select()
+          .single()
+        
+        if (updateSecurityError) throw updateSecurityError
+        
+        result = { security }
+        break
 
-        return new Response(JSON.stringify({ 
-          success: true, 
-          message: 'Preferences updated successfully',
-          profile: data 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else if (path === 'complete-onboarding') {
-        // Complete onboarding
-        const { data, error } = await supabase
+      case 'get_security':
+        const { data: userSecurity, error: getUserSecurityError } = await supabase
+          .from('user_security')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle()
+        
+        if (getUserSecurityError) throw getUserSecurityError
+        
+        result = { security: userSecurity }
+        break
+
+      case 'get_api_keys':
+        const { data: apiKeys, error: apiKeysError } = await supabase
+          .from('api_keys')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+        
+        if (apiKeysError) throw apiKeysError
+        
+        result = { apiKeys }
+        break
+
+      case 'create_api_key':
+        // Generate an API key using PostgreSQL function
+        const { data: newKeyData, error: generateKeyError } = await supabase
+          .rpc('generate_api_key')
+        
+        if (generateKeyError) throw generateKeyError
+        
+        const apiKey = newKeyData
+        
+        // Insert the new API key
+        const { data: createdKey, error: createKeyError } = await supabase
+          .from('api_keys')
+          .insert({
+            user_id: userId,
+            name: data.name,
+            api_key: apiKey,
+            expires_at: data.expires_at || null,
+          })
+          .select()
+          .single()
+        
+        if (createKeyError) throw createKeyError
+        
+        result = { apiKey: createdKey, key: apiKey }
+        break
+
+      case 'delete_api_key':
+        const { error: deleteKeyError } = await supabase
+          .from('api_keys')
+          .delete()
+          .eq('id', data.keyId)
+          .eq('user_id', userId)
+        
+        if (deleteKeyError) throw deleteKeyError
+        
+        result = { success: true }
+        break
+
+      case 'get_webhooks':
+        const { data: webhooks, error: webhooksError } = await supabase
+          .from('webhooks')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+        
+        if (webhooksError) throw webhooksError
+        
+        result = { webhooks }
+        break
+
+      case 'create_webhook':
+        // Generate a secret key for the webhook
+        const secretKey = Array.from(
+          { length: 32 },
+          () => Math.floor(Math.random() * 36).toString(36)
+        ).join('')
+        
+        const { data: createdWebhook, error: createWebhookError } = await supabase
+          .from('webhooks')
+          .insert({
+            user_id: userId,
+            name: data.name,
+            endpoint_url: data.endpoint_url,
+            event_type: data.event_type,
+            secret_key: secretKey,
+            active: true,
+          })
+          .select()
+          .single()
+        
+        if (createWebhookError) throw createWebhookError
+        
+        result = { webhook: createdWebhook }
+        break
+
+      case 'update_webhook':
+        const { data: updatedWebhook, error: updateWebhookError } = await supabase
+          .from('webhooks')
+          .update({
+            name: data.name,
+            endpoint_url: data.endpoint_url,
+            event_type: data.event_type,
+            active: data.active,
+            updated_at: new Date(),
+          })
+          .eq('id', data.webhookId)
+          .eq('user_id', userId)
+          .select()
+          .single()
+        
+        if (updateWebhookError) throw updateWebhookError
+        
+        result = { webhook: updatedWebhook }
+        break
+
+      case 'delete_webhook':
+        const { error: deleteWebhookError } = await supabase
+          .from('webhooks')
+          .delete()
+          .eq('id', data.webhookId)
+          .eq('user_id', userId)
+        
+        if (deleteWebhookError) throw deleteWebhookError
+        
+        result = { success: true }
+        break
+
+      case 'complete_onboarding':
+        const { error: completeOnboardingError } = await supabase
           .from('profiles')
           .update({ onboarding_completed: true })
-          .eq('id', user.id)
+          .eq('id', userId)
+        
+        if (completeOnboardingError) throw completeOnboardingError
+        
+        result = { success: true }
+        break
+
+      case 'update_preferences':
+        const { data: updatedPreferences, error: updatePrefError } = await supabase
+          .from('profiles')
+          .update({
+            dark_mode: data.dark_mode,
+            notifications_enabled: data.notifications_enabled,
+            timezone: data.timezone,
+            language: data.language,
+            auto_logout_minutes: data.auto_logout_minutes,
+          })
+          .eq('id', userId)
           .select()
-          .single();
+          .single()
+        
+        if (updatePrefError) throw updatePrefError
+        
+        result = { preferences: updatedPreferences }
+        break
 
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        return new Response(JSON.stringify({ 
-          success: true, 
-          message: 'Onboarding completed successfully',
-          profile: data 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      default:
+        throw new Error(`Unknown action: ${action}`)
     }
 
-    return new Response(JSON.stringify({ error: 'Not Found' }), {
-      status: 404,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(JSON.stringify(result), {
+      headers: { 
+        ...corsHeaders,
+        'Content-Type': 'application/json' 
+      },
+      status: 200,
+    })
   } catch (error) {
-    console.error('Error processing request:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Error processing settings request:', error)
+    
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { 
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      },
+      status: 400,
+    })
   }
-});
+})

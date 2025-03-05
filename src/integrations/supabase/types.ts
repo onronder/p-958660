@@ -48,6 +48,36 @@ export type Database = {
         }
         Relationships: []
       }
+      api_keys: {
+        Row: {
+          api_key: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          last_used_at: string | null
+          name: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          name: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       dashboard_metrics: {
         Row: {
           id: string
@@ -319,27 +349,45 @@ export type Database = {
       }
       profiles: {
         Row: {
+          auto_logout_minutes: number | null
           company: string | null
           created_at: string | null
+          dark_mode: boolean | null
           first_name: string | null
           id: string
+          language: string | null
           last_name: string | null
+          notifications_enabled: boolean | null
+          onboarding_completed: boolean | null
+          timezone: string | null
           updated_at: string | null
         }
         Insert: {
+          auto_logout_minutes?: number | null
           company?: string | null
           created_at?: string | null
+          dark_mode?: boolean | null
           first_name?: string | null
           id: string
+          language?: string | null
           last_name?: string | null
+          notifications_enabled?: boolean | null
+          onboarding_completed?: boolean | null
+          timezone?: string | null
           updated_at?: string | null
         }
         Update: {
+          auto_logout_minutes?: number | null
           company?: string | null
           created_at?: string | null
+          dark_mode?: boolean | null
           first_name?: string | null
           id?: string
+          language?: string | null
           last_name?: string | null
+          notifications_enabled?: boolean | null
+          onboarding_completed?: boolean | null
+          timezone?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -446,11 +494,116 @@ export type Database = {
         }
         Relationships: []
       }
+      user_security: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_password_change: string | null
+          two_factor_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_password_change?: string | null
+          two_factor_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_password_change?: string | null
+          two_factor_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_triggers: {
+        Row: {
+          id: string
+          response_body: string | null
+          response_code: number | null
+          status: string
+          triggered_at: string | null
+          webhook_id: string
+        }
+        Insert: {
+          id?: string
+          response_body?: string | null
+          response_code?: number | null
+          status: string
+          triggered_at?: string | null
+          webhook_id: string
+        }
+        Update: {
+          id?: string
+          response_body?: string | null
+          response_code?: number | null
+          status?: string
+          triggered_at?: string | null
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_triggers_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhooks: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          endpoint_url: string
+          event_type: string
+          id: string
+          last_triggered_at: string | null
+          name: string
+          secret_key: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          endpoint_url: string
+          event_type: string
+          id?: string
+          last_triggered_at?: string | null
+          name: string
+          secret_key: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          endpoint_url?: string
+          event_type?: string
+          id?: string
+          last_triggered_at?: string | null
+          name?: string
+          secret_key?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      generate_api_key: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       has_role: {
         Args: {
           user_id: string

@@ -50,7 +50,7 @@ interface OnboardingTourProps {
   onComplete?: () => void;
 }
 
-const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
+const OnboardingTour: React.FC<OnboardingTourProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const { profile, completeOnboarding } = useSettings();

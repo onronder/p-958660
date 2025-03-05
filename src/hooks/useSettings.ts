@@ -4,7 +4,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Profile {
+export interface Profile {
   id: string;
   first_name: string | null;
   last_name: string | null;
@@ -17,14 +17,14 @@ interface Profile {
   onboarding_completed: boolean;
 }
 
-interface SecuritySettings {
+export interface SecuritySettings {
   id: string;
   user_id: string;
   two_factor_enabled: boolean;
   last_password_change: string;
 }
 
-interface ApiKey {
+export interface ApiKey {
   id: string;
   user_id: string;
   name: string;
@@ -34,7 +34,7 @@ interface ApiKey {
   last_used_at: string | null;
 }
 
-interface Webhook {
+export interface Webhook {
   id: string;
   user_id: string;
   name: string;
@@ -48,177 +48,60 @@ interface Webhook {
 }
 
 export function useSettings() {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [securitySettings, setSecuritySettings] = useState<SecuritySettings | null>(null);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-  const [isLoadingSecurity, setIsLoadingSecurity] = useState(false);
-  const [isLoadingApiKeys, setIsLoadingApiKeys] = useState(false);
-  const [isLoadingWebhooks, setIsLoadingWebhooks] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
-  const { user } = useAuth();
 
+  // Fetch user profile
   const fetchProfile = async () => {
-    if (!user) return;
+    if (!user) return null;
     
+    setIsLoading(true);
     try {
-      setIsLoadingProfile(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return;
-      }
-      
       const { data, error } = await supabase.functions.invoke("settings", {
-        method: "GET",
-        path: "profile",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+        body: {
+          action: "get_profile",
+          userId: user.id,
         }
       });
       
       if (error) throw error;
-      
       setProfile(data.profile);
+      return data.profile;
     } catch (error) {
       console.error("Error fetching profile:", error);
       toast({
         title: "Error",
-        description: "Failed to load profile. Please try again.",
+        description: "Failed to load profile information",
         variant: "destructive",
       });
+      return null;
     } finally {
-      setIsLoadingProfile(false);
+      setIsLoading(false);
     }
   };
 
-  const fetchSecurity = async () => {
-    if (!user) return;
+  // Update user profile
+  const updateProfile = async (profileData: Partial<Profile>) => {
+    if (!user) return null;
     
+    setIsLoading(true);
     try {
-      setIsLoadingSecurity(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return;
-      }
-      
       const { data, error } = await supabase.functions.invoke("settings", {
-        method: "GET",
-        path: "security",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+        body: {
+          action: "update_profile",
+          userId: user.id,
+          data: profileData
         }
       });
       
       if (error) throw error;
-      
-      setSecuritySettings(data.security);
-    } catch (error) {
-      console.error("Error fetching security settings:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load security settings. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingSecurity(false);
-    }
-  };
-
-  const fetchApiKeys = async () => {
-    if (!user) return;
-    
-    try {
-      setIsLoadingApiKeys(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return;
-      }
-      
-      const { data, error } = await supabase.functions.invoke("settings", {
-        method: "GET",
-        path: "api-keys",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-      
-      if (error) throw error;
-      
-      setApiKeys(data.apiKeys);
-    } catch (error) {
-      console.error("Error fetching API keys:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load API keys. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingApiKeys(false);
-    }
-  };
-
-  const fetchWebhooks = async () => {
-    if (!user) return;
-    
-    try {
-      setIsLoadingWebhooks(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return;
-      }
-      
-      const { data, error } = await supabase.functions.invoke("settings", {
-        method: "GET",
-        path: "webhooks",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-      
-      if (error) throw error;
-      
-      setWebhooks(data.webhooks);
-    } catch (error) {
-      console.error("Error fetching webhooks:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load webhooks. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingWebhooks(false);
-    }
-  };
-
-  const updateProfile = async (updatedProfile: Partial<Profile>) => {
-    if (!user) return;
-    
-    try {
-      setIsSaving(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return;
-      }
-      
-      const { data, error } = await supabase.functions.invoke("settings", {
-        method: "POST",
-        path: "update-profile",
-        body: updatedProfile,
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-      
-      if (error) throw error;
-      
       setProfile(data.profile);
+      
       toast({
         title: "Profile Updated",
         description: "Your profile has been updated successfully.",
@@ -229,166 +112,250 @@ export function useSettings() {
       console.error("Error updating profile:", error);
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: "Failed to update profile information",
         variant: "destructive",
       });
       return null;
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
 
-  const changePassword = async (oldPassword: string, newPassword: string) => {
-    if (!user) return false;
+  // Fetch security settings
+  const fetchSecuritySettings = async () => {
+    if (!user) return null;
     
+    setIsLoading(true);
     try {
-      setIsSaving(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return false;
-      }
-      
       const { data, error } = await supabase.functions.invoke("settings", {
-        method: "POST",
-        path: "change-password",
-        body: { oldPassword, newPassword },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+        body: {
+          action: "get_security",
+          userId: user.id,
         }
       });
       
       if (error) throw error;
+      setSecuritySettings(data.security);
+      return data.security;
+    } catch (error) {
+      console.error("Error fetching security settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load security settings",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update security settings
+  const updateSecuritySettings = async (securityData: Partial<SecuritySettings>) => {
+    if (!user) return null;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("settings", {
+        body: {
+          action: "update_security",
+          userId: user.id,
+          data: securityData
+        }
+      });
+      
+      if (error) throw error;
+      setSecuritySettings(data.security);
+      
+      toast({
+        title: "Security Settings Updated",
+        description: "Your security settings have been updated successfully.",
+      });
+      
+      return data.security;
+    } catch (error) {
+      console.error("Error updating security settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update security settings",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Change password
+  const changePassword = async (oldPassword: string, newPassword: string) => {
+    if (!user) return false;
+    
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      
+      // Update the last password change timestamp
+      await supabase.functions.invoke("settings", {
+        body: {
+          action: "update_security",
+          userId: user.id,
+          data: {
+            last_password_change: new Date().toISOString()
+          }
+        }
+      });
       
       toast({
         title: "Password Changed",
         description: "Your password has been changed successfully.",
       });
       
-      // Refresh security settings
-      fetchSecurity();
-      
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error changing password:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to change password. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to change password",
         variant: "destructive",
       });
       return false;
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
 
-  const toggle2FA = async (enabled: boolean) => {
-    if (!user) return;
+  // Toggle two-factor authentication
+  const toggleTwoFactor = async (enabled: boolean) => {
+    if (!user) return false;
     
+    setIsLoading(true);
     try {
-      setIsSaving(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return;
-      }
-      
       const { data, error } = await supabase.functions.invoke("settings", {
-        method: "POST",
-        path: "toggle-2fa",
-        body: { enabled },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+        body: {
+          action: "update_security",
+          userId: user.id,
+          data: {
+            two_factor_enabled: enabled
+          }
         }
       });
       
       if (error) throw error;
-      
       setSecuritySettings(data.security);
+      
       toast({
         title: `Two-Factor Authentication ${enabled ? 'Enabled' : 'Disabled'}`,
-        description: data.message,
+        description: `Two-factor authentication has been ${enabled ? 'enabled' : 'disabled'} successfully.`,
       });
+      
+      return true;
     } catch (error) {
-      console.error("Error toggling 2FA:", error);
+      console.error("Error toggling two-factor authentication:", error);
       toast({
         title: "Error",
-        description: `Failed to ${enabled ? 'enable' : 'disable'} two-factor authentication. Please try again.`,
+        description: "Failed to update two-factor authentication",
         variant: "destructive",
       });
+      return false;
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
 
+  // Fetch API keys
+  const fetchApiKeys = async () => {
+    if (!user) return [];
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("settings", {
+        body: {
+          action: "get_api_keys",
+          userId: user.id,
+        }
+      });
+      
+      if (error) throw error;
+      setApiKeys(data.apiKeys);
+      return data.apiKeys;
+    } catch (error) {
+      console.error("Error fetching API keys:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load API keys",
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Create API key
   const createApiKey = async (name: string, expiresAt?: string) => {
     if (!user) return null;
     
+    setIsLoading(true);
     try {
-      setIsSaving(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return null;
-      }
-      
       const { data, error } = await supabase.functions.invoke("settings", {
-        method: "POST",
-        path: "create-api-key",
-        body: { name, expiresAt },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+        body: {
+          action: "create_api_key",
+          userId: user.id,
+          data: {
+            name,
+            expires_at: expiresAt
+          }
         }
       });
       
       if (error) throw error;
       
-      // Refresh API keys
-      fetchApiKeys();
+      // Add the new key to the state
+      setApiKeys(prev => [data.apiKey, ...prev]);
       
       toast({
         title: "API Key Created",
         description: "Your new API key has been created successfully.",
       });
       
-      return data.apiKey;
+      return { ...data.apiKey, key: data.key };
     } catch (error) {
       console.error("Error creating API key:", error);
       toast({
         title: "Error",
-        description: "Failed to create API key. Please try again.",
+        description: "Failed to create API key",
         variant: "destructive",
       });
       return null;
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
 
-  const deleteApiKey = async (id: string) => {
+  // Delete API key
+  const deleteApiKey = async (keyId: string) => {
     if (!user) return false;
     
+    setIsLoading(true);
     try {
-      setIsSaving(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return false;
-      }
-      
-      const { error } = await supabase.functions.invoke("settings", {
-        method: "POST",
-        path: "delete-api-key",
-        body: { id },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+      const { data, error } = await supabase.functions.invoke("settings", {
+        body: {
+          action: "delete_api_key",
+          userId: user.id,
+          data: {
+            keyId
+          }
         }
       });
       
       if (error) throw error;
       
-      // Update local state
-      setApiKeys(apiKeys.filter(key => key.id !== id));
+      // Remove the key from state
+      setApiKeys(prev => prev.filter(key => key.id !== keyId));
       
       toast({
         title: "API Key Deleted",
@@ -400,39 +367,66 @@ export function useSettings() {
       console.error("Error deleting API key:", error);
       toast({
         title: "Error",
-        description: "Failed to delete API key. Please try again.",
+        description: "Failed to delete API key",
         variant: "destructive",
       });
       return false;
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
 
-  const createWebhook = async (name: string, endpoint_url: string, event_type: string) => {
+  // Fetch webhooks
+  const fetchWebhooks = async () => {
+    if (!user) return [];
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("settings", {
+        body: {
+          action: "get_webhooks",
+          userId: user.id,
+        }
+      });
+      
+      if (error) throw error;
+      setWebhooks(data.webhooks);
+      return data.webhooks;
+    } catch (error) {
+      console.error("Error fetching webhooks:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load webhooks",
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Create webhook
+  const createWebhook = async (name: string, endpointUrl: string, eventType: string) => {
     if (!user) return null;
     
+    setIsLoading(true);
     try {
-      setIsSaving(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return null;
-      }
-      
       const { data, error } = await supabase.functions.invoke("settings", {
-        method: "POST",
-        path: "create-webhook",
-        body: { name, endpoint_url, event_type },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+        body: {
+          action: "create_webhook",
+          userId: user.id,
+          data: {
+            name,
+            endpoint_url: endpointUrl,
+            event_type: eventType
+          }
         }
       });
       
       if (error) throw error;
       
-      // Refresh webhooks
-      fetchWebhooks();
+      // Add the new webhook to the state
+      setWebhooks(prev => [data.webhook, ...prev]);
       
       toast({
         title: "Webhook Created",
@@ -444,39 +438,47 @@ export function useSettings() {
       console.error("Error creating webhook:", error);
       toast({
         title: "Error",
-        description: "Failed to create webhook. Please try again.",
+        description: "Failed to create webhook",
         variant: "destructive",
       });
       return null;
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
 
-  const updateWebhook = async (id: string, updates: Partial<Webhook>) => {
+  // Update webhook
+  const updateWebhook = async (
+    webhookId: string,
+    name: string,
+    endpointUrl: string,
+    eventType: string,
+    active: boolean
+  ) => {
     if (!user) return null;
     
+    setIsLoading(true);
     try {
-      setIsSaving(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return null;
-      }
-      
       const { data, error } = await supabase.functions.invoke("settings", {
-        method: "POST",
-        path: "update-webhook",
-        body: { id, ...updates },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+        body: {
+          action: "update_webhook",
+          userId: user.id,
+          data: {
+            webhookId,
+            name,
+            endpoint_url: endpointUrl,
+            event_type: eventType,
+            active
+          }
         }
       });
       
       if (error) throw error;
       
-      // Update local state
-      setWebhooks(webhooks.map(webhook => webhook.id === id ? data.webhook : webhook));
+      // Update the webhook in the state
+      setWebhooks(prev => 
+        prev.map(webhook => webhook.id === webhookId ? data.webhook : webhook)
+      );
       
       toast({
         title: "Webhook Updated",
@@ -488,39 +490,35 @@ export function useSettings() {
       console.error("Error updating webhook:", error);
       toast({
         title: "Error",
-        description: "Failed to update webhook. Please try again.",
+        description: "Failed to update webhook",
         variant: "destructive",
       });
       return null;
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
 
-  const deleteWebhook = async (id: string) => {
+  // Delete webhook
+  const deleteWebhook = async (webhookId: string) => {
     if (!user) return false;
     
+    setIsLoading(true);
     try {
-      setIsSaving(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return false;
-      }
-      
-      const { error } = await supabase.functions.invoke("settings", {
-        method: "POST",
-        path: "delete-webhook",
-        body: { id },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+      const { data, error } = await supabase.functions.invoke("settings", {
+        body: {
+          action: "delete_webhook",
+          userId: user.id,
+          data: {
+            webhookId
+          }
         }
       });
       
       if (error) throw error;
       
-      // Update local state
-      setWebhooks(webhooks.filter(webhook => webhook.id !== id));
+      // Remove the webhook from state
+      setWebhooks(prev => prev.filter(webhook => webhook.id !== webhookId));
       
       toast({
         title: "Webhook Deleted",
@@ -532,84 +530,37 @@ export function useSettings() {
       console.error("Error deleting webhook:", error);
       toast({
         title: "Error",
-        description: "Failed to delete webhook. Please try again.",
+        description: "Failed to delete webhook",
         variant: "destructive",
       });
       return false;
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
 
-  const updatePreferences = async (preferences: {
-    timezone?: string;
-    language?: string;
-    dark_mode?: boolean;
-    notifications_enabled?: boolean;
-    auto_logout_minutes?: number;
-  }) => {
-    if (!user) return null;
-    
-    try {
-      setIsSaving(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return null;
-      }
-      
-      const { data, error } = await supabase.functions.invoke("settings", {
-        method: "POST",
-        path: "update-preferences",
-        body: preferences,
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-      
-      if (error) throw error;
-      
-      setProfile(data.profile);
-      toast({
-        title: "Preferences Updated",
-        description: "Your preferences have been updated successfully.",
-      });
-      
-      return data.profile;
-    } catch (error) {
-      console.error("Error updating preferences:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update preferences. Please try again.",
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
+  // Complete onboarding
   const completeOnboarding = async () => {
     if (!user) return false;
     
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return false;
-      }
-      
       const { data, error } = await supabase.functions.invoke("settings", {
-        method: "POST",
-        path: "complete-onboarding",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+        body: {
+          action: "complete_onboarding",
+          userId: user.id
         }
       });
       
       if (error) throw error;
       
-      setProfile(data.profile);
+      // Update the profile in the state
+      if (profile) {
+        setProfile({
+          ...profile,
+          onboarding_completed: true
+        });
+      }
+      
       return true;
     } catch (error) {
       console.error("Error completing onboarding:", error);
@@ -617,29 +568,75 @@ export function useSettings() {
     }
   };
 
+  // Update user preferences
+  const updatePreferences = async (preferences: {
+    dark_mode?: boolean;
+    notifications_enabled?: boolean;
+    timezone?: string;
+    language?: string;
+    auto_logout_minutes?: number;
+  }) => {
+    if (!user) return null;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("settings", {
+        body: {
+          action: "update_preferences",
+          userId: user.id,
+          data: preferences
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Update the profile in state
+      if (profile) {
+        setProfile({
+          ...profile,
+          ...preferences
+        });
+      }
+      
+      toast({
+        title: "Preferences Updated",
+        description: "Your preferences have been updated successfully.",
+      });
+      
+      return data.preferences;
+    } catch (error) {
+      console.error("Error updating preferences:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update preferences",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
+    isLoading,
     profile,
     securitySettings,
     apiKeys,
     webhooks,
-    isLoadingProfile,
-    isLoadingSecurity,
-    isLoadingApiKeys,
-    isLoadingWebhooks,
-    isSaving,
     fetchProfile,
-    fetchSecurity,
-    fetchApiKeys,
-    fetchWebhooks,
     updateProfile,
+    fetchSecuritySettings,
+    updateSecuritySettings,
     changePassword,
-    toggle2FA,
+    toggleTwoFactor,
+    fetchApiKeys,
     createApiKey,
     deleteApiKey,
+    fetchWebhooks,
     createWebhook,
     updateWebhook,
     deleteWebhook,
-    updatePreferences,
-    completeOnboarding
+    completeOnboarding,
+    updatePreferences
   };
 }
