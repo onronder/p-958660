@@ -1,9 +1,9 @@
-
 import { Card } from "@/components/ui/card";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart as RechartssPieChart, Pie, Cell } from "recharts";
 import { useAnalyticsData } from "@/hooks/useAnalyticsData";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, BarChart4, ChartPie } from "lucide-react";
+import EmptyStateCard from "@/components/EmptyStateCard";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
 
@@ -13,6 +13,7 @@ const Analytics = () => {
     pullFrequencyData, 
     uploadSuccessData, 
     dataSizeData, 
+    analyticsData,
     isLoading, 
     isError,
     refetch 
@@ -47,8 +48,8 @@ const Analytics = () => {
               strokeLinejoin="round"
             >
               <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
           </div>
           <div className="flex-1">
@@ -57,6 +58,64 @@ const Analytics = () => {
             </p>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  const hasAnalyticsData = analyticsData && (
+    pullFrequencyData.length > 0 || 
+    uploadSuccessData.length > 0 || 
+    dataSizeData.length > 0
+  );
+
+  if (!hasAnalyticsData) {
+    return (
+      <div className="space-y-8">
+        <div className="bg-blue-50 rounded-lg p-4 flex items-start space-x-4 mb-4">
+          <div className="text-blue-500 mt-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-blue-800">
+              <span className="font-bold">⚡ The Analytics</span> page provides insights and visualizations on your data flow, transformation performance, and integration efficiency, helping you make data-driven decisions.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-primary">Analytics</h1>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-2"
+            onClick={handleRefresh}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
+
+        <EmptyStateCard 
+          icon={ChartPie}
+          title="No Analytics Data Available"
+          description="Analytics data will appear here once you have processed data through the system. Connect a data source and run jobs to see analytics."
+          actionLabel="Go to Sources"
+          onAction={() => window.location.href = '/sources'}
+        />
       </div>
     );
   }

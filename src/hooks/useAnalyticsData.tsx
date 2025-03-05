@@ -98,7 +98,7 @@ export const useAnalyticsData = () => {
   };
 
   return {
-    analyticsData: data,
+    analyticsData: data, // Expose the full data object
     etlData: getEtlData(),
     pullFrequencyData: data?.data_pull_frequency || [],
     uploadSuccessData: data?.upload_success_rate || [],

@@ -1,12 +1,11 @@
-
 import { Card } from "@/components/ui/card";
-import { PieChart, Clock, Database, Upload } from "lucide-react";
+import { PieChart, Clock, Database, Upload, BarChart3, RefreshCw } from "lucide-react";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import DashboardMetricCard from "@/components/DashboardMetricCard";
 import RecentJobsTable from "@/components/RecentJobsTable";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import EmptyStateCard from "@/components/EmptyStateCard";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -49,8 +48,8 @@ const Dashboard = () => {
               strokeLinejoin="round"
             >
               <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
           </div>
           <div className="flex-1">
@@ -59,6 +58,63 @@ const Dashboard = () => {
             </p>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  const hasJobs = dashboardData.recentJobs && dashboardData.recentJobs.length > 0;
+  const hasMetrics = dashboardData.metrics.totalDataProcessed > 0 || 
+                      dashboardData.metrics.totalApiCalls > 0 || 
+                      dashboardData.metrics.activeConnections > 0;
+
+  if (!hasJobs && !hasMetrics) {
+    return (
+      <div className="space-y-8">
+        <div className="bg-blue-50 rounded-lg p-4 flex items-start space-x-4 mb-4">
+          <div className="text-blue-500 mt-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-blue-800">
+              <span className="font-bold">⚡ The Dashboard</span> provides a centralized view of your data integration processes, offering key performance metrics, recent activity, and insights to help you monitor and manage your workflows effectively.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-2"
+            onClick={handleRefresh}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
+
+        <EmptyStateCard 
+          icon={BarChart3}
+          title="No Dashboard Data Yet"
+          description="Start by connecting your first data source and running jobs to see metrics and analytics on your dashboard."
+          actionLabel="Connect a Data Source"
+          onAction={() => window.location.href = '/sources/add'}
+        />
       </div>
     );
   }
@@ -155,7 +211,7 @@ const Dashboard = () => {
               {dashboardData.jobSummary.totalJobs} Total Jobs • {dashboardData.jobSummary.successfulJobs} Successful • {dashboardData.jobSummary.failedJobs} Failed
             </div>
           </div>
-          {dashboardData.recentJobs && dashboardData.recentJobs.length > 0 ? (
+          {hasJobs ? (
             <RecentJobsTable jobs={dashboardData.recentJobs} />
           ) : (
             <div className="text-center py-8 text-gray-500">
