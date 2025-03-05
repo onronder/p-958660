@@ -9,27 +9,61 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardMetrics from "@/components/dashboard/DashboardMetrics";
 import JobsSummary from "@/components/dashboard/JobsSummary";
 import LastUpdated from "@/components/dashboard/LastUpdated";
+import { useToast } from "@/components/ui/use-toast";
+import { useEffect } from "react";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { dashboardData, isLoading, isError, refetch } = useDashboardData();
+  const { toast } = useToast();
+
+  // Log component rendering for debugging
+  useEffect(() => {
+    console.log("Dashboard rendering", { 
+      user: !!user, 
+      isLoading, 
+      isError, 
+      hasData: !!dashboardData 
+    });
+  }, [user, isLoading, isError, dashboardData]);
 
   const handleRefresh = () => {
-    refetch();
+    try {
+      console.log("Refreshing dashboard data");
+      refetch();
+    } catch (error) {
+      console.error("Error refreshing dashboard data:", error);
+      toast({
+        title: "Refresh Error",
+        description: "Failed to refresh dashboard data. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
+  // Always render the banner and header to ensure UI consistency
+  const renderHeader = () => (
+    <>
+      <DashboardInfoBanner />
+      <DashboardHeader onRefresh={handleRefresh} />
+    </>
+  );
+
+  // Handle loading state
   if (isLoading) {
     return (
       <div className="space-y-8">
-        <DashboardInfoBanner />
+        {renderHeader()}
         <DashboardLoadingSkeleton />
       </div>
     );
   }
 
-  if (isError) {
+  // Handle error state
+  if (isError || !dashboardData) {
     return (
       <div className="space-y-8">
+        {renderHeader()}
         <div className="bg-red-50 rounded-lg p-4 flex items-start space-x-4 mb-4">
           <div className="text-red-500 mt-1">
             <svg
@@ -58,16 +92,19 @@ const Dashboard = () => {
     );
   }
 
-  const hasJobs = dashboardData.recentJobs && dashboardData.recentJobs.length > 0;
-  const hasMetrics = dashboardData.metrics.totalDataProcessed > 0 || 
-                      dashboardData.metrics.totalApiCalls > 0 || 
-                      dashboardData.metrics.activeConnections > 0;
+  // Safely check if we have jobs or metrics
+  const hasJobs = Array.isArray(dashboardData.recentJobs) && dashboardData.recentJobs.length > 0;
+  const hasMetrics = !!(dashboardData.metrics && (
+    dashboardData.metrics.totalDataProcessed > 0 || 
+    dashboardData.metrics.totalApiCalls > 0 || 
+    dashboardData.metrics.activeConnections > 0
+  ));
 
+  // Show empty state if no data
   if (!hasJobs && !hasMetrics) {
     return (
       <div className="space-y-8">
-        <DashboardInfoBanner />
-        <DashboardHeader onRefresh={handleRefresh} />
+        {renderHeader()}
         <EmptyStateCard 
           icon={BarChart3}
           title="No Dashboard Data Yet"
@@ -79,22 +116,25 @@ const Dashboard = () => {
     );
   }
 
+  // Render dashboard with data
   return (
     <div className="space-y-8">
-      <DashboardInfoBanner />
-      <DashboardHeader onRefresh={handleRefresh} />
+      {renderHeader()}
+      
       <DashboardMetrics 
-        totalDataProcessed={dashboardData.metrics.totalDataProcessed}
-        totalApiCalls={dashboardData.metrics.totalApiCalls}
-        activeConnections={dashboardData.metrics.activeConnections}
+        totalDataProcessed={dashboardData.metrics?.totalDataProcessed || 0}
+        totalApiCalls={dashboardData.metrics?.totalApiCalls || 0}
+        activeConnections={dashboardData.metrics?.activeConnections || 0}
       />
+      
       <JobsSummary 
-        totalJobs={dashboardData.jobSummary.totalJobs}
-        successfulJobs={dashboardData.jobSummary.successfulJobs}
-        failedJobs={dashboardData.jobSummary.failedJobs}
-        recentJobs={dashboardData.recentJobs}
+        totalJobs={dashboardData.jobSummary?.totalJobs || 0}
+        successfulJobs={dashboardData.jobSummary?.successfulJobs || 0}
+        failedJobs={dashboardData.jobSummary?.failedJobs || 0}
+        recentJobs={Array.isArray(dashboardData.recentJobs) ? dashboardData.recentJobs : []}
       />
-      <LastUpdated timestamp={dashboardData.metrics.lastUpdated} />
+      
+      <LastUpdated timestamp={dashboardData.metrics?.lastUpdated || null} />
     </div>
   );
 };

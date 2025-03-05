@@ -10,9 +10,9 @@ interface DashboardMetricsProps {
 }
 
 const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ 
-  totalDataProcessed, 
-  totalApiCalls, 
-  activeConnections 
+  totalDataProcessed = 0, 
+  totalApiCalls = 0, 
+  activeConnections = 0 
 }) => {
   const statsData = [
     {
@@ -24,21 +24,21 @@ const DashboardMetrics: React.FC<DashboardMetricsProps> = ({
     },
     {
       title: "Data Processed",
-      value: `${totalDataProcessed.toFixed(1)} GB`,
+      value: `${(totalDataProcessed || 0).toFixed(1)} GB`,
       description: "Total processed",
       icon: Database,
       iconColor: "text-blue-500",
     },
     {
       title: "API Calls",
-      value: totalApiCalls.toLocaleString(),
+      value: (totalApiCalls || 0).toLocaleString(),
       description: "Total calls",
       icon: Clock,
       iconColor: "text-yellow-500",
     },
     {
       title: "Active Connections",
-      value: activeConnections,
+      value: activeConnections || 0,
       description: "Current connections",
       icon: Upload,
       iconColor: "text-purple-500",

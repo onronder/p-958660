@@ -12,12 +12,14 @@ interface JobsSummaryProps {
 }
 
 const JobsSummary: React.FC<JobsSummaryProps> = ({ 
-  totalJobs, 
-  successfulJobs, 
-  failedJobs, 
-  recentJobs 
+  totalJobs = 0, 
+  successfulJobs = 0, 
+  failedJobs = 0, 
+  recentJobs = [] 
 }) => {
-  const hasJobs = recentJobs && recentJobs.length > 0;
+  // Ensure recentJobs is always an array
+  const safeJobs = Array.isArray(recentJobs) ? recentJobs : [];
+  const hasJobs = safeJobs.length > 0;
 
   return (
     <Card>
@@ -29,7 +31,7 @@ const JobsSummary: React.FC<JobsSummaryProps> = ({
           </div>
         </div>
         {hasJobs ? (
-          <RecentJobsTable jobs={recentJobs} />
+          <RecentJobsTable jobs={safeJobs} />
         ) : (
           <div className="text-center py-8 text-gray-500">
             No jobs have been run yet. Jobs will appear here when you start processing data.
