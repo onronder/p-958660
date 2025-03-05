@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      analytics_data: {
+        Row: {
+          created_at: string | null
+          data_pull_frequency: Json | null
+          data_size: Json | null
+          etl_extraction: number | null
+          etl_loading: number | null
+          etl_transformation: number | null
+          id: string
+          last_updated: string | null
+          upload_success_rate: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_pull_frequency?: Json | null
+          data_size?: Json | null
+          etl_extraction?: number | null
+          etl_loading?: number | null
+          etl_transformation?: number | null
+          id?: string
+          last_updated?: string | null
+          upload_success_rate?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_pull_frequency?: Json | null
+          data_size?: Json | null
+          etl_extraction?: number | null
+          etl_loading?: number | null
+          etl_transformation?: number | null
+          id?: string
+          last_updated?: string | null
+          upload_success_rate?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       dashboard_metrics: {
         Row: {
           id: string
@@ -57,6 +96,42 @@ export type Database = {
           successful_jobs?: number
           total_jobs?: number
           user_id?: string
+        }
+        Relationships: []
+      }
+      jobs: {
+        Row: {
+          created_at: string | null
+          duration: unknown | null
+          id: string
+          job_type: string | null
+          rows_processed: number | null
+          source_name: string
+          start_date: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration?: unknown | null
+          id?: string
+          job_type?: string | null
+          rows_processed?: number | null
+          source_name: string
+          start_date?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          duration?: unknown | null
+          id?: string
+          job_type?: string | null
+          rows_processed?: number | null
+          source_name?: string
+          start_date?: string | null
+          status?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
