@@ -2,10 +2,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Dialog, 
   DialogContent, 
@@ -15,21 +11,17 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useSources } from "@/hooks/useSources";
-import { Transformation, TransformationField, FunctionCategory, TransformationFunction } from "@/types/transformation";
+import { Transformation, TransformationField, FunctionCategory, DerivedColumn } from "@/types/transformation";
 import { functionCategories, mockFields } from "@/utils/transformationUtils";
 import FieldSelectionStep from "./FieldSelectionStep";
 import TransformationStep from "./TransformationStep";
 import PreviewStep from "./PreviewStep";
 import SkipTransformationInfo from "./SkipTransformationInfo";
+import TransformationBasicInfo from "./TransformationBasicInfo";
+import TransformationActions from "./TransformationActions";
+import useTransformationValidation from "./useTransformationValidation";
 
 interface TransformationModalProps {
   isOpen: boolean;
@@ -47,6 +39,8 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
   const { toast } = useToast();
   const { user } = useAuth();
   const { sources } = useSources();
+  const { expressionError, setExpressionError, validateExpressions } = useTransformationValidation();
+  
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("fields");
   const [selectedFunction, setSelectedFunction] = useState<FunctionCategory>("Arithmetic");
@@ -54,11 +48,10 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
   const [name, setName] = useState("");
   const [sourceId, setSourceId] = useState("");
   const [fields, setFields] = useState<TransformationField[]>([]);
-  const [derivedColumns, setDerivedColumns] = useState<{name: string, expression: string}[]>([
+  const [derivedColumns, setDerivedColumns] = useState<DerivedColumn[]>([
     { name: "", expression: "" }
   ]);
   const [skipTransformation, setSkipTransformation] = useState(false);
-  const [expressionError, setExpressionError] = useState("");
   const [previewData, setPreviewData] = useState<any[]>([]);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -131,35 +124,8 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
     updateDerivedColumn(index, "expression", updatedExpression);
   };
 
-  const validateExpressions = (): boolean => {
-    if (skipTransformation) return true;
-    
-    const hasSelectedFields = fields.some(field => field.selected);
-    if (!hasSelectedFields) {
-      toast({
-        title: "Validation Error",
-        description: "Please select at least one field.",
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    if (!skipTransformation && derivedColumns.length > 0) {
-      const hasEmptyDerivedColumn = derivedColumns.some(
-        col => !col.name.trim() || !col.expression.trim()
-      );
-      
-      if (hasEmptyDerivedColumn) {
-        setExpressionError("Derived column name and expression are required.");
-        return false;
-      }
-    }
-    
-    return true;
-  };
-
   const generatePreview = async () => {
-    if (!validateExpressions()) return;
+    if (!validateExpressions(skipTransformation, fields, derivedColumns)) return;
     
     try {
       setIsLoading(true);
@@ -186,7 +152,7 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
   };
 
   const handleSave = async () => {
-    if (!validateExpressions()) return;
+    if (!validateExpressions(skipTransformation, fields, derivedColumns)) return;
     if (!user) {
       toast({
         title: "Error",
@@ -246,56 +212,17 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
         </DialogHeader>
         
         <div className="space-y-4 py-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Transformation Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter a name for this transformation"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="source">Data Source</Label>
-              <Select 
-                value={sourceId} 
-                onValueChange={handleSourceChange}
-                disabled={!!transformation}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a data source" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sources.map((source) => (
-                    <SelectItem key={source.id} value={source.id}>
-                      {source.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center space-x-2 pt-2">
-              <Checkbox
-                id="skipTransformation"
-                checked={skipTransformation}
-                onCheckedChange={(checked) => {
-                  setSkipTransformation(checked as boolean);
-                  if (checked) {
-                    setActiveTab("review");
-                  }
-                }}
-              />
-              <label
-                htmlFor="skipTransformation"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Skip Transformation (Export Raw Data)
-              </label>
-            </div>
-          </div>
+          <TransformationBasicInfo
+            name={name}
+            sourceId={sourceId}
+            skipTransformation={skipTransformation}
+            isEditMode={!!transformation}
+            sources={sources}
+            onNameChange={setName}
+            onSourceChange={handleSourceChange}
+            onSkipTransformationChange={setSkipTransformation}
+            onActiveTabChange={setActiveTab}
+          />
           
           {!skipTransformation && (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -349,21 +276,15 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          {skipTransformation && (
-            <Button onClick={handleSave} disabled={isLoading || !name || !sourceId}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                transformation ? "Update Transformation" : "Save Transformation"
-              )}
-            </Button>
-          )}
+          <TransformationActions
+            isLoading={isLoading}
+            name={name}
+            sourceId={sourceId}
+            skipTransformation={skipTransformation}
+            isEditMode={!!transformation}
+            onCancel={onClose}
+            onSave={handleSave}
+          />
         </DialogFooter>
       </DialogContent>
     </Dialog>

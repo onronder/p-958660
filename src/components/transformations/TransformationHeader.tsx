@@ -8,8 +8,8 @@ interface TransformationHeaderProps {
 
 const TransformationHeader: React.FC<TransformationHeaderProps> = ({ onAddNew }) => {
   return (
-    <div className="space-y-8">
-      <div className="bg-blue-50 rounded-lg p-4 flex items-start space-x-4 mb-4">
+    <div className="space-y-6">
+      <div className="bg-blue-50 rounded-lg p-4 flex items-start space-x-4">
         <div className="text-blue-500 mt-1">
           <Info className="h-5 w-5" />
         </div>
