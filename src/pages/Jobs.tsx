@@ -10,40 +10,29 @@ import { fetchJobs } from "@/services/jobSchedulerService";
 import InfoBanner from "@/components/InfoBanner";
 import CreateJobDialog from "@/components/jobs/CreateJobDialog";
 import JobsList from "@/components/jobs/JobsList";
+import { useSources } from "@/hooks/useSources";
 
 const Jobs = () => {
   const navigate = useNavigate();
+  const { sources, isLoading: sourcesLoading } = useSources();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [sources, setSources] = useState<{id: string, name: string}[]>([]);
   const [sourcesExist, setSourcesExist] = useState(false);
 
   useEffect(() => {
     loadJobs();
-    loadSources();
   }, []);
+  
+  useEffect(() => {
+    setSourcesExist(sources.length > 0);
+  }, [sources]);
 
   const loadJobs = async () => {
     setIsLoading(true);
     const jobsData = await fetchJobs();
     setJobs(jobsData);
     setIsLoading(false);
-  };
-
-  const loadSources = async () => {
-    // In a real implementation, this would fetch from an API
-    const sourcesData = [
-      { id: "1", name: "Fashion Boutique" },
-      { id: "2", name: "Tech Gadgets" },
-      { id: "3", name: "Home Decor" },
-    ];
-    
-    // For testing the no sources scenario:
-    // const sourcesData = [];
-    
-    setSources(sourcesData);
-    setSourcesExist(sourcesData.length > 0);
   };
 
   const handleJobCreated = (newJob: Job) => {
@@ -60,8 +49,14 @@ const Jobs = () => {
       navigate("/sources");
       return;
     }
+    
     setIsDialogOpen(true);
   };
+
+  const sourcesForDialog = sources.map(source => ({
+    id: source.id,
+    name: source.name
+  }));
 
   return (
     <div className="space-y-8">
@@ -77,7 +72,7 @@ const Jobs = () => {
         <h1 className="text-3xl font-bold text-primary">Jobs</h1>
         {sourcesExist ? (
           <CreateJobDialog 
-            sources={sources}
+            sources={sourcesForDialog}
             onJobCreated={handleJobCreated}
             isOpen={isDialogOpen}
             onOpenChange={setIsDialogOpen}
@@ -96,7 +91,7 @@ const Jobs = () => {
         <h3 className="text-xl font-semibold mb-4">Scheduled Jobs</h3>
         <JobsList 
           jobs={jobs}
-          isLoading={isLoading}
+          isLoading={isLoading || sourcesLoading}
           onJobsUpdated={loadJobs}
           openCreateDialog={handleCreateButtonClick}
           sourcesExist={sourcesExist}

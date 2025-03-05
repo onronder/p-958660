@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -41,23 +42,26 @@ const CreateJobDialog = ({ sources, onJobCreated, isOpen, onOpenChange }: Create
   const [jobSchedule, setJobSchedule] = useState("06:00");
   const [jobSource, setJobSource] = useState("");
 
+  // Fix the infinite loop by adding proper dependency checks
   useEffect(() => {
     if (isOpen !== undefined) {
       setIsDialogOpen(isOpen);
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (onOpenChange && isDialogOpen !== isOpen) {
-      onOpenChange(isDialogOpen);
+  // Only call onOpenChange when internal state changes, not from props
+  const handleDialogOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (onOpenChange) {
+      onOpenChange(open);
     }
-  }, [isDialogOpen, isOpen, onOpenChange]);
+  };
 
   useEffect(() => {
     if (sources.length > 0 && !jobSource) {
       setJobSource(sources[0].id);
     }
-  }, [sources]);
+  }, [sources, jobSource]);
 
   const resetForm = () => {
     setJobName("");
@@ -96,7 +100,7 @@ const CreateJobDialog = ({ sources, onJobCreated, isOpen, onOpenChange }: Create
 
       if (newJob) {
         onJobCreated(newJob);
-        setIsDialogOpen(false);
+        handleDialogOpenChange(false);
         resetForm();
       }
     } catch (error) {
@@ -253,11 +257,11 @@ const CreateJobDialog = ({ sources, onJobCreated, isOpen, onOpenChange }: Create
       navigate("/sources");
       return;
     }
-    setIsDialogOpen(true);
+    handleDialogOpenChange(true);
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
       <DialogTrigger asChild>
         <Button className="flex items-center gap-2" onClick={handleDialogOpen}>
           <Plus className="h-4 w-4" />
