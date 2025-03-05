@@ -89,3 +89,16 @@
 .info-banner {
   @apply bg-blue-50 rounded-lg p-4 flex items-start space-x-4 mb-4;
 }
+
+/* Dropdown and combobox fixes */
+.select-content {
+  @apply bg-white !important;
+}
+
+.select-item {
+  @apply bg-white hover:bg-gray-100;
+}
+
+[data-radix-select-viewport] {
+  @apply bg-white;
+}
