@@ -119,7 +119,8 @@ const Destinations = () => {
         throw new Error("Authentication required");
       }
       
-      const response = await fetch(`${supabase.functions.url}/destinations`, {
+      // Use string concatenation to access the functions URL
+      const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/destinations`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -293,7 +294,8 @@ async function fetchDestinations() {
     throw new Error("Authentication required");
   }
   
-  const response = await fetch(`${supabase.functions.url}/destinations`, {
+  // Use string concatenation to access the functions URL
+  const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/destinations`, {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${session.access_token}`
@@ -317,7 +319,8 @@ async function deleteDestination(id: string) {
     throw new Error("Authentication required");
   }
   
-  const response = await fetch(`${supabase.functions.url}/destinations/${id}`, {
+  // Use string concatenation to access the functions URL
+  const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/destinations/${id}`, {
     method: "DELETE",
     headers: {
       "Authorization": `Bearer ${session.access_token}`
@@ -340,7 +343,8 @@ async function testConnection(destination: Destination) {
     throw new Error("Authentication required");
   }
   
-  const response = await fetch(`${supabase.functions.url}/test-destination-connection`, {
+  // Use string concatenation to access the functions URL
+  const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/test-destination-connection`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -369,7 +373,8 @@ async function exportToDestination(destinationId: string) {
     throw new Error("Authentication required");
   }
   
-  const response = await fetch(`${supabase.functions.url}/export-to-destination`, {
+  // Use string concatenation to access the functions URL
+  const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/export-to-destination`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

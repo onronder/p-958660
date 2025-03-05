@@ -72,6 +72,89 @@ export type Database = {
         }
         Relationships: []
       }
+      destinations: {
+        Row: {
+          connection_details: Json
+          created_at: string | null
+          destination_type: string | null
+          export_format: string | null
+          id: string
+          last_export: string | null
+          name: string
+          schedule: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          connection_details: Json
+          created_at?: string | null
+          destination_type?: string | null
+          export_format?: string | null
+          id?: string
+          last_export?: string | null
+          name: string
+          schedule?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          connection_details?: Json
+          created_at?: string | null
+          destination_type?: string | null
+          export_format?: string | null
+          id?: string
+          last_export?: string | null
+          name?: string
+          schedule?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      export_logs: {
+        Row: {
+          destination_id: string | null
+          error_message: string | null
+          exported_at: string | null
+          file_size: number | null
+          file_url: string | null
+          id: string
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          destination_id?: string | null
+          error_message?: string | null
+          exported_at?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          destination_id?: string | null
+          error_message?: string | null
+          exported_at?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_logs_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_summary: {
         Row: {
           failed_jobs: number
