@@ -21,6 +21,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
+import Help from "./pages/Help";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import NotificationSidebar from "@/components/NotificationSidebar";
 
@@ -70,6 +71,7 @@ const AppRoutes = () => {
                 <Route path="/insights" element={<Insights />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/help" element={<Help />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>

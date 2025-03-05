@@ -11,6 +11,7 @@ import {
   LogOut,
   Settings,
   Sparkles,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
@@ -127,6 +128,19 @@ const FlowTechsSidebar = () => {
           >
             <Settings className="h-5 w-5" />
             <span>Settings</span>
+          </Link>
+          
+          <Link
+            to="/help"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 mb-2",
+              location.pathname === "/help" 
+                ? "bg-primary/10 text-primary font-medium" 
+                : "text-secondary-foreground hover:bg-primary/5"
+            )}
+          >
+            <HelpCircle className="h-5 w-5" />
+            <span>Help & Documentation</span>
           </Link>
           
           <Link
