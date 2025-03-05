@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { PieChart, Clock, Database, Upload, BarChart3, RefreshCw } from "lucide-react";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -6,6 +7,7 @@ import RecentJobsTable from "@/components/RecentJobsTable";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import EmptyStateCard from "@/components/EmptyStateCard";
+import DashboardLoadingSkeleton from "@/components/DashboardLoadingSkeleton";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -25,8 +27,33 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="space-y-8">
+        <div className="bg-blue-50 rounded-lg p-4 flex items-start space-x-4 mb-4">
+          <div className="text-blue-500 mt-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-blue-800">
+              <span className="font-bold">⚡ The Dashboard</span> provides a centralized view of your data integration processes, offering key performance metrics, recent activity, and insights to help you monitor and manage your workflows effectively.
+            </p>
+          </div>
+        </div>
+        
+        <DashboardLoadingSkeleton />
       </div>
     );
   }

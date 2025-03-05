@@ -1,36 +1,41 @@
 
 import React from "react";
 import { useAnalyticsData } from "@/hooks/useAnalyticsData";
-import EmptyStateCard from "@/components/EmptyStateCard";
-import { ChartPie } from "lucide-react";
-
-// Import the new components
 import AnalyticsInfoBanner from "@/components/analytics/AnalyticsInfoBanner";
 import AnalyticsHeader from "@/components/analytics/AnalyticsHeader";
 import EtlAnalysisChart from "@/components/analytics/EtlAnalysisChart";
 import FrequencySuccessCharts from "@/components/analytics/FrequencySuccessCharts";
 import DataSizeGrowthChart from "@/components/analytics/DataSizeGrowthChart";
+import AnalyticsLoadingSkeleton from "@/components/analytics/AnalyticsLoadingSkeleton";
+import { useToast } from "@/hooks/use-toast";
 
-const Analytics: React.FC = () => {
+const Analytics = () => {
   const { 
+    analyticsData,
     etlData, 
     pullFrequencyData, 
-    uploadSuccessData, 
-    dataSizeData, 
-    analyticsData,
+    uploadSuccessData,
+    dataSizeData,
     isLoading, 
-    isError,
+    isError, 
     refetch 
   } = useAnalyticsData();
+  
+  const { toast } = useToast();
 
   const handleRefresh = () => {
     refetch();
+    toast({
+      title: "Refreshing analytics data",
+      description: "Your analytics data is being updated.",
+    });
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="space-y-8">
+        <AnalyticsInfoBanner />
+        <AnalyticsLoadingSkeleton />
       </div>
     );
   }
@@ -38,6 +43,7 @@ const Analytics: React.FC = () => {
   if (isError) {
     return (
       <div className="space-y-8">
+        <AnalyticsInfoBanner />
         <div className="bg-red-50 rounded-lg p-4 flex items-start space-x-4 mb-4">
           <div className="text-red-500 mt-1">
             <svg
@@ -66,41 +72,34 @@ const Analytics: React.FC = () => {
     );
   }
 
-  const hasAnalyticsData = analyticsData && (
-    pullFrequencyData.length > 0 || 
-    uploadSuccessData.length > 0 || 
-    dataSizeData.length > 0
-  );
-
-  if (!hasAnalyticsData) {
-    return (
-      <div className="space-y-8">
-        <AnalyticsInfoBanner />
-        <AnalyticsHeader onRefresh={handleRefresh} />
-        <EmptyStateCard 
-          icon={ChartPie}
-          title="No Analytics Data Available"
-          description="Analytics data will appear here once you have processed data through the system. Connect a data source and run jobs to see analytics."
-          actionLabel="Go to Sources"
-          onAction={() => window.location.href = '/sources'}
-        />
-      </div>
-    );
-  }
+  const hasData = analyticsData && 
+                  (analyticsData.data_pull_frequency.length > 0 || 
+                   analyticsData.upload_success_rate.length > 0 ||
+                   analyticsData.data_size.length > 0);
 
   return (
     <div className="space-y-8">
       <AnalyticsInfoBanner />
       <AnalyticsHeader onRefresh={handleRefresh} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <EtlAnalysisChart etlData={etlData} />
-        <FrequencySuccessCharts 
-          pullFrequencyData={pullFrequencyData} 
-          uploadSuccessData={uploadSuccessData} 
-        />
-        <DataSizeGrowthChart dataSizeData={dataSizeData} />
-      </div>
+      {hasData ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <EtlAnalysisChart etlData={etlData} />
+          <FrequencySuccessCharts 
+            pullFrequencyData={pullFrequencyData} 
+            uploadSuccessData={uploadSuccessData} 
+          />
+          <DataSizeGrowthChart dataSizeData={dataSizeData} />
+        </div>
+      ) : (
+        <AnalyticsLoadingSkeleton />
+      )}
+
+      {analyticsData && analyticsData.last_updated && (
+        <div className="text-xs text-right text-gray-500">
+          Last updated: {new Date(analyticsData.last_updated).toLocaleString()}
+        </div>
+      )}
     </div>
   );
 };
