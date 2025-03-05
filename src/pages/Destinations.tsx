@@ -1,95 +1,129 @@
 
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, MoreVertical } from "lucide-react";
+import { Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import DestinationCard from "@/components/destinations/DestinationCard";
+import AddDestinationModal from "@/components/destinations/AddDestinationModal";
+import DestinationsInfoBanner from "@/components/destinations/DestinationsInfoBanner";
+import EmptyStateCard from "@/components/EmptyStateCard";
+import { Database } from "lucide-react";
 
-const destinations = [
+// Temporary data to mock destinations until we connect to Supabase
+const initialDestinations = [
   {
+    id: "1",
     name: "FTP Server",
     type: "FTP/SFTP",
-    status: "Connected",
+    status: "Active",
+    exportFormat: "CSV",
+    schedule: "Manual",
+    lastExport: "2024-07-10T15:30:00Z"
   },
   {
+    id: "2",
     name: "Google Drive Backup",
     type: "Google Drive",
-    status: "Disconnected",
+    status: "Failed",
+    exportFormat: "JSON",
+    schedule: "Weekly",
+    lastExport: null
   },
   {
+    id: "3",
     name: "OneDrive Sync",
     type: "Microsoft OneDrive",
-    status: "Connected",
-  },
+    status: "Active",
+    exportFormat: "CSV",
+    schedule: "Daily",
+    lastExport: "2024-07-11T09:15:00Z"
+  }
 ];
 
 const Destinations = () => {
+  const [destinations, setDestinations] = useState(initialDestinations);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleTestConnection = (id: string) => {
+    toast({
+      title: "Testing connection...",
+      description: "Checking connection to destination.",
+    });
+    
+    // Simulate API delay
+    setTimeout(() => {
+      toast({
+        title: "Connection successful",
+        description: "The destination connection is working properly.",
+      });
+    }, 1500);
+  };
+
+  const handleDelete = (id: string) => {
+    // Simulate deletion
+    setDestinations(destinations.filter(dest => dest.id !== id));
+    
+    toast({
+      title: "Destination deleted",
+      description: "The destination has been removed successfully.",
+    });
+  };
+
+  const handleAddDestination = (newDestination: any) => {
+    // Add new destination with a random ID
+    setDestinations([
+      ...destinations, 
+      { ...newDestination, id: Math.random().toString(36).substring(2, 9) }
+    ]);
+    
+    toast({
+      title: "Destination added",
+      description: `${newDestination.name} has been added successfully.`,
+    });
+    
+    setIsAddModalOpen(false);
+  };
+
   return (
     <div className="space-y-8">
-      <div className="bg-blue-50 rounded-lg p-4 flex items-start space-x-4 mb-4">
-        <div className="text-blue-500 mt-1">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
-        </div>
-        <div className="flex-1">
-          <p className="text-blue-800">
-            <span className="font-bold">⚡ The My Destinations</span> page allows you to configure and manage where processed data will be sent, ensuring seamless integration with target systems or platforms.
-          </p>
-        </div>
-      </div>
+      <DestinationsInfoBanner />
 
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-primary">My Destinations</h1>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={() => setIsAddModalOpen(true)}>
           <Plus className="h-4 w-4" />
           Add New Destination
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {destinations.map((destination, index) => (
-          <Card key={index} className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold">{destination.name}</h3>
-                <p className="text-sm text-muted-foreground mt-1">{destination.type}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center">
-                  <div 
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                      destination.status === "Connected" ? "bg-green-500" : "bg-gray-200"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        destination.status === "Connected" ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </div>
-                  <span className="ml-2 text-sm">
-                    {destination.status}
-                  </span>
-                </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      {destinations.length === 0 ? (
+        <EmptyStateCard
+          icon={Database}
+          title="No destinations configured"
+          description="Add your first destination to start exporting processed data to external systems or storage providers."
+          actionLabel="Add Destination"
+          onAction={() => setIsAddModalOpen(true)}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {destinations.map((destination) => (
+            <DestinationCard
+              key={destination.id}
+              destination={destination}
+              onTestConnection={handleTestConnection}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
+      )}
+
+      <AddDestinationModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAdd={handleAddDestination}
+      />
     </div>
   );
 };
