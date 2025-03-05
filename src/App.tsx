@@ -18,7 +18,9 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Notifications from "./pages/Notifications";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import NotificationSidebar from "@/components/NotificationSidebar";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +43,9 @@ const AppRoutes = () => {
           <FlowTechsSidebar />
           <main className="flex-1 ml-64 p-8">
             <div className="max-w-7xl mx-auto">
+              <div className="flex justify-end mb-6">
+                <NotificationSidebar />
+              </div>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/sources" element={<Sources />} />
@@ -51,6 +56,7 @@ const AppRoutes = () => {
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/storage" element={<Storage />} />
                 <Route path="/insights" element={<Insights />} />
+                <Route path="/notifications" element={<Notifications />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
