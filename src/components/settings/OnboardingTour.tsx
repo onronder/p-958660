@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useSettings } from '@/hooks/useSettings';
@@ -50,7 +49,7 @@ interface OnboardingTourProps {
   onComplete?: () => void;
 }
 
-const OnboardingTour: React.FC<OnboardingTourProps> = ({ onComplete }) => {
+const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const { profile, completeOnboarding } = useSettings();
@@ -141,11 +140,6 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ onComplete }) => {
     // Highlight the target element
     targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     targetElement.classList.add('onboarding-highlight');
-    
-    // Clean up highlight on component unmount or step change
-    return () => {
-      targetElement.classList.remove('onboarding-highlight');
-    };
   }
 
   return (

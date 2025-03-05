@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -24,7 +23,7 @@ const apiKeyFormSchema = z.object({
 type ApiKeyFormValues = z.infer<typeof apiKeyFormSchema>;
 
 const ApiKeysSettings = () => {
-  const { apiKeys, isLoadingApiKeys, fetchApiKeys, createApiKey, deleteApiKey } = useSettings();
+  const { apiKeys, isLoading, fetchApiKeys, createApiKey, deleteApiKey } = useSettings();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedApiKeyId, setSelectedApiKeyId] = useState<string | null>(null);
@@ -82,7 +81,7 @@ const ApiKeysSettings = () => {
     });
   };
 
-  if (isLoadingApiKeys) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">

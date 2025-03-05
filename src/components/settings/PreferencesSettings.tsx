@@ -30,7 +30,7 @@ const autoLogoutOptions = [
 ];
 
 const PreferencesSettings = () => {
-  const { profile, isLoadingProfile, fetchProfile, updatePreferences } = useSettings();
+  const { profile, isLoading, fetchProfile, updatePreferences } = useSettings();
 
   const form = useForm<PreferencesFormValues>({
     resolver: zodResolver(preferencesFormSchema),
@@ -59,7 +59,7 @@ const PreferencesSettings = () => {
     await updatePreferences(data);
   };
 
-  if (isLoadingProfile) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-[100px] w-full rounded-md" />

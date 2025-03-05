@@ -26,7 +26,7 @@ const passwordFormSchema = z.object({
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 const SecuritySettings = () => {
-  const { securitySettings, isLoadingSecurity, fetchSecurity, changePassword, toggle2FA } = useSettings();
+  const { securitySettings, isLoading, fetchSecuritySettings, changePassword, toggleTwoFactor } = useSettings();
   const [passwordChangeSuccess, setPasswordChangeSuccess] = useState<boolean | null>(null);
 
   const form = useForm<PasswordFormValues>({
@@ -39,7 +39,7 @@ const SecuritySettings = () => {
   });
 
   useEffect(() => {
-    fetchSecurity();
+    fetchSecuritySettings();
   }, []);
 
   const onSubmit = async (data: PasswordFormValues) => {
@@ -52,10 +52,10 @@ const SecuritySettings = () => {
   };
 
   const handleToggle2FA = async (enabled: boolean) => {
-    await toggle2FA(enabled);
+    await toggleTwoFactor(enabled);
   };
 
-  if (isLoadingSecurity) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-32 w-full rounded-md" />
