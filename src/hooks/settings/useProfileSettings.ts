@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSettingsBase, Profile } from "./useSettingsBase";
 
 export function useProfileSettings() {
@@ -100,11 +100,6 @@ export function useProfileSettings() {
         });
       }
       
-      // Apply dark mode changes immediately
-      if (preferences.dark_mode !== undefined) {
-        applyDarkMode(preferences.dark_mode);
-      }
-      
       toast({
         title: "Preferences Updated",
         description: "Your preferences have been updated successfully.",
@@ -121,17 +116,6 @@ export function useProfileSettings() {
       return null;
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Helper function to apply dark mode immediately
-  const applyDarkMode = (isDarkMode: boolean) => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
     }
   };
 

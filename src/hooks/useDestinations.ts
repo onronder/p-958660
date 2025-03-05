@@ -17,44 +17,23 @@ export interface Destination {
   connection_details: Record<string, any>;
 }
 
-// Get the Supabase URL from window.location if process.env is not available
-const getSupabaseUrl = () => {
-  // Default Supabase URL as fallback
-  const defaultUrl = 'https://eovyjotxecnkqjylwdnj.supabase.co';
-  
-  try {
-    // Check if we're in a browser environment and process.env is not available
-    if (typeof process === 'undefined' || process.env === undefined) {
-      // Attempt to create a URL using window.location as base
-      return defaultUrl;
-    }
-    return process.env.SUPABASE_URL || defaultUrl;
-  } catch (error) {
-    console.warn("Error accessing process.env, using default Supabase URL");
-    return defaultUrl;
-  }
-};
-
 export const useDestinations = () => {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  
-  // Store the Supabase URL to avoid repeatedly calling the function
-  const supabaseUrl = getSupabaseUrl();
 
   // Fetch destinations
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["destinations"],
-    queryFn: () => fetchDestinations(supabaseUrl),
+    queryFn: fetchDestinations,
     enabled: !!user, // Only run if user is logged in
     refetchInterval: 30000, // Polling every 30 seconds to refresh statuses
   });
 
   // Delete destination mutation
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteDestination(id, supabaseUrl),
+    mutationFn: deleteDestination,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["destinations"] });
       toast({
@@ -73,7 +52,7 @@ export const useDestinations = () => {
 
   // Test connection mutation
   const testConnectionMutation = useMutation({
-    mutationFn: (destination: Destination) => testConnection(destination, supabaseUrl),
+    mutationFn: testConnection,
     onSuccess: (data) => {
       toast({
         title: "Connection test successful",
@@ -91,7 +70,7 @@ export const useDestinations = () => {
 
   // Export data mutation
   const exportMutation = useMutation({
-    mutationFn: (id: string) => exportToDestination(id, supabaseUrl),
+    mutationFn: exportToDestination,
     onSuccess: (data) => {
       toast({
         title: "Export started",
@@ -124,8 +103,8 @@ export const useDestinations = () => {
         throw new Error("Authentication required");
       }
       
-      // Use the safe URL
-      const response = await fetch(`${supabaseUrl}/functions/v1/destinations`, {
+      // Use string concatenation to access the functions URL
+      const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/destinations`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -177,14 +156,15 @@ export const useDestinations = () => {
 };
 
 // Function to fetch destinations from the API
-async function fetchDestinations(supabaseUrl: string) {
+async function fetchDestinations() {
   const { data: { session } } = await supabase.auth.getSession();
   
   if (!session) {
     throw new Error("Authentication required");
   }
   
-  const response = await fetch(`${supabaseUrl}/functions/v1/destinations`, {
+  // Use string concatenation to access the functions URL
+  const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/destinations`, {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${session.access_token}`
@@ -201,14 +181,15 @@ async function fetchDestinations(supabaseUrl: string) {
 }
 
 // Function to delete a destination
-async function deleteDestination(id: string, supabaseUrl: string) {
+async function deleteDestination(id: string) {
   const { data: { session } } = await supabase.auth.getSession();
   
   if (!session) {
     throw new Error("Authentication required");
   }
   
-  const response = await fetch(`${supabaseUrl}/functions/v1/destinations/${id}`, {
+  // Use string concatenation to access the functions URL
+  const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/destinations/${id}`, {
     method: "DELETE",
     headers: {
       "Authorization": `Bearer ${session.access_token}`
@@ -224,14 +205,15 @@ async function deleteDestination(id: string, supabaseUrl: string) {
 }
 
 // Function to test a destination connection
-async function testConnection(destination: Destination, supabaseUrl: string) {
+async function testConnection(destination: Destination) {
   const { data: { session } } = await supabase.auth.getSession();
   
   if (!session) {
     throw new Error("Authentication required");
   }
   
-  const response = await fetch(`${supabaseUrl}/functions/v1/test-destination-connection`, {
+  // Use string concatenation to access the functions URL
+  const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/test-destination-connection`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -253,14 +235,15 @@ async function testConnection(destination: Destination, supabaseUrl: string) {
 }
 
 // Function to export data to a destination
-async function exportToDestination(destinationId: string, supabaseUrl: string) {
+async function exportToDestination(destinationId: string) {
   const { data: { session } } = await supabase.auth.getSession();
   
   if (!session) {
     throw new Error("Authentication required");
   }
   
-  const response = await fetch(`${supabaseUrl}/functions/v1/export-to-destination`, {
+  // Use string concatenation to access the functions URL
+  const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/export-to-destination`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

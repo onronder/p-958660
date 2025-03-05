@@ -1,79 +1,96 @@
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "./contexts/AuthContext";
-import { useState, useEffect } from "react";
-import "./App.css";
 
-// Pages
-import Home from "./pages/Home";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Pricing from "./pages/Pricing";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
-import Login from "./pages/Login";
-import SignUp from "./pages/SignUp";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import FlowTechsSidebar from "@/components/FlowTechsSidebar";
 import Dashboard from "./pages/Dashboard";
-import Settings from "./pages/Settings";
+import Sources from "./pages/Sources";
+import AddSource from "./pages/AddSource";
+import Transform from "./pages/Transform";
+import Destinations from "./pages/Destinations";
+import Jobs from "./pages/Jobs";
+import Analytics from "./pages/Analytics";
+import Storage from "./pages/Storage";
+import Insights from "./pages/Insights";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
-import Unauthorized from "./pages/Unauthorized";
-import Destinations from "./pages/Destinations";
-import Analytics from "./pages/Analytics";
+import Notifications from "./pages/Notifications";
+import Settings from "./pages/Settings";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import NotificationSidebar from "@/components/NotificationSidebar";
 
-// Components
-import Layout from "./components/Layout";
-import PublicRoute from "./components/PublicRoute";
-import PrivateRoute from "./components/PrivateRoute";
+const queryClient = new QueryClient();
 
-function App() {
-  const [queryClient] = useState(() => new QueryClient());
+const AppRoutes = () => {
+  const { user, isLoading } = useAuth();
 
-  // Apply theme on app load
-  useEffect(() => {
-    // Check for saved theme preference or use OS preference
-    const savedTheme = localStorage.getItem('theme');
-    
-    if (savedTheme === 'dark' || 
-        (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
+    <>
+      {user ? (
+        <div className="flex min-h-screen bg-background">
+          <FlowTechsSidebar />
+          <main className="flex-1 ml-64 p-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex justify-end mb-6">
+                <NotificationSidebar />
+              </div>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/sources" element={<Sources />} />
+                <Route path="/sources/add" element={<AddSource />} />
+                <Route path="/transform" element={<Transform />} />
+                <Route path="/destinations" element={<Destinations />} />
+                <Route path="/jobs" element={<Jobs />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/storage" element={<Storage />} />
+                <Route path="/insights" element={<Insights />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </div>
+          </main>
+        </div>
+      ) : (
+        <Routes>
+          <Route path="/login" element={<Login onLogin={() => {}} />} />
+          <Route path="/register" element={<Register onRegister={() => {}} />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      )}
+    </>
+  );
+};
+
+const App = () => {
+  return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Home />} />
-              <Route path="about" element={<About />} />
-              <Route path="contact" element={<Contact />} />
-              <Route path="pricing" element={<Pricing />} />
-              <Route path="blog" element={<Blog />} />
-              <Route path="blog/:id" element={<BlogPost />} />
-
-              <Route path="login" element={<PublicRoute><Login /></PublicRoute>} />
-              <Route path="signup" element={<PublicRoute><SignUp /></PublicRoute>} />
-              <Route path="forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-              <Route path="reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
-
-              <Route path="dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-              <Route path="destinations" element={<PrivateRoute><Destinations /></PrivateRoute>} />
-              <Route path="analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
-              <Route path="settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
-
-              <Route path="unauthorized" element={<Unauthorized />} />
-              <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
-        </Router>
-      </AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
     </QueryClientProvider>
   );
-}
+};
 
 export default App;

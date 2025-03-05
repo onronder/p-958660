@@ -55,29 +55,6 @@ const PreferencesSettings = () => {
     }
   }, [profile, form]);
 
-  // Watch for dark mode changes to update UI immediately on toggle
-  const darkModeValue = form.watch("dark_mode");
-  
-  useEffect(() => {
-    // Apply dark mode class to document when the form value changes (before save)
-    if (darkModeValue) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkModeValue]);
-  
-  // Apply dark mode from profile when component loads
-  useEffect(() => {
-    if (profile) {
-      if (profile.dark_mode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    }
-  }, [profile]);
-
   const onSubmit = async (data: PreferencesFormValues) => {
     await updatePreferences(data);
   };
