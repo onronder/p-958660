@@ -8,6 +8,8 @@ import FrequencySuccessCharts from "@/components/analytics/FrequencySuccessChart
 import DataSizeGrowthChart from "@/components/analytics/DataSizeGrowthChart";
 import AnalyticsLoadingSkeleton from "@/components/analytics/AnalyticsLoadingSkeleton";
 import { useToast } from "@/hooks/use-toast";
+import { AlertTriangle } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 const Analytics = () => {
   const { 
@@ -31,6 +33,31 @@ const Analytics = () => {
     });
   };
 
+  // Render fallback UI if something goes wrong
+  if (isError) {
+    return (
+      <div className="space-y-8">
+        <AnalyticsInfoBanner />
+        <Card className="p-6">
+          <div className="flex flex-col items-center justify-center text-center p-6">
+            <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+            <h3 className="text-xl font-medium mb-2">We're having trouble loading your analytics</h3>
+            <p className="text-muted-foreground mb-4">
+              Our system encountered an error while trying to load your analytics data. 
+              This is usually a temporary issue.
+            </p>
+            <button 
+              onClick={() => refetch()}
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-8">
@@ -40,42 +67,12 @@ const Analytics = () => {
     );
   }
 
-  if (isError) {
-    return (
-      <div className="space-y-8">
-        <AnalyticsInfoBanner />
-        <div className="bg-red-50 rounded-lg p-4 flex items-start space-x-4 mb-4">
-          <div className="text-red-500 mt-1">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="16" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12.01" y2="8" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <p className="text-red-800">
-              There was an error loading the analytics data. Please try again later.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const hasData = analyticsData && 
-                  (analyticsData.data_pull_frequency.length > 0 || 
-                   analyticsData.upload_success_rate.length > 0 ||
-                   analyticsData.data_size.length > 0);
+  // Make sure we have analytics data before rendering
+  const safeAnalyticsData = analyticsData || {};
+  const hasData = safeAnalyticsData && 
+                  (Array.isArray(pullFrequencyData) && pullFrequencyData.length > 0 || 
+                   Array.isArray(uploadSuccessData) && uploadSuccessData.length > 0 ||
+                   Array.isArray(dataSizeData) && dataSizeData.length > 0);
 
   return (
     <div className="space-y-8">
@@ -84,20 +81,28 @@ const Analytics = () => {
 
       {hasData ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <EtlAnalysisChart etlData={etlData} />
+          <EtlAnalysisChart etlData={etlData || []} />
           <FrequencySuccessCharts 
-            pullFrequencyData={pullFrequencyData} 
-            uploadSuccessData={uploadSuccessData} 
+            pullFrequencyData={Array.isArray(pullFrequencyData) ? pullFrequencyData : []} 
+            uploadSuccessData={Array.isArray(uploadSuccessData) ? uploadSuccessData : []} 
           />
-          <DataSizeGrowthChart dataSizeData={dataSizeData} />
+          <DataSizeGrowthChart dataSizeData={Array.isArray(dataSizeData) ? dataSizeData : []} />
         </div>
       ) : (
-        <AnalyticsLoadingSkeleton />
+        <Card className="p-6">
+          <div className="flex flex-col items-center justify-center text-center p-6">
+            <h3 className="text-xl font-medium mb-2">No analytics data available yet</h3>
+            <p className="text-muted-foreground mb-4">
+              Your analytics data will appear here once you start processing data through the system.
+              Try running some jobs or connecting data sources to see analytics.
+            </p>
+          </div>
+        </Card>
       )}
 
-      {analyticsData && analyticsData.last_updated && (
+      {safeAnalyticsData && safeAnalyticsData.last_updated && (
         <div className="text-xs text-right text-gray-500">
-          Last updated: {new Date(analyticsData.last_updated).toLocaleString()}
+          Last updated: {new Date(safeAnalyticsData.last_updated).toLocaleString()}
         </div>
       )}
     </div>

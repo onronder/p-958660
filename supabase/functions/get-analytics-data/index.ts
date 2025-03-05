@@ -17,7 +17,20 @@ serve(async (req) => {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
     return new Response(
-      JSON.stringify({ error: 'Authorization header is required' }),
+      JSON.stringify({ 
+        error: 'Authorization header is required',
+        // Provide default data to prevent UI crashes
+        id: "",
+        user_id: "",
+        etl_extraction: 33,
+        etl_transformation: 33,
+        etl_loading: 34,
+        data_pull_frequency: [],
+        upload_success_rate: [],
+        data_size: [],
+        last_updated: "",
+        created_at: ""
+      }),
       { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -45,7 +58,20 @@ serve(async (req) => {
     if (userError || !user) {
       console.error("User authentication error:", userError);
       return new Response(
-        JSON.stringify({ error: "Authentication failed" }),
+        JSON.stringify({ 
+          error: "Authentication failed",
+          // Provide default data to prevent UI crashes
+          id: "",
+          user_id: "",
+          etl_extraction: 33,
+          etl_transformation: 33,
+          etl_loading: 34,
+          data_pull_frequency: [],
+          upload_success_rate: [],
+          data_size: [],
+          last_updated: "",
+          created_at: ""
+        }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -62,7 +88,20 @@ serve(async (req) => {
     if (analyticsError) {
       console.error("Error fetching analytics data:", analyticsError);
       return new Response(
-        JSON.stringify({ error: "Failed to fetch analytics data" }),
+        JSON.stringify({ 
+          error: "Failed to fetch analytics data",
+          // Provide default data to prevent UI crashes
+          id: "",
+          user_id: user.id,
+          etl_extraction: 33,
+          etl_transformation: 33,
+          etl_loading: 34,
+          data_pull_frequency: [],
+          upload_success_rate: [],
+          data_size: [],
+          last_updated: "",
+          created_at: ""
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -70,18 +109,33 @@ serve(async (req) => {
     // If no analytics data found, create default entry
     if (!analyticsData) {
       console.log("No analytics data found, creating default entry");
+      
+      // Create default analytics data
+      const defaultData = {
+        user_id: user.id,
+        etl_extraction: 33,
+        etl_transformation: 33,
+        etl_loading: 34,
+        data_pull_frequency: [],
+        upload_success_rate: [],
+        data_size: [],
+        last_updated: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      };
+      
       const { data: newAnalytics, error: insertError } = await supabaseClient
         .from("analytics_data")
-        .insert([
-          { user_id: user.id }
-        ])
+        .insert([defaultData])
         .select("*")
         .single();
 
       if (insertError) {
         console.error("Error creating analytics data:", insertError);
         return new Response(
-          JSON.stringify({ error: "Failed to initialize analytics data" }),
+          JSON.stringify({ 
+            error: "Failed to initialize analytics data",
+            ...defaultData
+          }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -100,7 +154,20 @@ serve(async (req) => {
   } catch (error) {
     console.error("Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ 
+        error: "Internal server error",
+        // Provide default data to prevent UI crashes
+        id: "",
+        user_id: "",
+        etl_extraction: 33,
+        etl_transformation: 33,
+        etl_loading: 34,
+        data_pull_frequency: [],
+        upload_success_rate: [],
+        data_size: [],
+        last_updated: "",
+        created_at: ""
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

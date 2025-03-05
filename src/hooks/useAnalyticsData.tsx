@@ -28,36 +28,69 @@ export type AnalyticsData = {
   created_at: string;
 };
 
+// Default data to use when analytics data is unavailable
+const defaultAnalyticsData = {
+  id: "",
+  user_id: "",
+  etl_extraction: 33,
+  etl_transformation: 33,
+  etl_loading: 34,
+  data_pull_frequency: [],
+  upload_success_rate: [],
+  data_size: [],
+  last_updated: "",
+  created_at: ""
+};
+
 export const useAnalyticsData = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
   const fetchAnalyticsData = async (): Promise<AnalyticsData> => {
     if (!user) {
-      throw new Error("User not authenticated");
+      console.log("User not authenticated, returning default analytics data");
+      return { ...defaultAnalyticsData };
     }
 
-    // Get the session token for authentication
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      throw new Error("No active session found");
-    }
-
-    // Call the edge function with auth token
-    const { data, error } = await supabase.functions.invoke("get-analytics-data", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`
+    try {
+      // Get the session token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error("No active session found");
+        return { ...defaultAnalyticsData };
       }
-    });
 
-    if (error) {
-      console.error("Error fetching analytics data:", error);
-      throw new Error("Failed to fetch analytics data");
+      // Call the edge function with auth token
+      const { data, error } = await supabase.functions.invoke("get-analytics-data", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) {
+        console.error("Error fetching analytics data:", error);
+        throw new Error("Failed to fetch analytics data");
+      }
+
+      // Validate and provide defaults for missing properties
+      return {
+        id: data?.id || "",
+        user_id: data?.user_id || "",
+        etl_extraction: data?.etl_extraction ?? 33,
+        etl_transformation: data?.etl_transformation ?? 33,
+        etl_loading: data?.etl_loading ?? 34,
+        data_pull_frequency: Array.isArray(data?.data_pull_frequency) ? data.data_pull_frequency : [],
+        upload_success_rate: Array.isArray(data?.upload_success_rate) ? data.upload_success_rate : [],
+        data_size: Array.isArray(data?.data_size) ? data.data_size : [],
+        last_updated: data?.last_updated || "",
+        created_at: data?.created_at || ""
+      };
+    } catch (error) {
+      console.error("Analytics data fetch error:", error);
+      return { ...defaultAnalyticsData };
     }
-
-    return data as AnalyticsData;
   };
 
   const { 
@@ -69,8 +102,23 @@ export const useAnalyticsData = () => {
     queryKey: ["analyticsData", user?.id],
     queryFn: fetchAnalyticsData,
     enabled: !!user,
-    // Removed the refetchInterval for on-demand updates only
+    retry: 1, // Limit retries to avoid infinite loading state
   });
+
+  // Process ETL data for pie chart with safety checks
+  const getEtlData = (): ETLData[] => {
+    if (!data) return [
+      { name: "Extract", value: 33 },
+      { name: "Transform", value: 33 },
+      { name: "Load", value: 34 }
+    ];
+
+    return [
+      { name: "Extract", value: data.etl_extraction ?? 33 },
+      { name: "Transform", value: data.etl_transformation ?? 33 },
+      { name: "Load", value: data.etl_loading ?? 34 }
+    ];
+  };
 
   // Show error toast if there's an error
   if (error) {
@@ -82,23 +130,8 @@ export const useAnalyticsData = () => {
     });
   }
 
-  // Process ETL data for pie chart
-  const getEtlData = (): ETLData[] => {
-    if (!data) return [
-      { name: "Extract", value: 40 },
-      { name: "Transform", value: 30 },
-      { name: "Load", value: 30 }
-    ];
-
-    return [
-      { name: "Extract", value: data.etl_extraction },
-      { name: "Transform", value: data.etl_transformation },
-      { name: "Load", value: data.etl_loading }
-    ];
-  };
-
   return {
-    analyticsData: data, // Expose the full data object
+    analyticsData: data || { ...defaultAnalyticsData },
     etlData: getEtlData(),
     pullFrequencyData: data?.data_pull_frequency || [],
     uploadSuccessData: data?.upload_success_rate || [],
