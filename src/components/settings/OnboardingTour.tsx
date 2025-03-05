@@ -1,151 +1,199 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { X, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
+import { X } from 'lucide-react';
 
-interface OnboardingTourProps {
-  onClose: () => void;
+interface TourStep {
+  element: string;
+  title: string;
+  content: string;
+  position?: 'top' | 'right' | 'bottom' | 'left';
 }
 
-const OnboardingTour = ({ onClose }: OnboardingTourProps) => {
-  const { toast } = useToast();
+const steps: TourStep[] = [
+  {
+    element: '.sources-menu-item',
+    title: 'Connect Your Data Sources',
+    content: 'Start by connecting to your data sources like e-commerce platforms, databases or files.',
+    position: 'right',
+  },
+  {
+    element: '.transform-menu-item',
+    title: 'Transform Your Data',
+    content: 'Create transformations to clean, format and prepare your data for analysis.',
+    position: 'right',
+  },
+  {
+    element: '.destinations-menu-item',
+    title: 'Configure Destinations',
+    content: 'Set up destinations to export your transformed data to various platforms.',
+    position: 'right',
+  },
+  {
+    element: '.jobs-menu-item',
+    title: 'Create Automated Jobs',
+    content: 'Schedule automated jobs to regularly process your data without manual intervention.',
+    position: 'right',
+  },
+  {
+    element: '.settings-menu-item',
+    title: 'Customize Your Settings',
+    content: 'Configure your account settings, API keys, and preferences.',
+    position: 'right',
+  },
+];
+
+interface OnboardingTourProps {
+  onComplete?: () => void;
+}
+
+const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
   const [currentStep, setCurrentStep] = useState(0);
-  
-  const steps = [
-    {
-      title: "Welcome to FlowTechs",
-      description: "Let's take a quick tour of the key features to help you get started.",
-      image: "https://placehold.co/600x400/png",
-    },
-    {
-      title: "Connect Your Data Sources",
-      description: "Start by connecting your data sources from the Sources page. We support multiple platforms including Shopify, WooCommerce and more.",
-      image: "https://placehold.co/600x400/png",
-      targetSelector: ".sources",
-    },
-    {
-      title: "Transform Your Data",
-      description: "Use the Load & Transform page to clean, enrich, and prepare your data for analysis.",
-      image: "https://placehold.co/600x400/png",
-      targetSelector: ".transform",
-    },
-    {
-      title: "Set Up Destinations",
-      description: "Configure where your transformed data should be exported using the My Destinations page.",
-      image: "https://placehold.co/600x400/png",
-      targetSelector: ".destinations",
-    },
-    {
-      title: "Automate with Jobs",
-      description: "Schedule recurring jobs to automate your data pipeline from the Jobs page.",
-      image: "https://placehold.co/600x400/png",
-      targetSelector: ".jobs",
-    },
-    {
-      title: "You're All Set!",
-      description: "You now know the basics of FlowTechs. Explore the platform and reach out if you need any help.",
-      image: "https://placehold.co/600x400/png",
-    },
-  ];
-  
-  const nextStep = () => {
+  const [isVisible, setIsVisible] = useState(true);
+  const { profile, completeOnboarding } = useSettings();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    // Check if user has already completed onboarding
+    if (profile?.onboarding_completed) {
+      setIsVisible(false);
+    }
+  }, [profile]);
+
+  const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      completeTour();
+      handleComplete();
     }
   };
-  
-  const prevStep = () => {
+
+  const handlePrevious = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
-  
-  const completeTour = () => {
-    // Update user preferences in database
-    // This would typically be implemented with a Supabase call
-    
-    toast({
-      title: "Tour completed",
-      description: "You've completed the onboarding tour. You can restart it anytime from Settings.",
-    });
-    
-    onClose();
+
+  const handleComplete = async () => {
+    await completeOnboarding();
+    setIsVisible(false);
+    if (onComplete) {
+      onComplete();
+    }
   };
 
+  const handleSkip = async () => {
+    await completeOnboarding();
+    setIsVisible(false);
+    if (onComplete) {
+      onComplete();
+    }
+  };
+
+  if (!isVisible || !user) {
+    return null;
+  }
+
+  const currentTourStep = steps[currentStep];
+  const targetElement = document.querySelector(currentTourStep.element);
+  
+  // Calculate position for tooltip
+  let tooltipStyle = {};
+  const position = currentTourStep.position || 'right';
+
+  if (targetElement) {
+    const rect = targetElement.getBoundingClientRect();
+    
+    switch (position) {
+      case 'top':
+        tooltipStyle = {
+          bottom: `${window.innerHeight - rect.top + 10}px`,
+          left: `${rect.left + rect.width / 2}px`,
+          transform: 'translateX(-50%)',
+        };
+        break;
+      case 'right':
+        tooltipStyle = {
+          left: `${rect.right + 10}px`,
+          top: `${rect.top + rect.height / 2}px`,
+          transform: 'translateY(-50%)',
+        };
+        break;
+      case 'bottom':
+        tooltipStyle = {
+          top: `${rect.bottom + 10}px`,
+          left: `${rect.left + rect.width / 2}px`,
+          transform: 'translateX(-50%)',
+        };
+        break;
+      case 'left':
+        tooltipStyle = {
+          right: `${window.innerWidth - rect.left + 10}px`,
+          top: `${rect.top + rect.height / 2}px`,
+          transform: 'translateY(-50%)',
+        };
+        break;
+    }
+    
+    // Highlight the target element
+    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    targetElement.classList.add('onboarding-highlight');
+    
+    // Clean up highlight on component unmount or step change
+    return () => {
+      targetElement.classList.remove('onboarding-highlight');
+    };
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <Card className="w-full max-w-2xl mx-4 overflow-hidden">
-        <div className="relative">
-          <button 
-            className="absolute top-4 right-4 p-1 rounded-full bg-muted hover:bg-muted/80 z-10"
-            onClick={onClose}
-          >
-            <X className="h-5 w-5" />
-          </button>
-          
-          <div className="aspect-video bg-muted relative">
-            <img 
-              src={steps[currentStep].image} 
-              alt={steps[currentStep].title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-              <div className="flex items-center gap-2 text-white">
-                <span className="font-medium">Step {currentStep + 1} of {steps.length}</span>
-                <div className="flex-grow h-1 bg-white/20 rounded-full">
-                  <div 
-                    className="h-full bg-white rounded-full"
-                    style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
+    <div 
+      className="fixed inset-0 bg-black/50 z-50 pointer-events-none"
+      aria-hidden="true"
+    >
+      <div 
+        className={cn(
+          "absolute z-50 bg-card text-card-foreground p-4 rounded-lg shadow-lg w-72 pointer-events-auto",
+          {
+            'after:content-[""] after:absolute after:border-8 after:border-transparent': true,
+            'after:border-r-card': position === 'left',
+            'after:border-l-card': position === 'right',
+            'after:border-b-card': position === 'top',
+            'after:border-t-card': position === 'bottom',
+            'after:-right-4 after:top-1/2 after:-translate-y-1/2': position === 'left',
+            'after:-left-4 after:top-1/2 after:-translate-y-1/2': position === 'right',
+            'after:left-1/2 after:-bottom-4 after:-translate-x-1/2': position === 'top',
+            'after:left-1/2 after:-top-4 after:-translate-x-1/2': position === 'bottom',
+          }
+        )}
+        style={tooltipStyle}
+      >
+        <button 
+          className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
+          onClick={handleSkip}
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <h3 className="text-lg font-semibold mb-2">{currentTourStep.title}</h3>
+        <p className="text-sm mb-4">{currentTourStep.content}</p>
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-muted-foreground">
+            {currentStep + 1} / {steps.length}
           </div>
-          
-          <div className="p-6">
-            <h3 className="text-xl font-semibold mb-2">{steps[currentStep].title}</h3>
-            <p className="text-muted-foreground mb-6">{steps[currentStep].description}</p>
-            
-            <div className="flex justify-between items-center">
-              <div className="space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={prevStep}
-                  disabled={currentStep === 0}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Previous
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  onClick={onClose}
-                >
-                  Skip Tour
-                </Button>
-              </div>
-              
-              <Button onClick={nextStep}>
-                {currentStep < steps.length - 1 ? (
-                  <>
-                    Next
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                ) : (
-                  <>
-                    Complete
-                    <CheckCircle className="ml-2 h-4 w-4" />
-                  </>
-                )}
+          <div className="space-x-2">
+            {currentStep > 0 && (
+              <Button variant="outline" size="sm" onClick={handlePrevious}>
+                Previous
               </Button>
-            </div>
+            )}
+            <Button size="sm" onClick={handleNext}>
+              {currentStep === steps.length - 1 ? 'Finish' : 'Next'}
+            </Button>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

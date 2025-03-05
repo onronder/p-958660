@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import ProfileSettings from "@/components/settings/ProfileSettings";
@@ -11,11 +11,30 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import InfoBanner from "@/components/InfoBanner";
+import OnboardingTour from "@/components/settings/OnboardingTour";
+import { useSettings } from "@/hooks/useSettings";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { profile, fetchProfile } = useSettings();
+  const [showTour, setShowTour] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    // Show onboarding tour for new users
+    if (profile && profile.onboarding_completed === false) {
+      setShowTour(true);
+    }
+  }, [profile]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -32,6 +51,8 @@ const Settings = () => {
 
   return (
     <div className="space-y-8">
+      {showTour && <OnboardingTour onComplete={() => setShowTour(false)} />}
+      
       <InfoBanner 
         message={
           <span>

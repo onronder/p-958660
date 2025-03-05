@@ -1,326 +1,281 @@
 
-import { useState } from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Copy, Plus, RefreshCw, Trash } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Copy, Key, Plus, Trash2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { useSettings } from "@/hooks/useSettings";
+import { format, formatDistanceToNow } from "date-fns";
 
-// Type definitions
-interface ApiKey {
-  id: string;
-  key: string;
-  created: string;
-  expires: string | null;
-}
+const apiKeyFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  expires: z.enum(["never", "30days", "60days", "90days"]),
+});
 
-interface Webhook {
-  id: string;
-  url: string;
-  eventType: string;
-  created: string;
-}
+type ApiKeyFormValues = z.infer<typeof apiKeyFormSchema>;
 
 const ApiKeysSettings = () => {
+  const { apiKeys, isLoadingApiKeys, fetchApiKeys, createApiKey, deleteApiKey } = useSettings();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedApiKeyId, setSelectedApiKeyId] = useState<string | null>(null);
+  const [newApiKey, setNewApiKey] = useState<string | null>(null);
   const { toast } = useToast();
-  
-  // API Keys state
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([
-    {
-      id: "1",
-      key: "ft_k_5f7a8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x",
-      created: "2023-10-15",
-      expires: "2024-10-15",
+
+  const form = useForm<ApiKeyFormValues>({
+    resolver: zodResolver(apiKeyFormSchema),
+    defaultValues: {
+      name: "",
+      expires: "never",
     },
-  ]);
-  
-  // Webhooks state
-  const [webhooks, setWebhooks] = useState<Webhook[]>([
-    {
-      id: "1",
-      url: "https://example.com/webhook",
-      eventType: "Job Completed",
-      created: "2023-10-10",
-    },
-  ]);
-  
-  // New webhook state
-  const [newWebhookUrl, setNewWebhookUrl] = useState("");
-  const [newWebhookEvent, setNewWebhookEvent] = useState("Job Completed");
-  const [isAddingWebhook, setIsAddingWebhook] = useState(false);
-  
-  // Copy API key to clipboard
-  const copyApiKey = (key: string) => {
-    navigator.clipboard.writeText(key);
-    toast({
-      title: "API key copied",
-      description: "API key has been copied to your clipboard.",
-    });
-  };
-  
-  // Generate new API key
-  const generateApiKey = () => {
-    const newKey = {
-      id: Math.random().toString(36).substring(2, 11),
-      key: `ft_k_${Math.random().toString(36).substring(2, 30)}`,
-      created: new Date().toISOString().split("T")[0],
-      expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    };
+  });
+
+  useEffect(() => {
+    fetchApiKeys();
+  }, []);
+
+  const onSubmit = async (data: ApiKeyFormValues) => {
+    let expiresAt: string | undefined;
     
-    setApiKeys([...apiKeys, newKey]);
-    
-    toast({
-      title: "New API key generated",
-      description: "Your new API key has been generated successfully.",
-    });
-  };
-  
-  // Delete API key
-  const deleteApiKey = (id: string) => {
-    setApiKeys(apiKeys.filter(key => key.id !== id));
-    
-    toast({
-      title: "API key deleted",
-      description: "The API key has been deleted successfully.",
-    });
-  };
-  
-  // Add new webhook
-  const addWebhook = () => {
-    if (!newWebhookUrl) {
-      toast({
-        title: "Missing webhook URL",
-        description: "Please enter a webhook URL.",
-        variant: "destructive",
-      });
-      return;
+    if (data.expires !== "never") {
+      const days = parseInt(data.expires.replace("days", ""), 10);
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      expiresAt = date.toISOString();
     }
     
-    setIsAddingWebhook(true);
+    const result = await createApiKey(data.name, expiresAt);
     
-    // Simulate adding a webhook
-    setTimeout(() => {
-      const newWebhook = {
-        id: Math.random().toString(36).substring(2, 11),
-        url: newWebhookUrl,
-        eventType: newWebhookEvent,
-        created: new Date().toISOString().split("T")[0],
-      };
-      
-      setWebhooks([...webhooks, newWebhook]);
-      setNewWebhookUrl("");
-      setNewWebhookEvent("Job Completed");
-      setIsAddingWebhook(false);
-      
-      toast({
-        title: "Webhook added",
-        description: "Your webhook has been added successfully.",
-      });
-    }, 1000);
+    if (result) {
+      setNewApiKey(result.api_key);
+      form.reset();
+    }
   };
-  
-  // Delete webhook
-  const deleteWebhook = (id: string) => {
-    setWebhooks(webhooks.filter(webhook => webhook.id !== id));
-    
+
+  const handleDeleteClick = (id: string) => {
+    setSelectedApiKeyId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (selectedApiKeyId) {
+      await deleteApiKey(selectedApiKeyId);
+      setIsDeleteDialogOpen(false);
+      setSelectedApiKeyId(null);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
     toast({
-      title: "Webhook deleted",
-      description: "The webhook has been deleted successfully.",
+      title: "Copied to clipboard",
+      description: "The API key has been copied to your clipboard.",
     });
   };
 
+  if (isLoadingApiKeys) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-8 w-[200px]" />
+          <Skeleton className="h-10 w-[150px]" />
+        </div>
+        <Skeleton className="h-[300px] w-full rounded-md" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>API Keys</CardTitle>
-          <CardDescription>
-            Manage API keys for integrating with external systems
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Alert className="mb-4">
-            <AlertDescription>
-              API keys provide full access to your account. Keep them secure and never share them in public repositories or client-side code.
-            </AlertDescription>
-          </Alert>
-          
-          <div className="space-y-4">
-            <div className="flex justify-end">
-              <Button onClick={generateApiKey}>
-                <Plus className="mr-2 h-4 w-4" />
-                Generate New API Key
-              </Button>
-            </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-bold">API Keys</h2>
+          <p className="text-sm text-muted-foreground">
+            Manage your API keys for external integrations and applications
+          </p>
+        </div>
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> Create API Key
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create API Key</DialogTitle>
+              <DialogDescription>
+                Generate a new API key for integrating with external services.
+              </DialogDescription>
+            </DialogHeader>
             
-            {apiKeys.length === 0 ? (
-              <div className="text-center p-6 border border-dashed rounded-md">
-                <p className="text-muted-foreground">No API keys found. Generate a new key to get started.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {apiKeys.map(key => (
-                  <div 
-                    key={key.id} 
-                    className="p-4 border border-border rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                  >
-                    <div className="space-y-1 flex-grow">
-                      <div className="flex items-center">
-                        <p className="font-mono bg-muted px-2 py-1 rounded text-sm truncate max-w-[240px] sm:max-w-md">
-                          {key.key}
-                        </p>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="ml-2"
-                          onClick={() => copyApiKey(key.key)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Created: {key.created} 
-                        {key.expires && ` • Expires: ${key.expires}`}
-                      </p>
-                    </div>
-                    
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="text-destructive border-destructive hover:bg-destructive/10"
-                        >
-                          <Trash className="h-4 w-4 mr-2" />
-                          Delete
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Confirm API Key Deletion</DialogTitle>
-                          <DialogDescription>
-                            Are you sure you want to delete this API key? This action cannot be undone.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                          <Button variant="outline">Cancel</Button>
-                          <Button 
-                            variant="destructive"
-                            onClick={() => deleteApiKey(key.id)}
-                          >
-                            Delete API Key
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Webhooks</CardTitle>
-          <CardDescription>
-            Configure webhooks to notify external systems about events
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="webhookUrl">Webhook URL</Label>
-                <Input
-                  id="webhookUrl"
-                  placeholder="https://example.com/webhook"
-                  value={newWebhookUrl}
-                  onChange={(e) => setNewWebhookUrl(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="eventType">Event Type</Label>
-                <Select 
-                  value={newWebhookEvent} 
-                  onValueChange={setNewWebhookEvent}
-                >
-                  <SelectTrigger id="eventType">
-                    <SelectValue placeholder="Select event" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Job Completed">Job Completed</SelectItem>
-                    <SelectItem value="Job Failed">Job Failed</SelectItem>
-                    <SelectItem value="Data Updated">Data Updated</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button 
-                onClick={addWebhook}
-                disabled={isAddingWebhook || !newWebhookUrl}
-              >
-                {isAddingWebhook ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Webhook
-                  </>
-                )}
-              </Button>
-            </div>
-            
-            {webhooks.length === 0 ? (
-              <div className="text-center p-6 border border-dashed rounded-md">
-                <p className="text-muted-foreground">No webhooks configured. Add a webhook to get started.</p>
-              </div>
-            ) : (
-              <div className="space-y-3 mt-4">
-                {webhooks.map(webhook => (
-                  <div 
-                    key={webhook.id} 
-                    className="p-4 border border-border rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                  >
-                    <div className="space-y-1 flex-grow">
-                      <p className="font-medium truncate max-w-md">{webhook.url}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                          {webhook.eventType}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          Created: {webhook.created}
-                        </span>
-                      </div>
-                    </div>
-                    
+            {newApiKey ? (
+              <div className="py-4 space-y-4">
+                <div className="rounded-md bg-muted p-4">
+                  <p className="text-sm font-medium mb-2">Your API Key (only shown once):</p>
+                  <div className="flex items-center">
+                    <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold overflow-x-auto max-w-full">
+                      {newApiKey}
+                    </code>
                     <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="text-destructive border-destructive hover:bg-destructive/10"
-                      onClick={() => deleteWebhook(webhook.id)}
+                      variant="ghost" 
+                      size="sm" 
+                      className="ml-2" 
+                      onClick={() => copyToClipboard(newApiKey)}
                     >
-                      <Trash className="h-4 w-4 mr-2" />
-                      Delete
+                      <Copy className="h-4 w-4" />
                     </Button>
                   </div>
-                ))}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  <strong>Important:</strong> This API key will only be displayed once. Please copy it now and store it securely.
+                </p>
+                <DialogFooter>
+                  <Button onClick={() => {
+                    setNewApiKey(null);
+                    setIsCreateModalOpen(false);
+                  }}>
+                    Done
+                  </Button>
+                </DialogFooter>
               </div>
+            ) : (
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>API Key Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="My Application" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          A descriptive name to identify this API key
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="expires"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Expiration</FormLabel>
+                        <FormControl>
+                          <select
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            {...field}
+                          >
+                            <option value="never">Never expires</option>
+                            <option value="30days">30 days</option>
+                            <option value="60days">60 days</option>
+                            <option value="90days">90 days</option>
+                          </select>
+                        </FormControl>
+                        <FormDescription>
+                          When this API key should expire
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <DialogFooter>
+                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                      {form.formState.isSubmitting ? "Creating..." : "Create API Key"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
             )}
-          </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Card>
+        <CardContent className="p-6">
+          {apiKeys.length === 0 ? (
+            <div className="text-center py-8">
+              <Key className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No API Keys</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                You haven't created any API keys yet. Create one to integrate with external services.
+              </p>
+              <Button onClick={() => setIsCreateModalOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Create API Key
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Expires</TableHead>
+                  <TableHead>Last Used</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {apiKeys.map((key) => (
+                  <TableRow key={key.id}>
+                    <TableCell className="font-medium">{key.name}</TableCell>
+                    <TableCell>{format(new Date(key.created_at), 'MMM d, yyyy')}</TableCell>
+                    <TableCell>
+                      {key.expires_at 
+                        ? format(new Date(key.expires_at), 'MMM d, yyyy')
+                        : 'Never'}
+                    </TableCell>
+                    <TableCell>
+                      {key.last_used_at 
+                        ? formatDistanceToNow(new Date(key.last_used_at), { addSuffix: true })
+                        : 'Never'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteClick(key.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. Any applications using this API key will no longer be able to access your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
