@@ -20,7 +20,7 @@ const Settings = () => {
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { profile, fetchProfile } = useSettings();
+  const { profile, fetchProfile, updateProfile } = useSettings();
   const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
@@ -39,7 +39,9 @@ const Settings = () => {
   const handleSave = async () => {
     setIsSaving(true);
     
-    // Simulate saving delay
+    // We're not actually using the synthetic save button anymore
+    // since each settings panel has its own save functionality
+    // This is kept for backwards compatibility
     setTimeout(() => {
       setIsSaving(false);
       toast({
