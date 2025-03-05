@@ -45,3 +45,19 @@ src = "./get-dashboard-metrics/index.ts"
 [[api.endpoints]]
 path = "/get-analytics-data"
 src = "./get-analytics-data/index.ts"
+
+[[api.endpoints]]
+path = "/destinations"
+src = "./destinations/index.ts"
+
+[[api.endpoints]]
+path = "/test-destination-connection"
+src = "./test-destination-connection/index.ts"
+
+[[api.endpoints]]
+path = "/export-to-destination"
+src = "./export-to-destination/index.ts"
+
+[[api.endpoints]]
+path = "/destination-webhook"
+src = "./destination-webhook/index.ts"

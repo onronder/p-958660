@@ -2,7 +2,15 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Calendar, FileType } from "lucide-react";
+import { 
+  Edit, 
+  Trash2, 
+  Calendar, 
+  FileType, 
+  RefreshCw, 
+  ExternalLink,
+  AlertTriangle
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { 
@@ -11,26 +19,46 @@ import {
   TooltipProvider, 
   TooltipTrigger 
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface DestinationProps {
   destination: {
     id: string;
     name: string;
-    type: string;
-    status: string;
-    exportFormat: string;
+    destination_type: string;
+    status: "Active" | "Pending" | "Failed";
+    export_format: string;
     schedule: string;
-    lastExport: string | null;
+    last_export: string | null;
   };
-  onTestConnection: (id: string) => void;
-  onDelete: (id: string) => void;
+  onTestConnection: () => void;
+  onDelete: () => void;
+  onExport: () => void;
+  onRetry: () => void;
+  isExporting?: boolean;
+  isTesting?: boolean;
 }
 
 const DestinationCard: React.FC<DestinationProps> = ({ 
   destination, 
   onTestConnection, 
-  onDelete 
+  onDelete,
+  onExport,
+  onRetry,
+  isExporting = false,
+  isTesting = false
 }) => {
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+
   return (
     <Card className="p-6">
       <div className="space-y-4">
@@ -40,7 +68,7 @@ const DestinationCard: React.FC<DestinationProps> = ({
               <h3 className="text-lg font-semibold">{destination.name}</h3>
               <StatusBadge status={destination.status} />
             </div>
-            <p className="text-sm text-muted-foreground mt-1">{destination.type}</p>
+            <p className="text-sm text-muted-foreground mt-1">{destination.destination_type}</p>
           </div>
         </div>
         
@@ -50,7 +78,7 @@ const DestinationCard: React.FC<DestinationProps> = ({
               <FileType className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Format:</span>
             </div>
-            <span className="font-medium">{destination.exportFormat}</span>
+            <span className="font-medium">{destination.export_format}</span>
           </div>
           
           <div className="flex items-center justify-between text-sm">
@@ -61,48 +89,157 @@ const DestinationCard: React.FC<DestinationProps> = ({
             <span className="font-medium">{destination.schedule}</span>
           </div>
           
-          {destination.lastExport && (
+          {destination.last_export && (
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Last Export:</span>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="font-medium cursor-help">
-                      {formatDistanceToNow(new Date(destination.lastExport), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(destination.last_export), { addSuffix: true })}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{new Date(destination.lastExport).toLocaleString()}</p>
+                    <p>{new Date(destination.last_export).toLocaleString()}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
           )}
         </div>
+        
+        {destination.status === "Failed" && (
+          <div className="pt-2 border-t border-border">
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <span>Export failed. Please retry or check settings.</span>
+            </div>
+          </div>
+        )}
       </div>
       
       <div className="flex justify-between mt-6 pt-4 border-t border-border">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => onTestConnection(destination.id)}
-        >
-          Test Connection
-        </Button>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Edit className="h-4 w-4" />
-          </Button>
+        {destination.status === "Failed" ? (
           <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 text-destructive hover:bg-destructive/10"
-            onClick={() => onDelete(destination.id)}
+            variant="outline" 
+            size="sm" 
+            onClick={onRetry}
+            className="text-destructive border-destructive hover:bg-destructive/10"
+            disabled={isExporting}
           >
-            <Trash2 className="h-4 w-4" />
+            {isExporting ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Retrying...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </>
+            )}
           </Button>
+        ) : (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onTestConnection}
+            disabled={isTesting}
+          >
+            {isTesting ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Testing...
+              </>
+            ) : (
+              "Test Connection"
+            )}
+          </Button>
+        )}
+        
+        <div className="flex gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8"
+                  disabled={isExporting}
+                  onClick={onExport}
+                >
+                  {isExporting ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ExternalLink className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isExporting ? "Exporting..." : "Export Now"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Edit</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
+      
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Destination</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this destination? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                onDelete();
+                setDeleteDialogOpen(false);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
