@@ -1,0 +1,30 @@
+
+project_id = "eovyjotxecnkqjylwdnj"
+
+[serve.get-source-fields]
+port = 54321
+verify_jwt = true
+
+[serve.create-transformation]
+port = 54322
+verify_jwt = true
+
+[serve.update-transformation]
+port = 54323
+verify_jwt = true
+
+[serve.delete-transformation]
+port = 54324
+verify_jwt = true
+
+[serve.apply-transformation]
+port = 54325
+verify_jwt = true
+
+[serve.get-transformations]
+port = 54326
+verify_jwt = true
+
+[serve.export-data]
+port = 54327
+verify_jwt = true

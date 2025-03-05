@@ -3,9 +3,10 @@ import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Transformation } from "@/types/transformation";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useLoadTransformations = (
-  setTransformations: (transformations: Transformation[]) => void,
+  setTransformations: React.Dispatch<React.SetStateAction<Transformation[]>>,
   setIsLoading: (isLoading: boolean) => void
 ) => {
   const { toast } = useToast();
@@ -25,47 +26,13 @@ export const useLoadTransformations = (
         return;
       }
       
-      // In a real implementation, we would fetch from the database
-      // const { data, error } = await supabase
-      //   .from('transformations')
-      //   .select('*')
-      //   .eq('user_id', user.id);
+      const { data, error } = await supabase.functions.invoke("get-transformations", {
+        method: "GET"
+      });
       
-      // if (error) throw error;
-      
-      // For now, we'll use mock data extending the existing sample
-      const mockTransformations: Transformation[] = [
-        {
-          id: "1",
-          name: "Order Transformation",
-          source_id: "shopify-source",
-          source_name: "Orders",
-          status: "Active",
-          last_modified: "2023-11-22",
-          user_id: user.id
-        },
-        {
-          id: "2",
-          name: "Customer Insights",
-          source_id: "customers-source",
-          source_name: "Customers",
-          status: "Inactive",
-          last_modified: "2023-11-20",
-          user_id: user.id
-        },
-        {
-          id: "3",
-          name: "Tax Calculation",
-          source_id: "shopify-source",
-          source_name: "Orders",
-          status: "Active",
-          last_modified: "2023-12-05",
-          expression: "total_price * 1.2",
-          user_id: user.id
-        }
-      ];
-      
-      setTransformations(mockTransformations);
+      if (error) throw error;
+
+      setTransformations(data.transformations || []);
     } catch (error) {
       console.error("Error fetching transformations:", error);
       toast({

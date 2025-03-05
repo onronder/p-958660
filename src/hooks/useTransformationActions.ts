@@ -1,6 +1,7 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { Transformation } from "@/types/transformation";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useTransformationActions = (
   transformations: Transformation[],
@@ -10,28 +11,35 @@ export const useTransformationActions = (
 
   const saveTransformation = async (transformation: Transformation) => {
     try {
-      // In a real implementation, we would save to the database
-      // const { data, error } = await supabase
-      //   .from('transformations')
-      //   .upsert(transformation)
-      //   .select();
+      let result;
       
-      // if (error) throw error;
-      
-      // For now, we'll update the local state
-      const existingIndex = transformations.findIndex(t => t.id === transformation.id);
-      
-      if (existingIndex >= 0) {
+      if (transformation.id) {
         // Update existing transformation
+        const { data, error } = await supabase.functions.invoke("update-transformation", {
+          body: transformation
+        });
+        
+        if (error) throw error;
+        result = data.transformation;
+        
+        // Update in local state
         setTransformations((prev: Transformation[]) => 
-          prev.map(t => t.id === transformation.id ? transformation : t)
+          prev.map(t => t.id === transformation.id ? result : t)
         );
       } else {
-        // Add new transformation
-        setTransformations((prev: Transformation[]) => [...prev, transformation]);
+        // Create new transformation
+        const { data, error } = await supabase.functions.invoke("create-transformation", {
+          body: transformation
+        });
+        
+        if (error) throw error;
+        result = data.transformation;
+        
+        // Add to local state
+        setTransformations((prev: Transformation[]) => [...prev, result]);
       }
       
-      return transformation;
+      return result;
     } catch (error) {
       console.error("Error saving transformation:", error);
       toast({
@@ -45,15 +53,13 @@ export const useTransformationActions = (
 
   const deleteTransformation = async (transformationId: string) => {
     try {
-      // In a real implementation, we would delete from the database
-      // const { error } = await supabase
-      //   .from('transformations')
-      //   .delete()
-      //   .eq('id', transformationId);
+      const { error } = await supabase.functions.invoke("delete-transformation", {
+        body: { id: transformationId }
+      });
       
-      // if (error) throw error;
+      if (error) throw error;
       
-      // For now, we'll update the local state
+      // Update local state
       setTransformations((prev: Transformation[]) => prev.filter(t => t.id !== transformationId));
       
       toast({
@@ -80,15 +86,16 @@ export const useTransformationActions = (
       
       const newStatus = transformation.status === "Active" ? "Inactive" : "Active";
       
-      // In a real implementation, we would update the database
-      // const { error } = await supabase
-      //   .from('transformations')
-      //   .update({ status: newStatus })
-      //   .eq('id', transformationId);
+      const { data, error } = await supabase.functions.invoke("update-transformation", {
+        body: { 
+          id: transformationId,
+          status: newStatus
+        }
+      });
       
-      // if (error) throw error;
+      if (error) throw error;
       
-      // For now, we'll update the local state
+      // Update local state
       setTransformations((prev: Transformation[]) => 
         prev.map(t => t.id === transformationId ? { ...t, status: newStatus } : t)
       );
