@@ -33,6 +33,7 @@ export function useSettings() {
     updateProfile: profileSettings.updateProfile,
     completeOnboarding: profileSettings.completeOnboarding,
     updatePreferences: profileSettings.updatePreferences,
+    updateProfilePicture: profileSettings.updateProfilePicture,
     
     // Security-related state and methods
     securitySettings: securitySettings.securitySettings,
