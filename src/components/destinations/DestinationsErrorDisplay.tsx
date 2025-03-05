@@ -12,10 +12,12 @@ const DestinationsErrorDisplay: React.FC<DestinationsErrorDisplayProps> = ({
   error,
   isUserLoggedIn,
 }) => {
+  // If there's no error and user is logged in, don't render anything
   if (!error && isUserLoggedIn) {
     return null;
   }
 
+  // Display error message if there's an error
   if (error) {
     return (
       <Alert variant="destructive">
@@ -28,6 +30,7 @@ const DestinationsErrorDisplay: React.FC<DestinationsErrorDisplayProps> = ({
     );
   }
 
+  // Display auth required message if user is not logged in
   return (
     <Alert>
       <AlertCircle className="h-4 w-4" />
