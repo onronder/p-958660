@@ -1,30 +1,33 @@
 
 import React from "react";
 import { JobStatus } from "@/types/job";
+import { Badge } from "@/components/ui/badge";
 
 interface JobStatusBadgeProps {
   status: JobStatus;
 }
 
 const JobStatusBadge: React.FC<JobStatusBadgeProps> = ({ status }) => {
-  let classes = "px-2 py-1 rounded-full text-xs font-medium ";
+  let variant = "default";
   
   switch (status) {
     case "Active":
-      classes += "bg-green-100 text-green-800";
+      variant = "success";
       break;
     case "Paused":
-      classes += "bg-yellow-100 text-yellow-800";
+      variant = "warning";
       break;
     case "Completed":
-      classes += "bg-blue-100 text-blue-800";
+      variant = "accent";
       break;
     case "Failed":
-      classes += "bg-red-100 text-red-800";
+      variant = "destructive";
       break;
+    default:
+      variant = "default";
   }
   
-  return <span className={classes}>{status}</span>;
+  return <Badge variant={variant as any} className="animate-fade-in">{status}</Badge>;
 };
 
 export default JobStatusBadge;

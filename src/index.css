@@ -6,24 +6,26 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 20 14.3% 4.1%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 20 14.3% 4.1%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 20 14.3% 4.1%;
-    --primary: 24 9.8% 10%;
-    --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 60 2.7% 97.9%;
-    --secondary-foreground: 24 9.8% 10%;
-    --muted: 60 4.8% 95.9%;
-    --muted-foreground: 25 5.3% 44.7%;
-    --accent: 60 4.8% 95.9%;
-    --accent-foreground: 24 9.8% 10%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 191.4 91.4% 36.4%;
+    --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 20 5.9% 90%;
-    --input: 20 5.9% 90%;
-    --ring: 20 14.3% 4.1%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --success: 152.2 76% 40.4%;
+    --warning: 38.8 92.2% 50.8%;
     --radius: 0.75rem;
   }
 }
@@ -37,17 +39,13 @@
   }
 }
 
+/* FlowTechs Custom Styles */
 .glass-card {
-  @apply bg-white bg-opacity-50 backdrop-blur-lg border border-white border-opacity-20 shadow-lg;
+  @apply bg-white bg-opacity-90 border border-gray-200 shadow-sm rounded-lg transition-all duration-200;
 }
 
 .hover-scale {
-  @apply transition-transform duration-200 hover:scale-105;
-}
-
-/* FlowTechs Custom Styles */
-.glass-card {
-  @apply bg-white bg-opacity-90 border border-gray-200 shadow-sm;
+  @apply transition-transform duration-200 hover:scale-102;
 }
 
 .alert-info {
@@ -55,7 +53,7 @@
 }
 
 .status-badge {
-  @apply px-2 py-1 rounded-full text-xs font-medium;
+  @apply px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200;
 }
 
 .status-active {
@@ -87,7 +85,57 @@
 }
 
 .info-banner {
-  @apply bg-blue-50 rounded-lg p-4 flex items-start space-x-4 mb-4;
+  @apply bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 flex items-start space-x-4 mb-4 animate-fade-in;
+}
+
+/* Section divider for sidebar */
+.sidebar-section-divider {
+  @apply h-px bg-gray-200 dark:bg-gray-700 my-2 mx-4;
+}
+
+/* Pro label for pro features */
+.pro-label {
+  @apply text-xs font-bold text-accent bg-accent/10 rounded px-1.5 py-0.5 ml-2;
+}
+
+/* CTA button styles */
+.cta-button {
+  @apply bg-gradient-to-r from-primary to-accent text-white font-medium py-2 px-4 rounded-lg hover:shadow-md transition-all duration-200 hover:scale-102;
+}
+
+/* Animated transitions */
+.animate-fade-in {
+  @apply transition-opacity duration-300 ease-in-out;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Card shadows and hover effects */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-md;
+}
+
+/* Table styles */
+.table-striped tbody tr:nth-child(odd) {
+  @apply bg-gray-50;
+}
+
+.table-hover tbody tr {
+  @apply hover:bg-blue-50 transition-colors duration-150;
+}
+
+/* Input focus states */
+.input-focus {
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200;
+}
+
+/* Pro section background */
+.pro-section {
+  @apply bg-accent/5 rounded-lg p-2;
 }
 
 /* Dropdown and combobox fixes */
