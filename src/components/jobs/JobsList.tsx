@@ -8,7 +8,7 @@ import { Job } from "@/types/job";
 import { triggerJobExecution, toggleJobStatus, deleteJob } from "@/services/jobSchedulerService";
 import { toast } from "@/hooks/use-toast";
 import JobStatusBadge from "./JobStatusBadge";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 interface JobsListProps {
   jobs: Job[];
@@ -19,6 +19,7 @@ interface JobsListProps {
 }
 
 const JobsList = ({ jobs, isLoading, onJobsUpdated, openCreateDialog, sourcesExist }: JobsListProps) => {
+  const navigate = useNavigate();
   
   const handleToggleJobStatus = async (job: Job) => {
     const updatedJob = await toggleJobStatus(job.id, job.status);

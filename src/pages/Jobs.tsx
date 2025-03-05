@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Job } from "@/types/job";
 import { fetchJobs } from "@/services/jobSchedulerService";
@@ -12,6 +12,7 @@ import CreateJobDialog from "@/components/jobs/CreateJobDialog";
 import JobsList from "@/components/jobs/JobsList";
 
 const Jobs = () => {
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -38,12 +39,28 @@ const Jobs = () => {
       { id: "3", name: "Home Decor" },
     ];
     
+    // For testing the no sources scenario:
+    // const sourcesData = [];
+    
     setSources(sourcesData);
     setSourcesExist(sourcesData.length > 0);
   };
 
   const handleJobCreated = (newJob: Job) => {
     setJobs([newJob, ...jobs]);
+  };
+
+  const handleCreateButtonClick = () => {
+    if (!sourcesExist) {
+      toast({
+        title: "No Data Sources",
+        description: "You need to connect a data source before creating a job.",
+        variant: "destructive",
+      });
+      navigate("/sources");
+      return;
+    }
+    setIsDialogOpen(true);
   };
 
   return (
@@ -62,6 +79,8 @@ const Jobs = () => {
           <CreateJobDialog 
             sources={sources}
             onJobCreated={handleJobCreated}
+            isOpen={isDialogOpen}
+            onOpenChange={setIsDialogOpen}
           />
         ) : (
           <Button asChild>
@@ -79,7 +98,7 @@ const Jobs = () => {
           jobs={jobs}
           isLoading={isLoading}
           onJobsUpdated={loadJobs}
-          openCreateDialog={() => setIsDialogOpen(true)}
+          openCreateDialog={handleCreateButtonClick}
           sourcesExist={sourcesExist}
         />
       </Card>

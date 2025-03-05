@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -28,9 +27,11 @@ import {
 interface CreateJobDialogProps {
   sources: { id: string; name: string }[];
   onJobCreated: (newJob: any) => void;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-const CreateJobDialog = ({ sources, onJobCreated }: CreateJobDialogProps) => {
+const CreateJobDialog = ({ sources, onJobCreated, isOpen, onOpenChange }: CreateJobDialogProps) => {
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreatingJob, setIsCreatingJob] = useState(false);
@@ -39,6 +40,18 @@ const CreateJobDialog = ({ sources, onJobCreated }: CreateJobDialogProps) => {
   const [jobFrequency, setJobFrequency] = useState<JobFrequency>("Daily");
   const [jobSchedule, setJobSchedule] = useState("06:00");
   const [jobSource, setJobSource] = useState("");
+
+  useEffect(() => {
+    if (isOpen !== undefined) {
+      setIsDialogOpen(isOpen);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (onOpenChange && isDialogOpen !== isOpen) {
+      onOpenChange(isDialogOpen);
+    }
+  }, [isDialogOpen, isOpen, onOpenChange]);
 
   useEffect(() => {
     if (sources.length > 0 && !jobSource) {
