@@ -15,6 +15,9 @@ export const useLoadTransformations = (
   useEffect(() => {
     if (user) {
       loadTransformations();
+    } else {
+      // Clear transformations when not logged in
+      setTransformations([]);
     }
   }, [user]);
 
@@ -26,8 +29,23 @@ export const useLoadTransformations = (
         return;
       }
       
+      // Get the session JWT token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to view your transformations.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const { data, error } = await supabase.functions.invoke("get-transformations", {
-        method: "GET"
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
       
       if (error) throw error;

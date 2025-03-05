@@ -126,6 +126,48 @@ export type Database = {
         }
         Relationships: []
       }
+      transformations: {
+        Row: {
+          created_at: string | null
+          expression: string | null
+          id: string
+          last_modified: string | null
+          name: string
+          skip_transformation: boolean | null
+          source_id: string
+          source_name: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expression?: string | null
+          id?: string
+          last_modified?: string | null
+          name: string
+          skip_transformation?: boolean | null
+          source_id: string
+          source_name: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expression?: string | null
+          id?: string
+          last_modified?: string | null
+          name?: string
+          skip_transformation?: boolean | null
+          source_id?: string
+          source_name?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
