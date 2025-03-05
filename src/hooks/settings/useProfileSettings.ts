@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useSettingsBase, Profile } from "./useSettingsBase";
 
 export function useProfileSettings() {
-  const { user, toast, isLoading, setIsLoading, invokeSettingsFunction } = useSettingsBase();
+  const { user, toast, isLoading, setIsLoading, invokeSettingsFunction, uploadProfilePicture } = useSettingsBase();
   const [profile, setProfile] = useState<Profile | null>(null);
 
   // Fetch user profile
@@ -14,6 +14,14 @@ export function useProfileSettings() {
     try {
       const { profile } = await invokeSettingsFunction("get_profile");
       setProfile(profile);
+      
+      // Apply dark mode setting if available
+      if (profile?.dark_mode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      
       return profile;
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -36,6 +44,15 @@ export function useProfileSettings() {
     try {
       const { profile } = await invokeSettingsFunction("update_profile", profileData);
       setProfile(profile);
+      
+      // Apply dark mode setting if it was changed
+      if (profileData.dark_mode !== undefined) {
+        if (profileData.dark_mode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
       
       toast({
         title: "Profile Updated",
@@ -100,6 +117,18 @@ export function useProfileSettings() {
         });
       }
       
+      // Apply dark mode setting if it was changed
+      if (preferences.dark_mode !== undefined) {
+        if (preferences.dark_mode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+        
+        // Store dark mode preference in localStorage
+        localStorage.setItem('theme', preferences.dark_mode ? 'dark' : 'light');
+      }
+      
       toast({
         title: "Preferences Updated",
         description: "Your preferences have been updated successfully.",
@@ -118,6 +147,38 @@ export function useProfileSettings() {
       setIsLoading(false);
     }
   };
+  
+  // Upload profile picture
+  const updateProfilePicture = async (file: File) => {
+    if (!user) return null;
+    
+    try {
+      const pictureUrl = await uploadProfilePicture(file);
+      
+      // Update the profile in state with the new picture URL
+      if (profile && pictureUrl) {
+        setProfile({
+          ...profile,
+          profile_picture_url: pictureUrl
+        });
+      }
+      
+      toast({
+        title: "Profile Picture Updated",
+        description: "Your profile picture has been updated successfully.",
+      });
+      
+      return pictureUrl;
+    } catch (error) {
+      console.error("Error updating profile picture:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile picture",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
 
   return {
     profile,
@@ -125,6 +186,7 @@ export function useProfileSettings() {
     fetchProfile,
     updateProfile,
     completeOnboarding,
-    updatePreferences
+    updatePreferences,
+    updateProfilePicture
   };
 }

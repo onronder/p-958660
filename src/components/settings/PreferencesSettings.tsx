@@ -59,7 +59,25 @@ const PreferencesSettings = () => {
     await updatePreferences(data);
   };
 
-  if (isLoading) {
+  // Handle dark mode toggle directly for immediate feedback
+  const handleDarkModeToggle = async (enabled: boolean) => {
+    form.setValue('dark_mode', enabled);
+    
+    // Apply dark mode immediately for better UX
+    if (enabled) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    // Store preference in localStorage for persistence
+    localStorage.setItem('theme', enabled ? 'dark' : 'light');
+    
+    // Update in backend
+    await updatePreferences({ dark_mode: enabled });
+  };
+
+  if (isLoading && !profile) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-[100px] w-full rounded-md" />
@@ -97,7 +115,7 @@ const PreferencesSettings = () => {
                     <FormControl>
                       <Switch
                         checked={field.value}
-                        onCheckedChange={field.onChange}
+                        onCheckedChange={handleDarkModeToggle}
                       />
                     </FormControl>
                   </FormItem>
@@ -130,7 +148,10 @@ const PreferencesSettings = () => {
                     <FormControl>
                       <Switch
                         checked={field.value}
-                        onCheckedChange={field.onChange}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          updatePreferences({ notifications_enabled: checked });
+                        }}
                       />
                     </FormControl>
                   </FormItem>
@@ -156,7 +177,11 @@ const PreferencesSettings = () => {
                   <FormItem>
                     <FormLabel>Auto Logout</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(parseInt(value, 10))}
+                      onValueChange={(value) => {
+                        const minutes = parseInt(value, 10);
+                        field.onChange(minutes);
+                        updatePreferences({ auto_logout_minutes: minutes });
+                      }}
                       value={field.value.toString()}
                     >
                       <FormControl>
@@ -181,7 +206,10 @@ const PreferencesSettings = () => {
                       max={240}
                       step={15}
                       className="mt-2"
-                      onValueChange={(vals) => field.onChange(vals[0])}
+                      onValueChange={(vals) => {
+                        field.onChange(vals[0]);
+                        updatePreferences({ auto_logout_minutes: vals[0] });
+                      }}
                     />
                     <FormMessage />
                   </FormItem>
@@ -190,7 +218,7 @@ const PreferencesSettings = () => {
             </CardContent>
           </Card>
 
-          <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button type="submit" disabled={form.formState.isSubmitting || isLoading}>
             {form.formState.isSubmitting ? "Saving..." : "Save Preferences"}
           </Button>
         </form>

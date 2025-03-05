@@ -15,6 +15,7 @@ export interface Profile {
   notifications_enabled: boolean;
   auto_logout_minutes: number;
   onboarding_completed: boolean;
+  profile_picture_url?: string | null;
 }
 
 export interface SecuritySettings {
@@ -58,6 +59,7 @@ export function useSettingsBase() {
     
     setIsLoading(true);
     try {
+      console.log(`Invoking settings function: ${action} with data:`, data);
       const response = await supabase.functions.invoke("settings", {
         body: {
           action,
@@ -66,10 +68,50 @@ export function useSettingsBase() {
         }
       });
       
-      if (response.error) throw response.error;
+      if (response.error) {
+        console.error(`Error response from settings function:`, response.error);
+        throw response.error;
+      }
+      
+      console.log(`Successful response from settings function:`, response.data);
       return response.data;
     } catch (error) {
       console.error(`Error invoking ${action}:`, error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Upload profile picture to Supabase Storage
+  const uploadProfilePicture = async (file: File) => {
+    if (!user) return null;
+    
+    setIsLoading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/profile-picture.${fileExt}`;
+      
+      // Upload the file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('profiles')
+        .upload(filePath, file, { upsert: true });
+      
+      if (uploadError) throw uploadError;
+      
+      // Get the public URL
+      const { data: urlData } = supabase.storage
+        .from('profiles')
+        .getPublicUrl(filePath);
+      
+      // Update the profile with the profile picture URL
+      await invokeSettingsFunction("update_profile", {
+        profile_picture_url: urlData.publicUrl
+      });
+      
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error("Error uploading profile picture:", error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -81,6 +123,7 @@ export function useSettingsBase() {
     toast,
     isLoading,
     setIsLoading,
-    invokeSettingsFunction
+    invokeSettingsFunction,
+    uploadProfilePicture
   };
 }

@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
 import FlowTechsSidebar from "@/components/FlowTechsSidebar";
 import Dashboard from "./pages/Dashboard";
 import Sources from "./pages/Sources";
@@ -27,6 +28,16 @@ const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   const { user, isLoading } = useAuth();
+
+  // Initialize theme from localStorage
+  useEffect(() => {
+    const storedTheme = localStorage.getItem("theme");
+    if (storedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
 
   // Show loading state
   if (isLoading) {

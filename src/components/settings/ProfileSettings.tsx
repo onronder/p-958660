@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2, Upload } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/components/ui/use-toast";
 
 const profileFormSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
@@ -50,10 +51,9 @@ const languages = [
 ];
 
 const ProfileSettings = () => {
-  const { profile, updateProfile, isLoading } = useSettings();
+  const { profile, updateProfile, isLoading, updateProfilePicture } = useSettings();
   const { user } = useAuth();
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -82,7 +82,6 @@ const ProfileSettings = () => {
     await updateProfile(data);
   };
 
-  // This function would handle avatar upload using Supabase Storage
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
@@ -90,38 +89,34 @@ const ProfileSettings = () => {
     try {
       setUploadingAvatar(true);
       
-      // Here you would upload the file to Supabase Storage
-      // For now just simulating the upload since we haven't set up storage yet
-      
-      /* Example implementation once storage is set up:
-      const { data, error } = await supabase.storage
-        .from("avatars")
-        .upload(`${user.id}/avatar`, file, {
-          upsert: true,
+      // Check file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Image must be less than 2MB",
+          variant: "destructive"
         });
+        return;
+      }
       
-      if (error) throw error;
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an image file",
+          variant: "destructive"
+        });
+        return;
+      }
       
-      // Get the public URL
-      const { data: urlData } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(`${user.id}/avatar`);
-      
-      setAvatarUrl(urlData.publicUrl);
-      
-      // Update the user's profile with the avatar URL
-      await updateProfile({
-        profile_picture: urlData.publicUrl,
-      });
-      */
-      
-      // Just for demonstration
-      setTimeout(() => {
-        setUploadingAvatar(false);
-      }, 1000);
-      
+      await updateProfilePicture(file);
     } catch (error) {
       console.error("Error uploading avatar:", error);
+      toast({
+        title: "Upload failed",
+        description: "There was a problem uploading your profile picture",
+        variant: "destructive"
+      });
     } finally {
       setUploadingAvatar(false);
     }
@@ -149,7 +144,7 @@ const ProfileSettings = () => {
         <CardContent>
           <div className="flex items-center gap-6">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={avatarUrl || undefined} />
+              <AvatarImage src={profile?.profile_picture_url || undefined} />
               <AvatarFallback className="text-lg">{getUserInitials()}</AvatarFallback>
             </Avatar>
             <div>
