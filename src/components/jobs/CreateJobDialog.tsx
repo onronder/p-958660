@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -234,7 +235,7 @@ const CreateJobDialog = ({ sources, onJobCreated }: CreateJobDialogProps) => {
       toast({
         title: "No Data Sources",
         description: "You need to connect a data source before creating a job.",
-        variant: "warning",
+        variant: "destructive", // Changed from "warning" to "destructive"
       });
       navigate("/sources");
       return;
