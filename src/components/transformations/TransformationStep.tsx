@@ -9,6 +9,7 @@ import { FunctionCategory, TransformationFunction } from "@/types/transformation
 interface DerivedColumn {
   name: string;
   expression: string;
+  description?: string;
 }
 
 interface TransformationStepProps {
@@ -89,7 +90,7 @@ const TransformationStep = ({
                       </SelectContent>
                     </Select>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {functionCategories[selectedFunction].map((func) => (
+                      {functionCategories[selectedFunction]?.map((func) => (
                         <Button
                           key={func.name}
                           variant="outline"

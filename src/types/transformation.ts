@@ -15,6 +15,9 @@ export interface Transformation {
   user_id: string;
   created_at?: string;
   updated_at?: string;
+  // Add the missing fields
+  fields?: TransformationField[];
+  derived_columns?: DerivedColumn[];
 }
 
 export interface TransformationField {
@@ -40,4 +43,5 @@ export interface TransformationFunction {
 export interface DerivedColumn {
   name: string;
   expression: string;
+  description?: string;
 }

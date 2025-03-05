@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Transformation } from "@/types/transformation";
+import { Transformation, TransformationField, DerivedColumn } from "@/types/transformation";
 
 interface UseTransformationModalProps {
   transformation: Transformation | undefined;
@@ -21,8 +21,8 @@ const useTransformationModal = ({
   const [selectedFunction, setSelectedFunction] = useState(null);
   const [name, setName] = useState("");
   const [sourceId, setSourceId] = useState("");
-  const [fields, setFields] = useState([]);
-  const [derivedColumns, setDerivedColumns] = useState([]);
+  const [fields, setFields] = useState<any[]>([]);
+  const [derivedColumns, setDerivedColumns] = useState<DerivedColumn[]>([]);
   const [skipTransformation, setSkipTransformation] = useState(false);
   const [previewData, setPreviewData] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -34,8 +34,15 @@ const useTransformationModal = ({
       setName(transformation.name || "");
       setSourceId(transformation.source_id || "");
       setSkipTransformation(transformation.skip_transformation || false);
-      setFields(transformation.fields || []);
-      setDerivedColumns(transformation.derived_columns || []);
+      
+      // Handle fields and derived columns if they exist in the transformation
+      if (transformation.fields) {
+        setFields(transformation.fields || []);
+      }
+      
+      if (transformation.derived_columns) {
+        setDerivedColumns(transformation.derived_columns || []);
+      }
     }
     
     loadSources();
@@ -86,10 +93,10 @@ const useTransformationModal = ({
       const fieldsWithSelection = data.fields.map(field => ({
         name: field.name,
         type: field.type,
-        selected: transformation 
+        selected: transformation && transformation.fields
           ? transformation.fields.some(f => f.name === field.name)
           : true,
-        alias: transformation?.fields.find(f => f.name === field.name)?.alias || field.name
+        alias: transformation?.fields?.find(f => f.name === field.name)?.alias || field.name
       }));
       
       setFields(fieldsWithSelection);
@@ -157,10 +164,10 @@ const useTransformationModal = ({
   };
 
   // Update derived column
-  const updateDerivedColumn = (index: number, updates: any) => {
+  const updateDerivedColumn = (index: number, field: string, value: string) => {
     setDerivedColumns(
       derivedColumns.map((col, i) => 
-        i === index ? { ...col, ...updates } : col
+        i === index ? { ...col, [field]: value } : col
       )
     );
   };
@@ -170,7 +177,7 @@ const useTransformationModal = ({
     const currentExpression = derivedColumns[index]?.expression || "";
     const newExpression = currentExpression + functionText;
     
-    updateDerivedColumn(index, { expression: newExpression });
+    updateDerivedColumn(index, "expression", newExpression);
   };
 
   // Generate preview data
@@ -242,13 +249,14 @@ const useTransformationModal = ({
       id: transformation?.id,
       name: name.trim(),
       source_id: sourceId,
+      status: transformation?.status || "Active",
+      skip_transformation: skipTransformation,
+      // Cast these fields to any to avoid TypeScript errors until DB schema is updated
       fields: fields.filter(f => f.selected).map(f => ({ 
         name: f.name, 
         alias: f.alias 
-      })),
-      derived_columns: derivedColumns,
-      skip_transformation: skipTransformation,
-      status: transformation?.status || "Active"
+      })) as any,
+      derived_columns: derivedColumns as any
     };
     
     try {

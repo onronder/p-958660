@@ -53,7 +53,22 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
     insertFunctionToExpression,
     generatePreview,
     handleSave
-  } = useTransformationModal(transformation, onSave, onClose);
+  } = useTransformationModal({
+    transformation,
+    onSave,
+    onClose
+  });
+
+  // Create validator function that has access to the current state
+  const validateCurrentState = () => {
+    const validator = validateExpressions();
+    return validator(skipTransformation, fields, derivedColumns);
+  };
+
+  // Function to handle function insertion in the right format
+  const handleInsertFunction = (func, index) => {
+    insertFunctionToExpression(index, func.syntax || func.name + "()");
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -108,9 +123,9 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
                   onUpdateDerivedColumn={updateDerivedColumn}
                   onAddDerivedColumn={addDerivedColumn}
                   onRemoveDerivedColumn={removeDerivedColumn}
-                  onInsertFunction={insertFunctionToExpression}
+                  onInsertFunction={handleInsertFunction}
                   onBack={() => setActiveTab("fields")}
-                  onGeneratePreview={() => generatePreview(validateExpressions)}
+                  onGeneratePreview={() => generatePreview(validateCurrentState)}
                 />
               </TabsContent>
               
@@ -119,9 +134,9 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
                   isLoading={isLoading}
                   showPreview={showPreview}
                   previewData={previewData}
-                  onGeneratePreview={() => generatePreview(validateExpressions)}
+                  onGeneratePreview={() => generatePreview(validateCurrentState)}
                   onBack={() => setActiveTab("transformations")}
-                  onSave={() => handleSave(validateExpressions)}
+                  onSave={() => handleSave(validateCurrentState)}
                   isExistingTransformation={!!transformation}
                 />
               </TabsContent>
@@ -139,7 +154,7 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
             skipTransformation={skipTransformation}
             isEditMode={!!transformation}
             onCancel={onClose}
-            onSave={() => handleSave(validateExpressions)}
+            onSave={() => handleSave(validateCurrentState)}
           />
         </DialogFooter>
       </DialogContent>
