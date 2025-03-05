@@ -235,7 +235,7 @@ const CreateJobDialog = ({ sources, onJobCreated }: CreateJobDialogProps) => {
       toast({
         title: "No Data Sources",
         description: "You need to connect a data source before creating a job.",
-        variant: "destructive", // Changed from "warning" to "destructive"
+        variant: "destructive",
       });
       navigate("/sources");
       return;
