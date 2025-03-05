@@ -19,3 +19,14 @@ export interface Job {
   updated_at: string;
   user_id: string;
 }
+
+export interface JobRun {
+  id: string;
+  job_id: string;
+  status: "Running" | "Success" | "Failed";
+  started_at: string;
+  completed_at?: string;
+  rows_processed?: number;
+  error_message?: string;
+  user_id: string;
+}

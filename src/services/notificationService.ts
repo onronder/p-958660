@@ -13,12 +13,10 @@ export const fetchNotifications = async (days = 7): Promise<Notification[]> => {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
-    const { data, error } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", userData.user.id)
-      .gte("created_at", cutoffDate.toISOString())
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.rpc("get_user_notifications", {
+      p_days: days,
+      p_user_id: userData.user.id
+    });
 
     if (error) throw error;
     return data || [];
@@ -34,11 +32,10 @@ export const markNotificationAsRead = async (id: string): Promise<boolean> => {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
 
-    const { error } = await supabase
-      .from("notifications")
-      .update({ read: true })
-      .eq("id", id)
-      .eq("user_id", userData.user.id);
+    const { error } = await supabase.rpc("mark_notification_read", {
+      p_notification_id: id,
+      p_user_id: userData.user.id
+    });
 
     if (error) throw error;
     return true;
@@ -54,11 +51,9 @@ export const markAllNotificationsAsRead = async (): Promise<boolean> => {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
 
-    const { error } = await supabase
-      .from("notifications")
-      .update({ read: true })
-      .eq("user_id", userData.user.id)
-      .eq("read", false);
+    const { error } = await supabase.rpc("mark_all_notifications_read", {
+      p_user_id: userData.user.id
+    });
 
     if (error) throw error;
     return true;
@@ -84,22 +79,16 @@ export const createNotification = async (
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
 
-    const notificationData = {
-      title,
-      description,
-      severity,
-      category,
-      link: options?.link,
-      related_id: options?.related_id,
-      read: false,
-      user_id: userData.user.id,
-      created_at: new Date().toISOString()
-    };
-
-    const { data, error } = await supabase
-      .from("notifications")
-      .insert(notificationData)
-      .select();
+    const { data, error } = await supabase.rpc("create_notification", {
+      p_title: title,
+      p_description: description,
+      p_severity: severity,
+      p_category: category,
+      p_link: options?.link,
+      p_related_id: options?.related_id,
+      p_read: false,
+      p_user_id: userData.user.id
+    });
 
     if (error) throw error;
 
@@ -112,7 +101,7 @@ export const createNotification = async (
       });
     }
 
-    return data?.[0] || null;
+    return data || null;
   } catch (error) {
     console.error("Error creating notification:", error);
     return null;
@@ -125,15 +114,10 @@ export const deleteOldNotifications = async (days = 7): Promise<boolean> => {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
 
-    // Calculate date X days ago
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-
-    const { error } = await supabase
-      .from("notifications")
-      .delete()
-      .eq("user_id", userData.user.id)
-      .lt("created_at", cutoffDate.toISOString());
+    const { error } = await supabase.rpc("delete_old_notifications", {
+      p_days: days,
+      p_user_id: userData.user.id
+    });
 
     if (error) throw error;
     return true;
@@ -149,11 +133,9 @@ export const countUnreadNotifications = async (): Promise<number> => {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
 
-    const { count, error } = await supabase
-      .from("notifications")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userData.user.id)
-      .eq("read", false);
+    const { count, error } = await supabase.rpc("count_unread_notifications", {
+      p_user_id: userData.user.id
+    });
 
     if (error) throw error;
     return count || 0;

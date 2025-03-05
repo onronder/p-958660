@@ -1,7 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Job } from "@/types/job";
+import { Job, JobFrequency, JobStatus } from "@/types/job";
 import { toast } from "@/hooks/use-toast";
+import { NotificationSeverity, NotificationCategory } from "@/types/notification";
 
 export const createJob = async (job: Omit<Job, "id" | "created_at" | "updated_at" | "user_id">): Promise<Job | null> => {
   try {
@@ -203,18 +204,17 @@ export const triggerJobExecution = async (jobId: string): Promise<boolean> => {
 
     if (jobError || !jobData) throw new Error(jobError?.message || "Job not found");
 
-    // Insert a new entry in the job_runs table
-    const { data: runData, error: runError } = await supabase
-      .from("job_runs")
-      .insert({
-        job_id: jobId,
-        status: "Running",
-        started_at: new Date().toISOString(),
-        user_id: userData.user.id
-      })
-      .select();
+    // Insert a new entry in the job_runs table using RPC call
+    const { data: runData, error: runError } = await supabase.rpc("insert_job_run", {
+      p_job_id: jobId,
+      p_status: "Running",
+      p_user_id: userData.user.id
+    });
 
     if (runError) throw runError;
+    
+    const runId = runData?.id;
+    if (!runId) throw new Error("Failed to create job run");
 
     // Call appropriate function based on job configuration
     try {
@@ -240,15 +240,11 @@ export const triggerJobExecution = async (jobId: string): Promise<boolean> => {
         }
       }
       
-      // Update job run status to Success
-      await supabase
-        .from("job_runs")
-        .update({
-          status: "Success",
-          completed_at: new Date().toISOString(),
-          rows_processed: Math.floor(Math.random() * 10000) // Mock data for demo purposes
-        })
-        .eq("id", runData[0].id);
+      // Update job run status to Success using RPC call
+      await supabase.rpc("update_job_run_success", {
+        p_run_id: runId,
+        p_rows_processed: Math.floor(Math.random() * 10000) // Mock data for demo purposes
+      });
       
       // Update job last_run and next_run
       const nextRun = calculateNextRun(jobData.frequency, jobData.schedule);
@@ -269,15 +265,11 @@ export const triggerJobExecution = async (jobId: string): Promise<boolean> => {
       
       return true;
     } catch (error) {
-      // Update job run status to Failed
-      await supabase
-        .from("job_runs")
-        .update({
-          status: "Failed",
-          completed_at: new Date().toISOString(),
-          error_message: error instanceof Error ? error.message : "Unknown error"
-        })
-        .eq("id", runData[0].id);
+      // Update job run status to Failed using RPC call
+      await supabase.rpc("update_job_run_failed", {
+        p_run_id: runId,
+        p_error_message: error instanceof Error ? error.message : "Unknown error"
+      });
       
       // Create failure notification
       await createNotification({
@@ -315,11 +307,15 @@ export const createNotification = async (notification: {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
 
-    const { error } = await supabase.from("notifications").insert({
-      ...notification,
-      read: notification.read || false,
-      user_id: userData.user.id,
-      created_at: new Date().toISOString()
+    const { error } = await supabase.rpc("create_notification", {
+      p_title: notification.title,
+      p_description: notification.description,
+      p_severity: notification.severity,
+      p_category: notification.category,
+      p_read: notification.read || false,
+      p_link: notification.link,
+      p_related_id: notification.related_id,
+      p_user_id: userData.user.id
     });
 
     if (error) throw error;
