@@ -4,7 +4,7 @@ import { Transformation } from "@/types/transformation";
 
 export const useTransformationActions = (
   transformations: Transformation[],
-  setTransformations: (transformations: Transformation[]) => void
+  setTransformations: React.Dispatch<React.SetStateAction<Transformation[]>>
 ) => {
   const { toast } = useToast();
 
@@ -23,12 +23,12 @@ export const useTransformationActions = (
       
       if (existingIndex >= 0) {
         // Update existing transformation
-        setTransformations(prev => 
+        setTransformations((prev: Transformation[]) => 
           prev.map(t => t.id === transformation.id ? transformation : t)
         );
       } else {
         // Add new transformation
-        setTransformations(prev => [...prev, transformation]);
+        setTransformations((prev: Transformation[]) => [...prev, transformation]);
       }
       
       return transformation;
@@ -54,7 +54,7 @@ export const useTransformationActions = (
       // if (error) throw error;
       
       // For now, we'll update the local state
-      setTransformations(prev => prev.filter(t => t.id !== transformationId));
+      setTransformations((prev: Transformation[]) => prev.filter(t => t.id !== transformationId));
       
       toast({
         title: "Transformation Deleted",
@@ -89,7 +89,7 @@ export const useTransformationActions = (
       // if (error) throw error;
       
       // For now, we'll update the local state
-      setTransformations(prev => 
+      setTransformations((prev: Transformation[]) => 
         prev.map(t => t.id === transformationId ? { ...t, status: newStatus } : t)
       );
       
