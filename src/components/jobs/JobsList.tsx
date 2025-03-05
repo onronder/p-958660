@@ -1,21 +1,24 @@
+
 import { useState } from "react";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, Play, Pause, Trash } from "lucide-react";
+import { Calendar, Clock, Play, Pause, Trash, FileText } from "lucide-react";
 import { Job } from "@/types/job";
 import { triggerJobExecution, toggleJobStatus, deleteJob } from "@/services/jobSchedulerService";
 import { toast } from "@/hooks/use-toast";
 import JobStatusBadge from "./JobStatusBadge";
+import { Link } from "react-router-dom";
 
 interface JobsListProps {
   jobs: Job[];
   isLoading: boolean;
   onJobsUpdated: () => void;
   openCreateDialog: () => void;
+  sourcesExist: boolean;
 }
 
-const JobsList = ({ jobs, isLoading, onJobsUpdated, openCreateDialog }: JobsListProps) => {
+const JobsList = ({ jobs, isLoading, onJobsUpdated, openCreateDialog, sourcesExist }: JobsListProps) => {
   
   const handleToggleJobStatus = async (job: Job) => {
     const updatedJob = await toggleJobStatus(job.id, job.status);
@@ -70,6 +73,23 @@ const JobsList = ({ jobs, isLoading, onJobsUpdated, openCreateDialog }: JobsList
   }
 
   if (jobs.length === 0) {
+    if (!sourcesExist) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <FileText className="h-16 w-16 text-muted-foreground opacity-20 mb-4" />
+          <h3 className="text-lg font-medium mb-2">No Data Sources Available</h3>
+          <p className="text-muted-foreground max-w-md mb-6">
+            You need to connect a data source before you can create automated jobs.
+          </p>
+          <Button asChild>
+            <Link to="/sources">
+              Go to My Sources
+            </Link>
+          </Button>
+        </div>
+      );
+    }
+    
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <Calendar className="h-16 w-16 text-muted-foreground opacity-20 mb-4" />

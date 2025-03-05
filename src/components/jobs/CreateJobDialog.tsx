@@ -1,5 +1,5 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
+import { Plus, AlertCircle } from "lucide-react";
 import { JobFrequency } from "@/types/job";
 import { toast } from "@/hooks/use-toast";
 import { createJob, calculateNextRun } from "@/services/jobSchedulerService";
@@ -30,6 +30,7 @@ interface CreateJobDialogProps {
 }
 
 const CreateJobDialog = ({ sources, onJobCreated }: CreateJobDialogProps) => {
+  const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreatingJob, setIsCreatingJob] = useState(false);
   const [jobName, setJobName] = useState("");
@@ -38,12 +39,18 @@ const CreateJobDialog = ({ sources, onJobCreated }: CreateJobDialogProps) => {
   const [jobSchedule, setJobSchedule] = useState("06:00");
   const [jobSource, setJobSource] = useState("");
 
+  useEffect(() => {
+    if (sources.length > 0 && !jobSource) {
+      setJobSource(sources[0].id);
+    }
+  }, [sources]);
+
   const resetForm = () => {
     setJobName("");
     setJobDescription("");
     setJobFrequency("Daily");
     setJobSchedule("06:00");
-    setJobSource("");
+    setJobSource(sources.length > 0 ? sources[0].id : "");
   };
 
   const handleCreateJob = async () => {
@@ -222,10 +229,23 @@ const CreateJobDialog = ({ sources, onJobCreated }: CreateJobDialogProps) => {
     }
   };
 
+  const handleDialogOpen = () => {
+    if (sources.length === 0) {
+      toast({
+        title: "No Data Sources",
+        description: "You need to connect a data source before creating a job.",
+        variant: "warning",
+      });
+      navigate("/sources");
+      return;
+    }
+    setIsDialogOpen(true);
+  };
+
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={handleDialogOpen}>
           <Plus className="h-4 w-4" />
           Create New Job
         </Button>
@@ -237,84 +257,100 @@ const CreateJobDialog = ({ sources, onJobCreated }: CreateJobDialogProps) => {
             Set up an automated job to extract and transform your data on a schedule.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Name
-            </Label>
-            <Input
-              id="name"
-              value={jobName}
-              onChange={(e) => setJobName(e.target.value)}
-              placeholder="Daily Order Sync"
-              className="col-span-3"
-            />
+        
+        {sources.length === 0 ? (
+          <div className="py-6 text-center">
+            <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">No Data Sources Available</h3>
+            <p className="text-muted-foreground mb-6">
+              You need to connect a data source before you can create automated jobs.
+            </p>
+            <Button onClick={() => navigate("/sources")}>
+              Go to My Sources
+            </Button>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">
-              Description
-            </Label>
-            <Input
-              id="description"
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-              placeholder="Sync orders daily"
-              className="col-span-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="source" className="text-right">
-              Source
-            </Label>
-            <Select value={jobSource} onValueChange={setJobSource}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select a source" />
-              </SelectTrigger>
-              <SelectContent>
-                {sources.map((source) => (
-                  <SelectItem key={source.id} value={source.id}>
-                    {source.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="frequency" className="text-right">
-              Frequency
-            </Label>
-            <Select value={jobFrequency} onValueChange={(value) => setJobFrequency(value as JobFrequency)}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select frequency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Once">Once</SelectItem>
-                <SelectItem value="Hourly">Hourly</SelectItem>
-                <SelectItem value="Daily">Daily</SelectItem>
-                <SelectItem value="Weekly">Weekly</SelectItem>
-                <SelectItem value="Monthly">Monthly</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {renderScheduleInputs()}
-        </div>
-        <DialogFooter>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => setIsDialogOpen(false)}
-          >
-            Cancel
-          </Button>
-          <Button 
-            type="button" 
-            onClick={handleCreateJob} 
-            disabled={isCreatingJob}
-          >
-            {isCreatingJob ? "Creating..." : "Create Job"}
-          </Button>
-        </DialogFooter>
+        ) : (
+          <>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  value={jobName}
+                  onChange={(e) => setJobName(e.target.value)}
+                  placeholder="Daily Order Sync"
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
+                <Input
+                  id="description"
+                  value={jobDescription}
+                  onChange={(e) => setJobDescription(e.target.value)}
+                  placeholder="Sync orders daily"
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="source" className="text-right">
+                  Source
+                </Label>
+                <Select value={jobSource} onValueChange={setJobSource}>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select a source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sources.map((source) => (
+                      <SelectItem key={source.id} value={source.id}>
+                        {source.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="frequency" className="text-right">
+                  Frequency
+                </Label>
+                <Select value={jobFrequency} onValueChange={(value) => setJobFrequency(value as JobFrequency)}>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Once">Once</SelectItem>
+                    <SelectItem value="Hourly">Hourly</SelectItem>
+                    <SelectItem value="Daily">Daily</SelectItem>
+                    <SelectItem value="Weekly">Weekly</SelectItem>
+                    <SelectItem value="Monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {renderScheduleInputs()}
+            </div>
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                onClick={handleCreateJob} 
+                disabled={isCreatingJob}
+              >
+                {isCreatingJob ? "Creating..." : "Create Job"}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, FileText } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Job } from "@/types/job";
 import { fetchJobs } from "@/services/jobSchedulerService";
@@ -15,6 +16,7 @@ const Jobs = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [sources, setSources] = useState<{id: string, name: string}[]>([]);
+  const [sourcesExist, setSourcesExist] = useState(false);
 
   useEffect(() => {
     loadJobs();
@@ -29,11 +31,15 @@ const Jobs = () => {
   };
 
   const loadSources = async () => {
-    setSources([
+    // In a real implementation, this would fetch from an API
+    const sourcesData = [
       { id: "1", name: "Fashion Boutique" },
       { id: "2", name: "Tech Gadgets" },
       { id: "3", name: "Home Decor" },
-    ]);
+    ];
+    
+    setSources(sourcesData);
+    setSourcesExist(sourcesData.length > 0);
   };
 
   const handleJobCreated = (newJob: Job) => {
@@ -52,10 +58,19 @@ const Jobs = () => {
 
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-primary">Jobs</h1>
-        <CreateJobDialog 
-          sources={sources}
-          onJobCreated={handleJobCreated}
-        />
+        {sourcesExist ? (
+          <CreateJobDialog 
+            sources={sources}
+            onJobCreated={handleJobCreated}
+          />
+        ) : (
+          <Button asChild>
+            <Link to="/sources" className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Connect a Data Source
+            </Link>
+          </Button>
+        )}
       </div>
 
       <Card className="p-6">
@@ -65,6 +80,7 @@ const Jobs = () => {
           isLoading={isLoading}
           onJobsUpdated={loadJobs}
           openCreateDialog={() => setIsDialogOpen(true)}
+          sourcesExist={sourcesExist}
         />
       </Card>
     </div>
