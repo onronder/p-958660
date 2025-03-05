@@ -50,6 +50,8 @@ serve(async (req) => {
       );
     }
 
+    console.log("Fetching dashboard data for user:", user.id);
+
     // Fetch metrics from the dashboard_metrics table
     const { data: metricsData, error: metricsError } = await supabaseClient
       .from("dashboard_metrics")

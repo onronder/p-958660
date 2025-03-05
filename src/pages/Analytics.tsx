@@ -14,8 +14,13 @@ const Analytics = () => {
     uploadSuccessData, 
     dataSizeData, 
     isLoading, 
-    isError 
+    isError,
+    refetch 
   } = useAnalyticsData();
+
+  const handleRefresh = () => {
+    refetch();
+  };
 
   if (isLoading) {
     return (
@@ -85,7 +90,12 @@ const Analytics = () => {
 
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-primary">Analytics</h1>
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center gap-2"
+          onClick={handleRefresh}
+        >
           <RefreshCw className="h-4 w-4" />
           Refresh
         </Button>

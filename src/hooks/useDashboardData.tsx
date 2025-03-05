@@ -62,7 +62,7 @@ export const useDashboardData = () => {
     queryKey: ["dashboardData", user?.id],
     queryFn: fetchDashboardData,
     enabled: !!user,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    // Removed the refetchInterval for on-demand updates only
   });
 
   // Show error toast if there's an error

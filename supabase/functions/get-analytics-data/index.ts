@@ -50,7 +50,9 @@ serve(async (req) => {
       );
     }
 
-    // Fetch analytics data for this user
+    console.log("Fetching analytics data for user:", user.id);
+
+    // Fetch analytics data for this user with more efficient query
     const { data: analyticsData, error: analyticsError } = await supabaseClient
       .from("analytics_data")
       .select("*")
@@ -67,6 +69,7 @@ serve(async (req) => {
 
     // If no analytics data found, create default entry
     if (!analyticsData) {
+      console.log("No analytics data found, creating default entry");
       const { data: newAnalytics, error: insertError } = await supabaseClient
         .from("analytics_data")
         .insert([

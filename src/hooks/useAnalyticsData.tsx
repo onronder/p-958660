@@ -63,12 +63,13 @@ export const useAnalyticsData = () => {
   const { 
     data, 
     isLoading,
-    error
+    error,
+    refetch
   } = useQuery({
     queryKey: ["analyticsData", user?.id],
     queryFn: fetchAnalyticsData,
     enabled: !!user,
-    refetchInterval: 60000, // Refresh every minute
+    // Removed the refetchInterval for on-demand updates only
   });
 
   // Show error toast if there's an error
@@ -103,6 +104,7 @@ export const useAnalyticsData = () => {
     uploadSuccessData: data?.upload_success_rate || [],
     dataSizeData: data?.data_size || [],
     isLoading,
-    isError: !!error
+    isError: !!error,
+    refetch
   };
 };
