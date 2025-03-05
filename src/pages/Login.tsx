@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface LoginProps {
   onLogin: () => void;
@@ -18,6 +19,7 @@ const Login = ({ onLogin }: LoginProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,9 +29,23 @@ const Login = ({ onLogin }: LoginProps) => {
       const { error } = await signIn(email, password);
       
       if (!error) {
+        console.log("Login successful, calling onLogin callback");
         onLogin();
         navigate("/");
+      } else {
+        toast({
+          title: "Login failed",
+          description: error.message || "Please check your credentials and try again",
+          variant: "destructive",
+        });
       }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login error",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
