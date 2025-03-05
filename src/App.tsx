@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -43,6 +44,11 @@ function App() {
     }
   }, []);
 
+  const handleLogin = () => {
+    // Handle any post-login logic here
+    console.log("User logged in successfully");
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -56,7 +62,7 @@ function App() {
               <Route path="blog" element={<Blog />} />
               <Route path="blog/:id" element={<BlogPost />} />
 
-              <Route path="login" element={<PublicRoute><Login /></PublicRoute>} />
+              <Route path="login" element={<PublicRoute><Login onLogin={handleLogin} /></PublicRoute>} />
               <Route path="signup" element={<PublicRoute><SignUp /></PublicRoute>} />
               <Route path="forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
               <Route path="reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
