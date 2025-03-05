@@ -1,77 +1,133 @@
+
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { Bell, Moon, Globe, Lock, Shield } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
+import ProfileSettings from "@/components/settings/ProfileSettings";
+import SecuritySettings from "@/components/settings/SecuritySettings";
+import ApiKeysSettings from "@/components/settings/ApiKeysSettings";
+import BillingSettings from "@/components/settings/BillingSettings";
+import PreferencesSettings from "@/components/settings/PreferencesSettings";
+import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import InfoBanner from "@/components/InfoBanner";
 
 const Settings = () => {
+  const [activeTab, setActiveTab] = useState("profile");
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    
+    // Simulate saving delay
+    setTimeout(() => {
+      setIsSaving(false);
+      toast({
+        title: "Settings saved",
+        description: "Your changes have been saved successfully.",
+      });
+    }, 1000);
+  };
+
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-4xl font-bold text-primary">Settings</h1>
-        <p className="text-secondary-foreground">Customize your account preferences</p>
-      </header>
+      <InfoBanner 
+        message={
+          <span>
+            <span className="font-bold">⚙️ Settings</span> - Customize your account, manage security, and configure app preferences to personalize your FlowTechs experience.
+          </span>
+        } 
+      />
 
-      <Card className="glass-card p-6">
-        <h3 className="text-lg font-semibold mb-6">Preferences</h3>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Bell className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Notifications</p>
-                <p className="text-sm text-muted-foreground">Receive app notifications</p>
-              </div>
-            </div>
-            <Switch />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Moon className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Dark Mode</p>
-                <p className="text-sm text-muted-foreground">Toggle dark mode theme</p>
-              </div>
-            </div>
-            <Switch />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Globe className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Language</p>
-                <p className="text-sm text-muted-foreground">English (US)</p>
-              </div>
-            </div>
-          </div>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-primary">Settings</h1>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              // Reset form state
+              window.location.reload();
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
+          </Button>
         </div>
-      </Card>
+      </div>
 
-      <Card className="glass-card p-6">
-        <h3 className="text-lg font-semibold mb-6">Security</h3>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Lock className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Two-Factor Authentication</p>
-                <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
-              </div>
-            </div>
-            <Switch />
-          </div>
+      <Card className="p-6">
+        <Tabs 
+          defaultValue="profile" 
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full"
+        >
+          <TabsList className="mb-6 bg-muted w-full justify-start overflow-x-auto border-b border-border rounded-none h-auto p-0">
+            <TabsTrigger 
+              value="profile"
+              className="py-3 px-4 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none"
+            >
+              Profile & Account
+            </TabsTrigger>
+            <TabsTrigger 
+              value="security"
+              className="py-3 px-4 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none"
+            >
+              Security
+            </TabsTrigger>
+            <TabsTrigger 
+              value="api-keys"
+              className="py-3 px-4 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none"
+            >
+              API Keys & Webhooks
+            </TabsTrigger>
+            <TabsTrigger 
+              value="billing"
+              className="py-3 px-4 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none"
+            >
+              Billing & Subscription
+            </TabsTrigger>
+            <TabsTrigger 
+              value="preferences"
+              className="py-3 px-4 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none"
+            >
+              Preferences
+            </TabsTrigger>
+          </TabsList>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Shield className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Password Protection</p>
-                <p className="text-sm text-muted-foreground">Require password for sensitive actions</p>
-              </div>
-            </div>
-            <Switch />
-          </div>
-        </div>
+          <TabsContent value="profile" className="mt-6">
+            <ProfileSettings />
+          </TabsContent>
+
+          <TabsContent value="security" className="mt-6">
+            <SecuritySettings />
+          </TabsContent>
+
+          <TabsContent value="api-keys" className="mt-6">
+            <ApiKeysSettings />
+          </TabsContent>
+
+          <TabsContent value="billing" className="mt-6">
+            <BillingSettings />
+          </TabsContent>
+
+          <TabsContent value="preferences" className="mt-6">
+            <PreferencesSettings />
+          </TabsContent>
+        </Tabs>
       </Card>
     </div>
   );

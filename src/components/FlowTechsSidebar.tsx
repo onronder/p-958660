@@ -9,6 +9,7 @@ import {
   HardDrive,
   Zap,
   LogOut,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
@@ -22,6 +23,7 @@ const menuItems = [
   { icon: PieChart, label: "Analytics", path: "/analytics" },
   { icon: HardDrive, label: "Data Storage", path: "/storage" },
   { icon: Zap, label: "AI Insights", path: "/insights" },
+  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 const FlowTechsSidebar = () => {
