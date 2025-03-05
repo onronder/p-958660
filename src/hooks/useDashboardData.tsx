@@ -1,24 +1,9 @@
 
-import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
-
-export type DashboardMetric = {
-  id: string;
-  metric_name: string;
-  metric_value: number;
-  last_updated: string;
-};
-
-export type JobSummary = {
-  id: string;
-  total_jobs: number;
-  successful_jobs: number;
-  failed_jobs: number;
-  last_updated: string;
-};
+import { Job } from "@/components/RecentJobsTable";
 
 export type DashboardData = {
   metrics: {
@@ -33,142 +18,81 @@ export type DashboardData = {
     failedJobs: number;
     lastUpdated: string | null;
   };
-};
-
-const fetchDashboardMetrics = async () => {
-  const { data, error } = await supabase
-    .from("dashboard_metrics")
-    .select("*");
-
-  if (error) {
-    throw new Error(`Error fetching metrics: ${error.message}`);
-  }
-
-  return data as DashboardMetric[];
-};
-
-const fetchJobSummary = async () => {
-  const { data, error } = await supabase
-    .from("job_summary")
-    .select("*")
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`Error fetching job summary: ${error.message}`);
-  }
-
-  return data as JobSummary;
+  recentJobs: Job[];
 };
 
 export const useDashboardData = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
-    metrics: {
-      totalDataProcessed: 0,
-      totalApiCalls: 0,
-      activeConnections: 0,
-      lastUpdated: null,
-    },
-    jobSummary: {
-      totalJobs: 0,
-      successfulJobs: 0,
-      failedJobs: 0,
-      lastUpdated: null,
-    },
-  });
+
+  const fetchDashboardData = async (): Promise<DashboardData> => {
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+
+    // Get the session token for authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      throw new Error("No active session found");
+    }
+
+    // Call the edge function with auth token
+    const { data, error } = await supabase.functions.invoke("get-dashboard-metrics", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
+    });
+
+    if (error) {
+      console.error("Error fetching dashboard data:", error);
+      throw new Error("Failed to fetch dashboard data");
+    }
+
+    return data as DashboardData;
+  };
 
   const { 
-    data: metricsData, 
-    isLoading: isLoadingMetrics,
-    error: metricsError
+    data, 
+    isLoading,
+    error,
+    refetch
   } = useQuery({
-    queryKey: ["dashboardMetrics", user?.id],
-    queryFn: fetchDashboardMetrics,
+    queryKey: ["dashboardData", user?.id],
+    queryFn: fetchDashboardData,
     enabled: !!user,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  const {
-    data: jobData,
-    isLoading: isLoadingJobs,
-    error: jobError
-  } = useQuery({
-    queryKey: ["jobSummary", user?.id],
-    queryFn: fetchJobSummary,
-    enabled: !!user,
-  });
+  // Show error toast if there's an error
+  if (error) {
+    console.error("Dashboard data error:", error);
+    toast({
+      title: "Error",
+      description: "Failed to load dashboard data. Please try again.",
+      variant: "destructive",
+    });
+  }
 
-  useEffect(() => {
-    if (metricsError) {
-      console.error("Error fetching metrics:", metricsError);
-      toast({
-        title: "Error",
-        description: "Failed to load dashboard metrics",
-        variant: "destructive",
-      });
-    }
-
-    if (jobError) {
-      console.error("Error fetching job summary:", jobError);
-      toast({
-        title: "Error",
-        description: "Failed to load job summary",
-        variant: "destructive",
-      });
-    }
-  }, [metricsError, jobError, toast]);
-
-  useEffect(() => {
-    if (metricsData) {
-      // Process metrics data
-      const processedMetrics = {
+  return {
+    dashboardData: data || {
+      metrics: {
         totalDataProcessed: 0,
         totalApiCalls: 0,
         activeConnections: 0,
-        lastUpdated: null as string | null,
-      };
-
-      metricsData.forEach((metric) => {
-        switch (metric.metric_name) {
-          case "total_data_processed":
-            processedMetrics.totalDataProcessed = metric.metric_value;
-            processedMetrics.lastUpdated = metric.last_updated;
-            break;
-          case "total_api_calls":
-            processedMetrics.totalApiCalls = metric.metric_value;
-            break;
-          case "active_connections":
-            processedMetrics.activeConnections = metric.metric_value;
-            break;
-        }
-      });
-
-      setDashboardData((prev) => ({
-        ...prev,
-        metrics: processedMetrics,
-      }));
-    }
-  }, [metricsData]);
-
-  useEffect(() => {
-    if (jobData) {
-      // Process job summary data
-      setDashboardData((prev) => ({
-        ...prev,
-        jobSummary: {
-          totalJobs: jobData.total_jobs,
-          successfulJobs: jobData.successful_jobs,
-          failedJobs: jobData.failed_jobs,
-          lastUpdated: jobData.last_updated,
-        },
-      }));
-    }
-  }, [jobData]);
-
-  return {
-    dashboardData,
-    isLoading: isLoadingMetrics || isLoadingJobs,
-    isError: !!metricsError || !!jobError,
+        lastUpdated: null,
+      },
+      jobSummary: {
+        totalJobs: 0,
+        successfulJobs: 0,
+        failedJobs: 0,
+        lastUpdated: null,
+      },
+      recentJobs: [],
+    },
+    isLoading,
+    isError: !!error,
+    refetch
   };
 };

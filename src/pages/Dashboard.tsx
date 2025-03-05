@@ -1,76 +1,28 @@
 
-import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { PieChart, Clock, Database, Upload } from "lucide-react";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import DashboardMetricCard from "@/components/DashboardMetricCard";
-import RecentJobsTable, { Job } from "@/components/RecentJobsTable";
+import RecentJobsTable from "@/components/RecentJobsTable";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { dashboardData, isLoading, isError } = useDashboardData();
-  const [recentJobs, setRecentJobs] = useState<Job[]>([]);
+  const { dashboardData, isLoading, isError, refetch } = useDashboardData();
 
-  // Sample job data - in a real application, this would come from the API
-  useEffect(() => {
-    // Mock data for recent jobs
-    const mockJobs: Job[] = [
-      {
-        source: "Orders",
-        startDate: "2023-11-22",
-        duration: "00:15:30",
-        rowsProcessed: 10345,
-        status: "Success",
-      },
-      {
-        source: "Products",
-        startDate: "2023-11-22",
-        duration: "00:10:15",
-        rowsProcessed: 3345,
-        status: "Success",
-      },
-      {
-        source: "Customers",
-        startDate: "2023-11-21",
-        duration: "00:12:45",
-        rowsProcessed: 1234,
-        status: "Failed",
-      },
-    ];
-    setRecentJobs(mockJobs);
-  }, []);
+  // Format the timestamp into a more readable format
+  const formatLastUpdated = (timestamp: string | null) => {
+    if (!timestamp) return "Not available";
+    
+    const date = new Date(timestamp);
+    return date.toLocaleString();
+  };
 
-  const statsData = [
-    {
-      title: "Service Uptime",
-      value: "99.8%",
-      description: "Last 24 hours",
-      icon: PieChart,
-      iconColor: "text-green-500",
-    },
-    {
-      title: "New Data Rows",
-      value: dashboardData.metrics.totalDataProcessed.toFixed(1) + "GB",
-      description: "Data processed",
-      icon: Database,
-      iconColor: "text-blue-500",
-    },
-    {
-      title: "API Calls",
-      value: dashboardData.metrics.totalApiCalls.toLocaleString(),
-      description: "Last 30 days",
-      icon: Clock,
-      iconColor: "text-yellow-500",
-    },
-    {
-      title: "Active Connections",
-      value: dashboardData.metrics.activeConnections,
-      description: "Current connections",
-      icon: Upload,
-      iconColor: "text-purple-500",
-    },
-  ];
+  const handleRefresh = () => {
+    refetch();
+  };
 
   if (isLoading) {
     return (
@@ -111,6 +63,37 @@ const Dashboard = () => {
     );
   }
 
+  const statsData = [
+    {
+      title: "Service Uptime",
+      value: "99.8%",
+      description: "Last 24 hours",
+      icon: PieChart,
+      iconColor: "text-green-500",
+    },
+    {
+      title: "Data Processed",
+      value: `${dashboardData.metrics.totalDataProcessed.toFixed(1)} GB`,
+      description: "Total processed",
+      icon: Database,
+      iconColor: "text-blue-500",
+    },
+    {
+      title: "API Calls",
+      value: dashboardData.metrics.totalApiCalls.toLocaleString(),
+      description: "Total calls",
+      icon: Clock,
+      iconColor: "text-yellow-500",
+    },
+    {
+      title: "Active Connections",
+      value: dashboardData.metrics.activeConnections,
+      description: "Current connections",
+      icon: Upload,
+      iconColor: "text-purple-500",
+    },
+  ];
+
   return (
     <div className="space-y-8">
       <div className="bg-blue-50 rounded-lg p-4 flex items-start space-x-4 mb-4">
@@ -138,7 +121,18 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center gap-2"
+          onClick={handleRefresh}
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statsData.map((stat, index) => (
@@ -161,9 +155,21 @@ const Dashboard = () => {
               {dashboardData.jobSummary.totalJobs} Total Jobs • {dashboardData.jobSummary.successfulJobs} Successful • {dashboardData.jobSummary.failedJobs} Failed
             </div>
           </div>
-          <RecentJobsTable jobs={recentJobs} />
+          {dashboardData.recentJobs && dashboardData.recentJobs.length > 0 ? (
+            <RecentJobsTable jobs={dashboardData.recentJobs} />
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              No jobs have been run yet. Jobs will appear here when you start processing data.
+            </div>
+          )}
         </div>
       </Card>
+
+      {dashboardData.metrics.lastUpdated && (
+        <div className="text-xs text-right text-gray-500">
+          Last updated: {formatLastUpdated(dashboardData.metrics.lastUpdated)}
+        </div>
+      )}
     </div>
   );
 };

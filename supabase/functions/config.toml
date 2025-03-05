@@ -1,30 +1,47 @@
 
 project_id = "eovyjotxecnkqjylwdnj"
 
-[serve.get-source-fields]
+[api]
+enabled = true
 port = 54321
-verify_jwt = true
+schemas = ["public", "storage"]
 
-[serve.create-transformation]
-port = 54322
-verify_jwt = true
+[[api.endpoints]]
+path = "/apply-transformation"
+src = "./apply-transformation/index.ts"
 
-[serve.update-transformation]
-port = 54323
-verify_jwt = true
+[[api.endpoints]]
+path = "/create-transformation"
+src = "./create-transformation/index.ts"
 
-[serve.delete-transformation]
-port = 54324
-verify_jwt = true
+[[api.endpoints]]
+path = "/delete-transformation"
+src = "./delete-transformation/index.ts"
 
-[serve.apply-transformation]
-port = 54325
-verify_jwt = true
+[[api.endpoints]]
+path = "/export-data"
+src = "./export-data/index.ts"
 
-[serve.get-transformations]
-port = 54326
-verify_jwt = true
+[[api.endpoints]]
+path = "/get-source-fields"
+src = "./get-source-fields/index.ts"
 
-[serve.export-data]
-port = 54327
-verify_jwt = true
+[[api.endpoints]]
+path = "/get-transformations"
+src = "./get-transformations/index.ts"
+
+[[api.endpoints]]
+path = "/shopify-oauth"
+src = "./shopify-oauth/index.ts"
+
+[[api.endpoints]]
+path = "/update-transformation"
+src = "./update-transformation/index.ts"
+
+[[api.endpoints]]
+path = "/get-dashboard-metrics"
+src = "./get-dashboard-metrics/index.ts"
+
+[[api.endpoints]]
+path = "/get-analytics-data"
+src = "./get-analytics-data/index.ts"

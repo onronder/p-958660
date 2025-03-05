@@ -1,41 +1,61 @@
 
 import { Card } from "@/components/ui/card";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart as RechartssPieChart, Pie, Cell } from "recharts";
-
-const pullFrequencyData = [
-  { time: "10:00", value: 5000 },
-  { time: "11:00", value: 6500 },
-  { time: "12:00", value: 9800 },
-  { time: "13:00", value: 10200 },
-  { time: "14:00", value: 9500 },
-];
-
-const uploadSuccessData = [
-  { time: "10:00", value: 100 },
-  { time: "11:00", value: 98 },
-  { time: "12:00", value: 85 },
-  { time: "13:00", value: 90 },
-  { time: "14:00", value: 98 },
-];
-
-const dataSizeData = [
-  { month: "Jan", value: 2000 },
-  { month: "Feb", value: 1800 },
-  { month: "Mar", value: 8000 },
-  { month: "Apr", value: 3900 },
-  { month: "May", value: 4000 },
-  { month: "Jun", value: 3800 },
-];
-
-const etlData = [
-  { name: "Extract", value: 40 },
-  { name: "Transform", value: 30 },
-  { name: "Load", value: 30 },
-];
+import { useAnalyticsData } from "@/hooks/useAnalyticsData";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
 
 const Analytics = () => {
+  const { 
+    etlData, 
+    pullFrequencyData, 
+    uploadSuccessData, 
+    dataSizeData, 
+    isLoading, 
+    isError 
+  } = useAnalyticsData();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-8">
+        <div className="bg-red-50 rounded-lg p-4 flex items-start space-x-4 mb-4">
+          <div className="text-red-500 mt-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-red-800">
+              There was an error loading the analytics data. Please try again later.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div className="bg-blue-50 rounded-lg p-4 flex items-start space-x-4 mb-4">
@@ -63,11 +83,17 @@ const Analytics = () => {
         </div>
       </div>
 
-      <h1 className="text-3xl font-bold text-primary">Analytics</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-primary">Analytics</h1>
+        <Button variant="outline" size="sm" className="flex items-center gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="p-6 lg:col-span-1">
-          <h3 className="text-lg font-semibold mb-4">Recent ETL Analysis</h3>
+          <h3 className="text-lg font-semibold mb-4">ETL Process Analysis</h3>
           <div className="h-[300px] w-full flex justify-center items-center">
             <ResponsiveContainer width="100%" height="100%">
               <RechartssPieChart>
@@ -144,7 +170,7 @@ const Analytics = () => {
         </Card>
 
         <Card className="p-6 lg:col-span-1">
-          <h3 className="text-lg font-semibold mb-4">Data Size</h3>
+          <h3 className="text-lg font-semibold mb-4">Data Size Growth</h3>
           <div className="h-[400px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dataSizeData} barSize={20}>
