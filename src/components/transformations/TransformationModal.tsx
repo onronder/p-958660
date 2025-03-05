@@ -13,7 +13,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { useSources } from "@/hooks/useSources";
-import { Transformation, TransformationField, FunctionCategory, DerivedColumn } from "@/types/transformation";
+import { 
+  Transformation, 
+  TransformationField, 
+  FunctionCategory, 
+  DerivedColumn,
+  TransformationFunction 
+} from "@/types/transformation";
 import { functionCategories, mockFields } from "@/utils/transformationUtils";
 import FieldSelectionStep from "./FieldSelectionStep";
 import TransformationStep from "./TransformationStep";
