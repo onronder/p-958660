@@ -26,15 +26,14 @@ export const useHelpArticles = (initialQuery = "", initialCategory = "All Catego
     queryKey: ["helpArticles", searchQuery, selectedCategory],
     queryFn: async () => {
       try {
-        // Build parameters
-        const requestBody: Record<string, any> = {};
-        
-        if (searchQuery) requestBody.query = searchQuery;
-        if (selectedCategory !== "All Categories") requestBody.category = selectedCategory;
-        
+        // According to Supabase docs, for GET requests with params, we need to pass them as queryParams
         const { data, error } = await supabase.functions.invoke("help-articles", {
           method: "GET",
-          body: requestBody
+          // For Edge Functions, we need to pass parameters in the body regardless of HTTP method
+          body: {
+            query: searchQuery || undefined,
+            category: selectedCategory !== "All Categories" ? selectedCategory : undefined
+          }
         });
 
         if (error) throw error;

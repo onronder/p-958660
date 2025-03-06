@@ -24,10 +24,27 @@ serve(async (req) => {
       }
     );
 
-    // Parse the request body to get the parameters
-    const requestData = await req.json();
-    const query = requestData.query || '';
-    const category = requestData.category || '';
+    // Parse URL to get query parameters for GET requests
+    let query = '';
+    let category = '';
+    
+    // Extract query parameters from request based on HTTP method
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      query = url.searchParams.get('query') || '';
+      category = url.searchParams.get('category') || '';
+    } else {
+      // For non-GET requests, parse the body
+      try {
+        const requestData = await req.json();
+        query = requestData.query || '';
+        category = requestData.category || '';
+      } catch (e) {
+        console.error("Failed to parse request body:", e);
+      }
+    }
+
+    console.log(`Processing request with query: "${query}", category: "${category}"`);
 
     // GET request for fetching articles
     if (req.method === 'GET') {
