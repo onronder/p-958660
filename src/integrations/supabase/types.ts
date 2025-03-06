@@ -191,6 +191,7 @@ export type Database = {
           content: string
           created_at: string | null
           id: string
+          slug: string | null
           title: string
         }
         Insert: {
@@ -198,6 +199,7 @@ export type Database = {
           content: string
           created_at?: string | null
           id?: string
+          slug?: string | null
           title: string
         }
         Update: {
@@ -205,9 +207,39 @@ export type Database = {
           content?: string
           created_at?: string | null
           id?: string
+          slug?: string | null
           title?: string
         }
         Relationships: []
+      }
+      help_images: {
+        Row: {
+          article_id: string | null
+          created_at: string | null
+          file_path: string
+          id: string
+        }
+        Insert: {
+          article_id?: string | null
+          created_at?: string | null
+          file_path: string
+          id?: string
+        }
+        Update: {
+          article_id?: string | null
+          created_at?: string | null
+          file_path?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_images_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "help_articles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       help_search_logs: {
         Row: {

@@ -73,3 +73,11 @@ src = "./help-articles/index.ts"
 [[api.endpoints]]
 path = "/onboarding-steps"
 src = "./onboarding-steps/index.ts"
+
+[[api.endpoints]]
+path = "/upload-documentation"
+src = "./upload-documentation/index.ts"
+
+[[api.endpoints]]
+path = "/upload-image"
+src = "./upload-image/index.ts"

@@ -27,24 +27,27 @@ serve(async (req) => {
     // Parse URL to get query parameters for GET requests
     let query = '';
     let category = '';
+    let slug = '';
     
     // Extract query parameters from request based on HTTP method
     if (req.method === 'GET') {
       const url = new URL(req.url);
       query = url.searchParams.get('query') || '';
       category = url.searchParams.get('category') || '';
+      slug = url.searchParams.get('slug') || '';
     } else {
       // For non-GET requests, parse the body
       try {
         const requestData = await req.json();
         query = requestData.query || '';
         category = requestData.category || '';
+        slug = requestData.slug || '';
       } catch (e) {
         console.error("Failed to parse request body:", e);
       }
     }
 
-    console.log(`Processing request with query: "${query}", category: "${category}"`);
+    console.log(`Processing request with query: "${query}", category: "${category}", slug: "${slug}"`);
 
     // GET request for fetching articles
     if (req.method === 'GET') {
@@ -52,25 +55,30 @@ serve(async (req) => {
         .from('help_articles')
         .select('*');
 
-      // Apply search filter if query parameter is provided
-      if (query) {
-        articlesQuery = articlesQuery.or(`title.ilike.%${query}%,content.ilike.%${query}%`);
-        
-        // Log search if user is authenticated
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (user) {
-          await supabaseClient
-            .from('help_search_logs')
-            .insert({
-              user_id: user.id,
-              query: query,
-            });
+      // If slug is provided, fetch a single article by slug
+      if (slug) {
+        articlesQuery = articlesQuery.eq('slug', slug);
+      } else {
+        // Apply search filter if query parameter is provided
+        if (query) {
+          articlesQuery = articlesQuery.or(`title.ilike.%${query}%,content.ilike.%${query}%`);
+          
+          // Log search if user is authenticated
+          const { data: { user } } = await supabaseClient.auth.getUser();
+          if (user) {
+            await supabaseClient
+              .from('help_search_logs')
+              .insert({
+                user_id: user.id,
+                query: query,
+              });
+          }
         }
-      }
 
-      // Apply category filter if provided
-      if (category && category !== 'All Categories') {
-        articlesQuery = articlesQuery.eq('category', category);
+        // Apply category filter if provided
+        if (category && category !== 'All Categories') {
+          articlesQuery = articlesQuery.eq('category', category);
+        }
       }
 
       const { data: articles, error } = await articlesQuery;
@@ -87,6 +95,42 @@ serve(async (req) => {
             } 
           }
         );
+      }
+
+      // If fetching by slug, also get associated images
+      if (slug && articles && articles.length > 0) {
+        const article = articles[0];
+        const { data: images, error: imagesError } = await supabaseClient
+          .from('help_images')
+          .select('*')
+          .eq('article_id', article.id);
+
+        if (!imagesError && images) {
+          // Add image URLs to the response
+          const imagesWithUrls = images.map(image => {
+            const { data } = supabaseClient.storage
+              .from('help_images')
+              .getPublicUrl(image.file_path);
+            
+            return {
+              ...image,
+              url: data.publicUrl
+            };
+          });
+
+          return new Response(
+            JSON.stringify({ 
+              article,
+              images: imagesWithUrls
+            }),
+            { 
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders 
+              } 
+            }
+          );
+        }
       }
 
       return new Response(

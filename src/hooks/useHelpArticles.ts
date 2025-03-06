@@ -10,6 +10,7 @@ export interface HelpArticle {
   title: string;
   content: string;
   created_at: string;
+  slug?: string;
 }
 
 export const useHelpArticles = (initialQuery = "", initialCategory = "All Categories") => {
