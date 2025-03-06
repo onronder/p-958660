@@ -24,11 +24,10 @@ serve(async (req) => {
       }
     );
 
-    // Parse the request body to get the params
+    // Parse the request body to get the parameters
     const requestData = await req.json();
-    const params = requestData.params || {};
-    const query = params.query || '';
-    const category = params.category || '';
+    const query = requestData.query || '';
+    const category = requestData.category || '';
 
     // GET request for fetching articles
     if (req.method === 'GET') {
