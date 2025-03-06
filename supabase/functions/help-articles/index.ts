@@ -24,9 +24,11 @@ serve(async (req) => {
       }
     );
 
-    const url = new URL(req.url);
-    const query = url.searchParams.get('query') || '';
-    const category = url.searchParams.get('category') || '';
+    // Parse the request body to get the params
+    const requestData = await req.json();
+    const params = requestData.params || {};
+    const query = params.query || '';
+    const category = params.category || '';
 
     // GET request for fetching articles
     if (req.method === 'GET') {

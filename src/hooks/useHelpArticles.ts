@@ -26,14 +26,13 @@ export const useHelpArticles = (initialQuery = "", initialCategory = "All Catego
     queryKey: ["helpArticles", searchQuery, selectedCategory],
     queryFn: async () => {
       try {
-        // Create the function URL with query parameters
-        let functionUrl = "help-articles";
+        // Create an object with the parameters
         const params: Record<string, string> = {};
         
         if (searchQuery) params.query = searchQuery;
         if (selectedCategory !== "All Categories") params.category = selectedCategory;
         
-        const { data, error } = await supabase.functions.invoke(functionUrl, {
+        const { data, error } = await supabase.functions.invoke("help-articles", {
           method: "GET",
           body: { params }
         });
