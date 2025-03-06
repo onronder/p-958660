@@ -23,7 +23,13 @@ const Login = ({ onLogin }: LoginProps) => {
 
   useEffect(() => {
     console.log("Login page mounted, current user state:", user ? "logged in" : "not logged in");
-  }, [user]);
+    
+    // If user is already logged in, redirect to dashboard
+    if (user) {
+      console.log("User already logged in, redirecting to dashboard");
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

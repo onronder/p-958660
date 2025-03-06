@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 type AuthContextType = {
   session: Session | null;
@@ -154,8 +155,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     console.log("AuthContext: Signing out");
-    await supabase.auth.signOut();
-    setProfile(null);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("AuthContext: Sign out error:", error);
+        toast({
+          title: "Logout error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        console.log("AuthContext: Sign out successful, session cleared");
+        toast({
+          title: "Logged out",
+          description: "You have been successfully logged out",
+        });
+        
+        // Clear local state
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        
+        // Force a page reload to clear any cached state
+        window.location.href = "/login";
+      }
+    } catch (error: any) {
+      console.error("AuthContext: Sign out exception:", error);
+      toast({
+        title: "Logout error",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   const value = {
