@@ -26,17 +26,21 @@ export const useHelpArticles = (initialQuery = "", initialCategory = "All Catego
     queryKey: ["helpArticles", searchQuery, selectedCategory],
     queryFn: async () => {
       try {
-        // Build query parameters to be sent in URL
-        const queryParams = new URLSearchParams();
+        // Build query string manually
+        let url = "help-articles";
+        const params = [];
         
-        if (searchQuery) queryParams.append('query', searchQuery);
-        if (selectedCategory !== "All Categories") queryParams.append('category', selectedCategory);
+        if (searchQuery) params.push(`query=${encodeURIComponent(searchQuery)}`);
+        if (selectedCategory !== "All Categories") params.push(`category=${encodeURIComponent(selectedCategory)}`);
         
-        // Call the edge function with query parameters in URL
-        const { data, error } = await supabase.functions.invoke("help-articles", {
-          method: "GET",
-          // Edge Function expects params in URL, not in body for GET requests
-          queryParams: queryParams
+        // Append query string to URL if we have parameters
+        if (params.length > 0) {
+          url += `?${params.join('&')}`;
+        }
+        
+        // Call the edge function with parameters in the URL
+        const { data, error } = await supabase.functions.invoke(url, {
+          method: "GET"
         });
 
         if (error) throw error;
