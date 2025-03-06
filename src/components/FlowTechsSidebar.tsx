@@ -16,6 +16,10 @@ import {
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
 
+interface FlowTechsSidebarProps {
+  onLogout?: () => void;
+}
+
 const menuItems = [
   { icon: Home, label: "Dashboard", path: "/" },
   { icon: FileText, label: "My Sources", path: "/sources" },
@@ -30,8 +34,15 @@ const proFeatures = [
   { icon: Zap, label: "AI Insights", path: "/insights" },
 ];
 
-const FlowTechsSidebar = () => {
+const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
   const location = useLocation();
+
+  const handleLogoutClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onLogout) {
+      onLogout();
+    }
+  };
 
   return (
     <div className="fixed left-0 top-0 h-full w-64 border-r border-border bg-background shadow-sm z-10">
@@ -143,13 +154,13 @@ const FlowTechsSidebar = () => {
             <span>Help & Documentation</span>
           </Link>
           
-          <Link
-            to="/logout"
-            className="flex items-center gap-3 px-4 py-3 text-secondary-foreground hover:bg-primary/5 rounded-lg transition-all duration-200"
+          <button
+            onClick={handleLogoutClick}
+            className="flex w-full items-center gap-3 px-4 py-3 text-secondary-foreground hover:bg-primary/5 rounded-lg transition-all duration-200"
           >
             <LogOut className="h-5 w-5" />
             <span>Logout</span>
-          </Link>
+          </button>
         </div>
       </div>
     </div>
