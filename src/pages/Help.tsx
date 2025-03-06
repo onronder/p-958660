@@ -1,82 +1,72 @@
 
 import { useState } from "react";
-import { Search, Book, HelpCircle, Info, ArrowRight } from "lucide-react";
+import { Search, Book, HelpCircle, Info, ArrowRight, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
-// Mock help articles data (this would come from Supabase in a real implementation)
-const helpArticles = [
-  {
-    id: "1",
-    category: "Getting Started",
-    title: "Welcome to FlowTechs",
-    content: "FlowTechs is a powerful data integration platform that helps you connect, transform, and load your data across different systems."
-  },
-  {
-    id: "2",
-    category: "Getting Started",
-    title: "How to Navigate the Dashboard",
-    content: "The Dashboard provides an overview of your data processing activities, including job status, data processed, and recent activities."
-  },
-  {
-    id: "3",
-    category: "Sources",
-    title: "Connecting a New Data Source",
-    content: "To connect a new data source, navigate to the 'My Sources' page and click the 'Add Source' button. Follow the configuration wizard to set up your connection."
-  },
-  {
-    id: "4",
-    category: "Sources",
-    title: "Supported Data Sources",
-    content: "FlowTechs supports various data sources including Shopify, WooCommerce, CSV files, and database connections."
-  },
-  {
-    id: "5",
-    category: "Transformations",
-    title: "Creating Your First Transformation",
-    content: "Transformations allow you to modify your data before sending it to a destination. Create a transformation by selecting a source and defining transformation rules."
-  },
-  {
-    id: "6",
-    category: "Jobs",
-    title: "Scheduling Data Jobs",
-    content: "Jobs can be scheduled to run at specific intervals. Navigate to the Jobs page to create and manage your data processing schedules."
-  },
-  {
-    id: "7",
-    category: "Pro Features",
-    title: "Data Storage Benefits",
-    content: "Pro users get access to increased data storage capabilities, allowing you to store and manage larger datasets efficiently."
-  },
-  {
-    id: "8",
-    category: "Pro Features",
-    title: "AI Insights Features",
-    content: "AI Insights provide automated analysis of your data, revealing patterns and offering recommendations to optimize your data flows."
-  }
-];
-
-// Get unique categories
-const categories = Array.from(new Set(helpArticles.map(article => article.category)));
+import { useHelpArticles, HelpArticle } from "@/hooks/useHelpArticles";
+import HelpArticleCard from "@/components/help/HelpArticleCard";
+import HelpArticleDetail from "@/components/help/HelpArticleDetail";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const Help = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(categories[0]);
-  const [selectedArticle, setSelectedArticle] = useState(helpArticles[0]);
+  const { 
+    helpArticles, 
+    categories, 
+    isLoading, 
+    searchQuery, 
+    setSearchQuery,
+    selectedCategory, 
+    setSelectedCategory 
+  } = useHelpArticles();
+  
+  const [selectedArticle, setSelectedArticle] = useState<HelpArticle | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [showTourButton, setShowTourButton] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Filter articles based on search query and selected category
-  const filteredArticles = helpArticles.filter(article => {
-    const matchesSearch = searchQuery === "" || 
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      article.content.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = selectedCategory === "All Categories" || 
-      article.category === selectedCategory;
-    
-    return matchesSearch && matchesCategory;
-  });
+  const handleArticleClick = (article: HelpArticle) => {
+    setSelectedArticle(article);
+    setIsDetailOpen(true);
+  };
+
+  const handleStartTour = async () => {
+    // Reset onboarding_completed to false to trigger the tour
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ onboarding_completed: false })
+          .eq('id', user.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Onboarding Tour Activated",
+          description: "Navigate to the dashboard to start the tour.",
+        });
+
+        setShowTourButton(false);
+      } catch (error) {
+        console.error("Failed to activate tour:", error);
+        toast({
+          title: "Error",
+          description: "Failed to activate the tour. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to use the guided tour feature.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="container mx-auto py-6">
@@ -104,15 +94,6 @@ const Help = () => {
             </CardHeader>
             <CardContent className="p-0">
               <div className="categories-list">
-                <button
-                  key="all-categories"
-                  className={`w-full text-left px-4 py-2 transition-colors ${
-                    selectedCategory === "All Categories" ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
-                  }`}
-                  onClick={() => setSelectedCategory("All Categories")}
-                >
-                  All Categories
-                </button>
                 {categories.map((category) => (
                   <button
                     key={category}
@@ -143,19 +124,26 @@ const Help = () => {
               <Button variant="outline" className="w-full">
                 Contact Support
               </Button>
+              {showTourButton && (
+                <Button 
+                  variant="link" 
+                  className="w-full mt-2 text-primary"
+                  onClick={handleStartTour}
+                >
+                  Start Guided Tour
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>
 
         {/* Main Content */}
         <div className="col-span-12 md:col-span-9">
-          {searchQuery && (
-            <p className="mb-4 text-sm text-muted-foreground">
-              {filteredArticles.length} {filteredArticles.length === 1 ? 'result' : 'results'} found for "{searchQuery}"
-            </p>
-          )}
-
-          {filteredArticles.length === 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : helpArticles.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-8">
                 <Info className="h-12 w-12 text-muted-foreground mb-4" />
@@ -167,7 +155,7 @@ const Help = () => {
                   variant="outline" 
                   onClick={() => {
                     setSearchQuery("");
-                    setSelectedCategory(categories[0]);
+                    setSelectedCategory("All Categories");
                   }}
                 >
                   Clear search
@@ -175,37 +163,32 @@ const Help = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {filteredArticles.map((article) => (
-                <Card 
-                  key={article.id} 
-                  className="cursor-pointer hover:shadow-md transition-all duration-200"
-                  onClick={() => setSelectedArticle(article)}
-                >
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{article.title}</CardTitle>
-                        <CardDescription>{article.category}</CardDescription>
-                      </div>
-                      <Button variant="ghost" size="icon" className="rounded-full">
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {article.content}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <>
+              {searchQuery && (
+                <p className="mb-4 text-sm text-muted-foreground">
+                  {helpArticles.length} {helpArticles.length === 1 ? 'result' : 'results'} found for "{searchQuery}"
+                </p>
+              )}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {helpArticles.map((article) => (
+                  <HelpArticleCard 
+                    key={article.id} 
+                    article={article}
+                    onClick={handleArticleClick}
+                  />
+                ))}
+              </div>
+            </>
           )}
-
-          {/* Selected Article Modal/Detail could be added here */}
         </div>
       </div>
+
+      {/* Article Detail Dialog */}
+      <HelpArticleDetail 
+        article={selectedArticle} 
+        isOpen={isDetailOpen} 
+        onClose={() => setIsDetailOpen(false)} 
+      />
 
       {/* Tooltip component example */}
       <TooltipProvider>

@@ -43,3 +43,20 @@ export const groupNotificationsByDate = (notifications: Notification[]) => {
   
   return groups;
 };
+
+export const getIconForCategory = (category: string) => {
+  switch (category.toLowerCase()) {
+    case "getting started":
+      return <Info className="h-5 w-5 text-blue-500" />;
+    case "sources":
+      return <AlertCircle className="h-5 w-5 text-purple-500" />;
+    case "transformations":
+      return <AlertCircle className="h-5 w-5 text-indigo-500" />;
+    case "jobs":
+      return <AlertCircle className="h-5 w-5 text-green-500" />;
+    case "pro features":
+      return <AlertCircle className="h-5 w-5 text-amber-500" />;
+    default:
+      return <Info className="h-5 w-5 text-blue-500" />;
+  }
+};

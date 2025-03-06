@@ -65,3 +65,11 @@ src = "./destination-webhook/index.ts"
 [[api.endpoints]]
 path = "/settings"
 src = "./settings/index.ts"
+
+[[api.endpoints]]
+path = "/help-articles"
+src = "./help-articles/index.ts"
+
+[[api.endpoints]]
+path = "/onboarding-steps"
+src = "./onboarding-steps/index.ts"

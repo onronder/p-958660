@@ -1,49 +1,11 @@
+
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
-
-interface TourStep {
-  element: string;
-  title: string;
-  content: string;
-  position?: 'top' | 'right' | 'bottom' | 'left';
-}
-
-const steps: TourStep[] = [
-  {
-    element: '.sources-menu-item',
-    title: 'Connect Your Data Sources',
-    content: 'Start by connecting to your data sources like e-commerce platforms, databases or files.',
-    position: 'right',
-  },
-  {
-    element: '.transform-menu-item',
-    title: 'Transform Your Data',
-    content: 'Create transformations to clean, format and prepare your data for analysis.',
-    position: 'right',
-  },
-  {
-    element: '.destinations-menu-item',
-    title: 'Configure Destinations',
-    content: 'Set up destinations to export your transformed data to various platforms.',
-    position: 'right',
-  },
-  {
-    element: '.jobs-menu-item',
-    title: 'Create Automated Jobs',
-    content: 'Schedule automated jobs to regularly process your data without manual intervention.',
-    position: 'right',
-  },
-  {
-    element: '.settings-menu-item',
-    title: 'Customize Your Settings',
-    content: 'Configure your account settings, API keys, and preferences.',
-    position: 'right',
-  },
-];
+import { useOnboardingSteps, OnboardingStep } from '@/hooks/useOnboardingSteps';
 
 interface OnboardingTourProps {
   onComplete?: () => void;
@@ -54,6 +16,7 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
   const [isVisible, setIsVisible] = useState(true);
   const { profile, completeOnboarding } = useSettings();
   const { user } = useAuth();
+  const { steps, isLoading } = useOnboardingSteps();
 
   useEffect(() => {
     // Check if user has already completed onboarding
@@ -92,12 +55,12 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
     }
   };
 
-  if (!isVisible || !user) {
+  if (!isVisible || !user || isLoading || steps.length === 0) {
     return null;
   }
 
   const currentTourStep = steps[currentStep];
-  const targetElement = document.querySelector(currentTourStep.element);
+  const targetElement = document.querySelector(currentTourStep.element_selector);
   
   // Calculate position for tooltip
   let tooltipStyle = {};
@@ -171,7 +134,7 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
           <X className="h-4 w-4" />
         </button>
         <h3 className="text-lg font-semibold mb-2">{currentTourStep.title}</h3>
-        <p className="text-sm mb-4">{currentTourStep.content}</p>
+        <p className="text-sm mb-4">{currentTourStep.description}</p>
         <div className="flex justify-between items-center">
           <div className="text-sm text-muted-foreground">
             {currentStep + 1} / {steps.length}

@@ -185,6 +185,51 @@ export type Database = {
           },
         ]
       }
+      help_articles: {
+        Row: {
+          category: string
+          content: string
+          created_at: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      help_search_logs: {
+        Row: {
+          id: string
+          query: string
+          search_date: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          query: string
+          search_date?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          query?: string
+          search_date?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       job_runs: {
         Row: {
           completed_at: string | null
@@ -344,6 +389,36 @@ export type Database = {
           severity?: string
           title?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      onboarding_steps: {
+        Row: {
+          created_at: string | null
+          description: string
+          element_selector: string
+          id: string
+          position: string
+          step_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          element_selector: string
+          id?: string
+          position?: string
+          step_order: number
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          element_selector?: string
+          id?: string
+          position?: string
+          step_order?: number
+          title?: string
         }
         Relationships: []
       }
