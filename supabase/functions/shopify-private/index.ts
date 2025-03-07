@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,21 +11,6 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
-
-  // Get environment variables
-  const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-  const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
-
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error("Missing required environment variables");
-    return new Response(
-      JSON.stringify({ error: "Server configuration issue - missing required environment variables" }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-    );
-  }
-
-  // Create Supabase client
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   try {
     const requestData = await req.json();
@@ -55,45 +39,59 @@ serve(async (req) => {
       const shopifyUrl = `https://${formattedStoreUrl}/admin/api/2025-01/shop.json`;
       console.log("Making request to:", shopifyUrl);
       
-      const testResponse = await fetch(shopifyUrl, {
-        headers: { 
-          'X-Shopify-Access-Token': api_token,
-          'Content-Type': 'application/json'
+      try {
+        const testResponse = await fetch(shopifyUrl, {
+          headers: { 
+            'X-Shopify-Access-Token': api_token,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const testStatus = testResponse.status;
+        console.log("Test connection status:", testStatus);
+        
+        if (!testResponse.ok) {
+          console.error("Connection test failed with status:", testStatus);
+          let errorJson;
+          try {
+            errorJson = await testResponse.json();
+          } catch (e) {
+            errorJson = { message: "Could not parse error response" };
+          }
+          
+          return new Response(
+            JSON.stringify({ 
+              error: "Connection test failed", 
+              status: testStatus,
+              details: errorJson
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+          );
         }
-      });
-      
-      const testStatus = testResponse.status;
-      console.log("Test connection status:", testStatus);
-      
-      if (!testResponse.ok) {
-        console.error("Connection test failed with status:", testStatus);
-        let errorJson;
-        try {
-          errorJson = await testResponse.json();
-        } catch (e) {
-          errorJson = { message: "Could not parse error response" };
-        }
+        
+        const shopData = await testResponse.json();
+        console.log("Connection test successful, shop data retrieved:", {
+          name: shopData.shop?.name,
+          hasData: Boolean(shopData.shop)
+        });
         
         return new Response(
           JSON.stringify({ 
-            error: "Connection test failed", 
-            status: testStatus,
-            details: errorJson
+            success: true,
+            shop: shopData.shop
           }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (fetchError) {
+        console.error("Fetch error during test:", fetchError);
+        return new Response(
+          JSON.stringify({ 
+            error: "Failed to connect to Shopify", 
+            details: fetchError.message
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
         );
       }
-      
-      const shopData = await testResponse.json();
-      console.log("Connection test successful, shop data retrieved");
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          shop: shopData.shop
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     } else {
       console.error("Unknown action requested:", action);
       return new Response(

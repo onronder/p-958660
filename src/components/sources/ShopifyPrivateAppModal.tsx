@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useLocation } from "react-router-dom";
 
 interface ShopifyPrivateAppModalProps {
   open: boolean;
@@ -39,8 +40,17 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<"idle" | "success" | "error">("idle");
+  const [testResponseData, setTestResponseData] = useState<any>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check if we should open the modal automatically from redirect
+    if (location.state?.openShopifyModal) {
+      onOpenChange(true);
+    }
+  }, [location, onOpenChange]);
 
   const resetForm = () => {
     setStoreName("");
@@ -49,6 +59,7 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
     setIsSubmitting(false);
     setIsTesting(false);
     setTestStatus("idle");
+    setTestResponseData(null);
   };
 
   const handleTestConnection = async () => {
@@ -64,10 +75,13 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
     try {
       setIsTesting(true);
       setTestStatus("idle");
+      setTestResponseData(null);
 
       const formattedStoreUrl = storeName.includes(".myshopify.com")
         ? storeName
         : `${storeName}.myshopify.com`;
+
+      console.log("Testing connection to:", formattedStoreUrl);
 
       const { data, error } = await supabase.functions.invoke("shopify-private", {
         body: {
@@ -100,7 +114,8 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
         return;
       }
 
-      // Connection successful
+      // Connection successful - save test response data
+      setTestResponseData(data.shop);
       setTestStatus("success");
       toast({
         title: "Connection Successful",
@@ -169,10 +184,18 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
           setIsSubmitting(false);
           return;
         }
+        
+        // If test was successful but testResponseData is empty, store the shop data
+        if (!testResponseData && data.shop) {
+          setTestResponseData(data.shop);
+        }
       }
 
+      // Prepare store data to save
+      const shopName = testResponseData?.name || formattedStoreUrl;
+
       // Insert credentials into database
-      const { error: insertError } = await supabase
+      const { data: insertedData, error: insertError } = await supabase
         .from("shopify_credentials")
         .insert({
           user_id: user.id,
@@ -181,7 +204,8 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
           api_token: apiToken,
           last_connection_status: true,
           last_connection_time: new Date().toISOString(),
-        });
+        })
+        .select('id');
 
       if (insertError) {
         console.error("Error inserting credentials:", insertError);
@@ -192,6 +216,9 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
         });
         return;
       }
+
+      // Log the inserted record ID to confirm it was saved
+      console.log("Saved credentials with ID:", insertedData[0]?.id);
 
       toast({
         title: "Success",
@@ -221,7 +248,7 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
     }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Shopify Store (Private App)</DialogTitle>
+          <DialogTitle>Add Shopify Store</DialogTitle>
           <DialogDescription>
             Connect to your Shopify store using Private App credentials.
           </DialogDescription>
@@ -270,7 +297,6 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
             </div>
             <Input
               id="apiKey"
-              type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="API Key"
@@ -310,22 +336,29 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
           )}
 
           {testStatus === "success" && (
-            <div className="flex items-center text-green-500 text-sm">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              Connection successful!
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center text-green-500 text-sm">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                Connection successful!
+              </div>
+              {testResponseData && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  Connected to store: {testResponseData.name || storeName}
+                </div>
+              )}
             </div>
           )}
 

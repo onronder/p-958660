@@ -15,13 +15,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useShopifyCredentials } from "@/hooks/useShopifyCredentials";
 import ShopifyPrivateAppModal from "@/components/sources/ShopifyPrivateAppModal";
@@ -106,25 +99,10 @@ const Sources = () => {
             Refresh
           </Button>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add New Source
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link to="/sources/add" className="cursor-pointer">
-                  Add OAuth-based Source
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setShowShopifyModal(true)}>
-                Add Shopify Private App
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button onClick={() => setShowShopifyModal(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add New Source
+          </Button>
         </div>
       </div>
 
@@ -134,7 +112,7 @@ const Sources = () => {
         <>
           {shopifyCredentials.length > 0 && (
             <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-4">Shopify Private App Connections</h2>
+              <h2 className="text-xl font-semibold mb-4">Shopify Connections</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {shopifyCredentials.map((credential) => (
                   <ShopifyCredentialCard
@@ -151,7 +129,7 @@ const Sources = () => {
             </div>
           )}
 
-          <h2 className="text-xl font-semibold mb-4">OAuth Connections</h2>
+          <h2 className="text-xl font-semibold mb-4">Other API Connections</h2>
           {sources.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sources.map((source) => (
