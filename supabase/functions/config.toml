@@ -27,6 +27,10 @@ path = "/get-source-fields"
 src = "./get-source-fields/index.ts"
 
 [[api.endpoints]]
+path = "/get-sources"
+src = "./get-sources/index.ts"
+
+[[api.endpoints]]
 path = "/get-transformations"
 src = "./get-transformations/index.ts"
 
