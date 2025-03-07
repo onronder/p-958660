@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, HelpCircle } from "lucide-react";
@@ -103,23 +104,7 @@ const Sources = () => {
     return filteredSources;
   };
 
-  const handleDeleteSource = async (sourceId: string) => {
-    try {
-      await deleteSource(sourceId);
-      toast({
-        title: "Source Deleted",
-        description: "The source will be permanently deleted after 30 days.",
-      });
-      loadSources();
-    } catch (error) {
-      console.error("Error deleting source:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete source. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  // Removed duplicate handleDeleteSource function since we're using the one from useSources hook
 
   const isLoading = isSourcesLoading || isCredentialsLoading;
   const displaySources = getDisplaySources();
