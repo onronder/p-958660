@@ -106,19 +106,19 @@ const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
                 const isActive = location.pathname === item.path;
                 
                 return (
-                  <li key={item.path}>
+                  <li key={item.path} className="mb-1 last:mb-0">
                     <Link
                       to={item.path}
                       className={cn(
-                        "flowtech-sidebar-link",
-                        isActive 
-                          ? "pro-feature-active" 
-                          : "pro-feature"
+                        "flowtech-pro-item",
+                        isActive ? "pro-feature-active" : ""
                       )}
                     >
-                      <Icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                      <span className="flowtech-pro-badge">PRO</span>
+                      <Icon className="flowtech-pro-icon" />
+                      <div className="flowtech-pro-content">
+                        <span>{item.label}</span>
+                        <span className="flowtech-pro-badge">PRO</span>
+                      </div>
                     </Link>
                   </li>
                 );
