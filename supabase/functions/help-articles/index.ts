@@ -72,6 +72,36 @@ You can select from available options such as **Shopify, WooCommerce, or Custom 
 - **Google Sheets** (Coming Soon): Import spreadsheets into your database.
 - **Custom API Endpoints**: Fetch and process data from external APIs.`
   },
+  {
+    id: "9",
+    category: "Sources",
+    title: "First Time Shopify Connection",
+    slug: "first-time-shopify-connection",
+    content: `## Setting Up Your First Shopify Connection
+
+### 1. Create a Shopify Developer Account
+Before you begin, you'll need a Shopify Developer account. Sign up for a free account at https://partners.shopify.com/signup.
+
+### 2. Create a New Custom App
+Create a new custom app once you have a Developer account:
+- Log in to your Shopify Partner Dashboard using your login credentials.
+- In the sidebar menu, click on "Apps".
+- On the "Apps" page, click on the "Create app" button.
+- Next, select the "Custom app" option from the available choices.
+- Click on the "Create app" button once again.
+- Fill out all the required information for your custom app, such as the app name and app URL, in the appropriate fields.
+- Once you have entered all the necessary information, click on the "Create app" button one final time to complete the process.
+
+### 3. Set up API Credentials
+To interact with the Shopify API Integration or any external API, your app will need the appropriate API credentials:
+- In your custom app's page, click on "App setup."
+- Scroll down the "API keys and scopes" section. (If you do not grant read permission to API Scopes, the existing data will not be accessible even if the connection is successful.)
+- Click "Generate API credentials."
+- Fill in the required information, such as API key description and scopes, and click "Generate."
+
+### 4. Connect to FlowTechs
+Now that you have your API Key and Admin API Access Token, you can enter them in the connection form to connect your Shopify store to FlowTechs.`
+  },
   
   // Transformations
   {
