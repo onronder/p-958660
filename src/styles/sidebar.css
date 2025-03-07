@@ -1,3 +1,4 @@
+
 @layer base {
   :root {
     --sidebar-background: 255 255 255; /* White sidebar */
@@ -100,7 +101,7 @@
   @apply p-3 rounded-lg mt-4 mx-2;
 }
 
-/* Smaller Pro badge with better alignment */
+/* Smaller Pro badge with better alignment - moved further right */
 .flowtech-pro-badge {
   @apply text-xs font-bold text-white bg-violet-600 px-1.5 py-0.5 rounded-full ml-auto text-[10px];
 }
@@ -115,7 +116,7 @@
   @apply h-5 w-5 mr-3 flex-shrink-0;
 }
 
-/* Text and badge container for proper alignment */
+/* Text and badge container for proper alignment - added more spacing */
 .flowtech-pro-content {
   @apply flex items-center justify-between w-full;
 }
