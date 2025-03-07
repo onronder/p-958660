@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, HelpCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import InfoBanner from "@/components/InfoBanner";
 import SourceCard from "@/components/SourceCard";
 import EmptySourcesState from "@/components/EmptySourcesState";
@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useShopifyCredentials } from "@/hooks/useShopifyCredentials";
 import ShopifyPrivateAppModal from "@/components/sources/ShopifyPrivateAppModal";
 import ShopifyCredentialCard from "@/components/sources/ShopifyCredentialCard";
+import SourceTypeSelector from "@/components/sources/SourceTypeSelector";
 
 const Sources = () => {
   const { 
@@ -37,12 +38,19 @@ const Sources = () => {
     setSelectedCredential
   } = useShopifyCredentials();
   
+  const [showSourceSelector, setShowSourceSelector] = useState(false);
   const [showShopifyModal, setShowShopifyModal] = useState(false);
   const { toast } = useToast();
+  const location = useLocation();
 
   useEffect(() => {
     // Load sources when the component mounts
     loadSources();
+    
+    // Check location state for modal flags
+    if (location.state?.openShopifyModal) {
+      setShowShopifyModal(true);
+    }
   }, []);
 
   const handleHelpClick = () => {
@@ -50,6 +58,30 @@ const Sources = () => {
       title: "Sources Help",
       description: "FlowTechs connects to platforms like Shopify, WooCommerce, and databases.",
     });
+  };
+
+  const handleSourceSelection = (sourceType: string) => {
+    setShowSourceSelector(false);
+    
+    // Handle source type selection
+    if (sourceType === "shopify") {
+      setShowShopifyModal(true);
+    } else if (sourceType === "woocommerce") {
+      toast({
+        title: "Coming Soon",
+        description: "WooCommerce integration is coming soon.",
+      });
+    } else if (sourceType === "api") {
+      toast({
+        title: "Coming Soon",
+        description: "Custom API integration is coming soon.",
+      });
+    } else if (sourceType === "googlesheets") {
+      toast({
+        title: "Coming Soon",
+        description: "Google Sheets integration is coming soon.",
+      });
+    }
   };
 
   const isLoading = isSourcesLoading || isCredentialsLoading;
@@ -99,7 +131,7 @@ const Sources = () => {
             Refresh
           </Button>
           
-          <Button onClick={() => setShowShopifyModal(true)} className="flex items-center gap-2">
+          <Button onClick={() => setShowSourceSelector(true)} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Add New Source
           </Button>
@@ -142,10 +174,16 @@ const Sources = () => {
               ))}
             </div>
           ) : (
-            <EmptySourcesState />
+            <EmptySourcesState onAddSource={() => setShowSourceSelector(true)} />
           )}
         </>
       )}
+
+      <SourceTypeSelector
+        open={showSourceSelector}
+        onOpenChange={setShowSourceSelector}
+        onSelectSource={handleSourceSelection}
+      />
 
       <ShopifyPrivateAppModal
         open={showShopifyModal}

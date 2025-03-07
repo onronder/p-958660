@@ -6,9 +6,9 @@ const AddSource = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to the sources page and open the Shopify modal
+    // Redirect to the sources page and open the source selector
     const redirectToSources = () => {
-      navigate("/sources", { state: { openShopifyModal: true } });
+      navigate("/sources", { state: { openSourceSelector: true } });
     };
     
     redirectToSources();

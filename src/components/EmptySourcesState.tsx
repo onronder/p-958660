@@ -3,9 +3,12 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { Link } from "react-router-dom";
 
-const EmptySourcesState: React.FC = () => {
+interface EmptySourcesStateProps {
+  onAddSource?: () => void;
+}
+
+const EmptySourcesState: React.FC<EmptySourcesStateProps> = ({ onAddSource }) => {
   return (
     <Card className="p-10 flex flex-col items-center justify-center text-center">
       <div className="rounded-full bg-primary/10 p-3 mb-4">
@@ -29,11 +32,9 @@ const EmptySourcesState: React.FC = () => {
       <p className="text-muted-foreground mb-6 max-w-md">
         Connect your first data source to start extracting and transforming your data.
       </p>
-      <Button asChild>
-        <Link to="/sources/add">
-          <Plus className="h-4 w-4 mr-2" />
-          Connect Your First Source
-        </Link>
+      <Button onClick={onAddSource} className="flex items-center gap-2">
+        <Plus className="h-4 w-4 mr-2" />
+        Connect Your First Source
       </Button>
     </Card>
   );
