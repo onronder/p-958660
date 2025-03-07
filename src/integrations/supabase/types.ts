@@ -542,7 +542,9 @@ export type Database = {
         Row: {
           created_at: string | null
           credentials: Json
+          deletion_marked_at: string | null
           id: string
+          is_deleted: boolean
           last_sync: string | null
           name: string
           source_type: string
@@ -554,7 +556,9 @@ export type Database = {
         Insert: {
           created_at?: string | null
           credentials: Json
+          deletion_marked_at?: string | null
           id?: string
+          is_deleted?: boolean
           last_sync?: string | null
           name: string
           source_type: string
@@ -566,7 +570,9 @@ export type Database = {
         Update: {
           created_at?: string | null
           credentials?: Json
+          deletion_marked_at?: string | null
           id?: string
+          is_deleted?: boolean
           last_sync?: string | null
           name?: string
           source_type?: string
@@ -746,6 +752,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_old_marked_sources: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       dismiss_help_message: {
         Args: {
           message_id: string

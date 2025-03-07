@@ -11,4 +11,6 @@ export interface Source {
   credentials?: Record<string, any>;
   created_at?: string;
   updated_at?: string;
+  is_deleted?: boolean;
+  deletion_marked_at?: string;
 }

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, HelpCircle } from "lucide-react";
@@ -94,11 +93,32 @@ const Sources = () => {
     const shopifyIds = shopifyCredentials.map(cred => cred.id);
     
     // Filter out regular sources that are already shown as Shopify credentials
+    // and filter out soft-deleted sources
     const filteredSources = sources.filter(source => 
-      !shopifyIds.includes(source.id) && source.source_type !== "Shopify"
+      !shopifyIds.includes(source.id) && 
+      source.source_type !== "Shopify" &&
+      !source.is_deleted
     );
     
     return filteredSources;
+  };
+
+  const handleDeleteSource = async (sourceId: string) => {
+    try {
+      await deleteSource(sourceId);
+      toast({
+        title: "Source Deleted",
+        description: "The source will be permanently deleted after 30 days.",
+      });
+      loadSources();
+    } catch (error) {
+      console.error("Error deleting source:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete source. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const isLoading = isSourcesLoading || isCredentialsLoading;

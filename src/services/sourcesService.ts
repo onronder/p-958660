@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Source, SourceStatus } from "@/types/source";
 
@@ -6,7 +5,8 @@ export const fetchUserSources = async (userId: string) => {
   const { data, error } = await supabase
     .from('sources')
     .select('*')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .eq('is_deleted', false); // Only fetch non-deleted sources
   
   if (error) {
     throw error;
@@ -24,7 +24,10 @@ export const fetchUserSources = async (userId: string) => {
 export const deleteSource = async (sourceId: string) => {
   const { error } = await supabase
     .from('sources')
-    .delete()
+    .update({ 
+      is_deleted: true,
+      deletion_marked_at: new Date().toISOString()
+    })
     .eq('id', sourceId);
     
   if (error) {
