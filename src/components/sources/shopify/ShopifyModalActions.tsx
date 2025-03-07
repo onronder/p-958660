@@ -9,12 +9,14 @@ interface ShopifyModalActionsProps {
   isTesting: boolean;
   isSubmitting: boolean;
   onTestConnection: () => void;
+  isEditMode?: boolean;
 }
 
 const ShopifyModalActions: React.FC<ShopifyModalActionsProps> = ({
   isTesting,
   isSubmitting,
   onTestConnection,
+  isEditMode = false,
 }) => {
   const [showHelpGuide, setShowHelpGuide] = useState(false);
 
@@ -58,10 +60,10 @@ const ShopifyModalActions: React.FC<ShopifyModalActionsProps> = ({
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
+              {isEditMode ? "Updating..." : "Saving..."}
             </>
           ) : (
-            "Save Credentials"
+            isEditMode ? "Update Credentials" : "Save Credentials"
           )}
         </Button>
       </DialogFooter>

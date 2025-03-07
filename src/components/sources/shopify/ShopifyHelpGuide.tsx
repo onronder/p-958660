@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import {
   Dialog,
@@ -6,11 +5,9 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ShopifyHelpGuideProps {
   open: boolean;
@@ -21,7 +18,7 @@ interface ShopifyHelpGuideProps {
 const ShopifyHelpGuide: React.FC<ShopifyHelpGuideProps> = ({
   open,
   onOpenChange,
-  autoOpen = false,
+  autoOpen = false
 }) => {
   useEffect(() => {
     if (autoOpen) {
@@ -31,11 +28,11 @@ const ShopifyHelpGuide: React.FC<ShopifyHelpGuideProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl">First Time Shopify Connection</DialogTitle>
+          <DialogTitle>How to Create a Shopify Private App</DialogTitle>
           <DialogDescription>
-            Follow these steps to set up your Shopify API credentials
+            Follow these steps to create API credentials for your Shopify store.
           </DialogDescription>
         </DialogHeader>
 
@@ -96,7 +93,12 @@ const ShopifyHelpGuide: React.FC<ShopifyHelpGuideProps> = ({
         </ScrollArea>
 
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Close</Button>
+          <Button 
+            onClick={() => onOpenChange(false)} 
+            className="w-full"
+          >
+            Understood
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

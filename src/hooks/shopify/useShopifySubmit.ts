@@ -52,7 +52,7 @@ export const useShopifySubmit = (onSuccess: () => void) => {
         return false;
       }
 
-      // Insert source into the sources table instead of shopify_credentials
+      // Insert source into the sources table
       const { data: insertedData, error: insertError } = await supabase
         .from("sources")
         .insert({
@@ -67,7 +67,8 @@ export const useShopifySubmit = (onSuccess: () => void) => {
             last_connection_status: true,
             last_connection_time: new Date().toISOString(),
             store_details: testResponseData
-          }
+          },
+          updated_at: new Date().toISOString() // Explicitly set updated_at timestamp
         })
         .select('id');
 
@@ -104,8 +105,106 @@ export const useShopifySubmit = (onSuccess: () => void) => {
     }
   };
 
+  const updateCredentials = async (
+    sourceId: string,
+    apiKey: string, 
+    apiToken: string,
+    testResponseData: any,
+    hasTestedSuccessfully: boolean
+  ) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to update a source",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!apiKey || !apiToken) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // Get current credentials
+      const { data: sourceData, error: getError } = await supabase
+        .from("sources")
+        .select("credentials")
+        .eq("id", sourceId)
+        .single();
+        
+      if (getError) {
+        console.error("Error fetching source:", getError);
+        toast({
+          title: "Error",
+          description: "Failed to fetch source data",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Cast credentials to Record type for type safety
+      const currentCreds = sourceData.credentials as Record<string, any> || {};
+      
+      // Update credentials with new values
+      const updatedCredentials = {
+        ...currentCreds,
+        api_key: apiKey,
+        api_token: apiToken,
+        last_connection_status: hasTestedSuccessfully ? true : currentCreds.last_connection_status,
+        last_connection_time: hasTestedSuccessfully ? new Date().toISOString() : currentCreds.last_connection_time,
+        store_details: testResponseData || currentCreds.store_details
+      };
+
+      // Update source
+      const { error: updateError } = await supabase
+        .from("sources")
+        .update({
+          credentials: updatedCredentials,
+          updated_at: new Date().toISOString() // Explicitly update the timestamp
+        })
+        .eq("id", sourceId);
+      
+      if (updateError) {
+        console.error("Error updating source:", updateError);
+        toast({
+          title: "Error",
+          description: updateError.message || "Failed to update source",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      toast({
+        title: "Success",
+        description: "Shopify source updated successfully",
+      });
+
+      onSuccess();
+      return true;
+    } catch (error) {
+      console.error("Error updating source:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return {
     isSubmitting,
     submitCredentials,
+    updateCredentials
   };
 };

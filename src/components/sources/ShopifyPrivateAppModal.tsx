@@ -26,7 +26,9 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
   onSuccess,
 }) => {
   const location = useLocation();
-  const [showHelpOnOpen, setShowHelpOnOpen] = useState(false);
+  const [showHelpGuide, setShowHelpGuide] = useState(false);
+  const [isFirstOpen, setIsFirstOpen] = useState(true);
+  
   const {
     storeName,
     setStoreName,
@@ -41,15 +43,18 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
     resetForm,
     handleTestConnection,
     handleSubmit,
+    setSelectedCredential,
+    selectedCredential,
+    isEditMode
   } = useShopifyConnection(onSuccess);
 
-  // Auto-open help guide on first open
+  // Auto-open help guide only on first open and not in edit mode
   useEffect(() => {
-    if (open && !showHelpOnOpen) {
-      // Only show automatically on first open
-      setShowHelpOnOpen(true);
+    if (open && isFirstOpen && !isEditMode) {
+      setShowHelpGuide(true);
+      setIsFirstOpen(false);
     }
-  }, [open]);
+  }, [open, isFirstOpen, isEditMode]);
 
   useEffect(() => {
     // Check if we should open the modal automatically from redirect
@@ -61,14 +66,19 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={(isOpen) => {
-        if (!isOpen) resetForm();
+        if (!isOpen) {
+          resetForm();
+          setSelectedCredential(null);
+        }
         onOpenChange(isOpen);
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Shopify Store</DialogTitle>
+            <DialogTitle>{isEditMode ? "Edit Shopify Store" : "Add Shopify Store"}</DialogTitle>
             <DialogDescription>
-              Connect to your Shopify store using Private App credentials.
+              {isEditMode 
+                ? "Update your Shopify store connection details."
+                : "Connect to your Shopify store using Private App credentials."}
             </DialogDescription>
           </DialogHeader>
 
@@ -80,6 +90,7 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
               onChange={(e) => setStoreName(e.target.value)}
               placeholder="mystore.myshopify.com"
               tooltip="Enter your Shopify store URL (e.g., mystore.myshopify.com)"
+              disabled={isEditMode}
             />
 
             <ShopifyFormField
@@ -111,16 +122,17 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
               isTesting={isTesting}
               isSubmitting={isSubmitting}
               onTestConnection={handleTestConnection}
+              isEditMode={isEditMode}
             />
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Help guide that automatically opens on first modal open */}
+      {/* Help guide with button to dismiss */}
       <ShopifyHelpGuide
-        open={showHelpOnOpen}
-        onOpenChange={setShowHelpOnOpen}
-        autoOpen={open}
+        open={showHelpGuide}
+        onOpenChange={setShowHelpGuide}
+        autoOpen={false}
       />
     </>
   );

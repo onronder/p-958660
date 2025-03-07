@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Edit, Loader2, Trash2, AlertCircle } from "lucide-react";
+import { Check, Edit, Loader2, Trash2, AlertCircle, ShoppingBag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -59,12 +59,16 @@ const ShopifyCredentialCard: React.FC<ShopifyCredentialCardProps> = ({
       if (error || data.error) {
         console.error("Connection test failed:", error || data.error);
         
-        // Update connection status in database
+        // Update connection status in database for sources table
         await supabase
-          .from("shopify_credentials")
+          .from("sources")
           .update({
-            last_connection_status: false,
-            last_connection_time: new Date().toISOString(),
+            credentials: {
+              ...credential,
+              last_connection_status: false,
+              last_connection_time: new Date().toISOString(),
+            },
+            updated_at: new Date().toISOString() // Update timestamp
           })
           .eq("id", credential.id);
         
@@ -78,12 +82,16 @@ const ShopifyCredentialCard: React.FC<ShopifyCredentialCardProps> = ({
         return;
       }
 
-      // Update connection status in database
+      // Update connection status in database for sources table
       await supabase
-        .from("shopify_credentials")
+        .from("sources")
         .update({
-          last_connection_status: true,
-          last_connection_time: new Date().toISOString(),
+          credentials: {
+            ...credential,
+            last_connection_status: true,
+            last_connection_time: new Date().toISOString(),
+          },
+          updated_at: new Date().toISOString() // Update timestamp
         })
         .eq("id", credential.id);
 
@@ -109,16 +117,17 @@ const ShopifyCredentialCard: React.FC<ShopifyCredentialCardProps> = ({
     try {
       setIsDeleting(true);
 
+      // Delete from sources table instead of shopify_credentials
       const { error } = await supabase
-        .from("shopify_credentials")
+        .from("sources")
         .delete()
         .eq("id", credential.id);
 
       if (error) {
-        console.error("Error deleting credential:", error);
+        console.error("Error deleting source:", error);
         toast({
           title: "Error",
-          description: "Failed to delete credential",
+          description: "Failed to delete source",
           variant: "destructive",
         });
         return;
@@ -126,12 +135,12 @@ const ShopifyCredentialCard: React.FC<ShopifyCredentialCardProps> = ({
 
       toast({
         title: "Deleted",
-        description: "Shopify credential deleted successfully",
+        description: "Shopify source deleted successfully",
       });
       
       onRefresh();
     } catch (error) {
-      console.error("Error deleting credential:", error);
+      console.error("Error deleting source:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
@@ -177,6 +186,7 @@ const ShopifyCredentialCard: React.FC<ShopifyCredentialCardProps> = ({
           <div className="space-y-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-primary" />
                 <h3 className="text-lg font-semibold">{credential.store_name}</h3>
                 {renderConnectionStatus()}
               </div>
