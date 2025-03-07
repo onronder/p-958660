@@ -39,6 +39,10 @@ path = "/shopify-oauth"
 src = "./shopify-oauth/index.ts"
 
 [[api.endpoints]]
+path = "/shopify-private"
+src = "./shopify-private/index.ts"
+
+[[api.endpoints]]
 path = "/update-transformation"
 src = "./update-transformation/index.ts"
 

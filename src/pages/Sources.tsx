@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -15,16 +15,36 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { useShopifyCredentials } from "@/hooks/useShopifyCredentials";
+import ShopifyPrivateAppModal from "@/components/sources/ShopifyPrivateAppModal";
+import ShopifyCredentialCard from "@/components/sources/ShopifyCredentialCard";
 
 const Sources = () => {
   const { 
     sources, 
-    isLoading, 
+    isLoading: isSourcesLoading, 
     loadSources, 
     handleTestConnection, 
     handleDeleteSource 
   } = useSources();
+  
+  const {
+    credentials: shopifyCredentials,
+    isLoading: isCredentialsLoading,
+    loadCredentials,
+    selectedCredential,
+    setSelectedCredential
+  } = useShopifyCredentials();
+  
+  const [showShopifyModal, setShowShopifyModal] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -38,6 +58,8 @@ const Sources = () => {
       description: "FlowTechs connects to platforms like Shopify, WooCommerce, and databases.",
     });
   };
+
+  const isLoading = isSourcesLoading || isCredentialsLoading;
 
   return (
     <div className="space-y-8">
@@ -72,35 +94,89 @@ const Sources = () => {
           </TooltipProvider>
         </div>
         <div className="flex gap-2">
-          <Button onClick={loadSources} variant="outline" className="flex items-center gap-2">
+          <Button 
+            onClick={() => {
+              loadSources();
+              loadCredentials();
+            }} 
+            variant="outline" 
+            className="flex items-center gap-2"
+          >
             <RefreshCw className="h-4 w-4" />
             Refresh
           </Button>
-          <Button asChild className="flex items-center gap-2">
-            <Link to="/sources/add">
-              <Plus className="h-4 w-4" />
-              Add New Source
-            </Link>
-          </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add New Source
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link to="/sources/add" className="cursor-pointer">
+                  Add OAuth-based Source
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setShowShopifyModal(true)}>
+                Add Shopify Private App
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       {isLoading ? (
         <SourcesLoadingSkeleton />
-      ) : sources.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sources.map((source) => (
-            <SourceCard 
-              key={source.id}
-              source={source}
-              onTestConnection={handleTestConnection}
-              onDelete={handleDeleteSource}
-            />
-          ))}
-        </div>
       ) : (
-        <EmptySourcesState />
+        <>
+          {shopifyCredentials.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-4">Shopify Private App Connections</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {shopifyCredentials.map((credential) => (
+                  <ShopifyCredentialCard
+                    key={credential.id}
+                    credential={credential}
+                    onRefresh={loadCredentials}
+                    onEdit={(cred) => {
+                      setSelectedCredential(cred);
+                      setShowShopifyModal(true);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <h2 className="text-xl font-semibold mb-4">OAuth Connections</h2>
+          {sources.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sources.map((source) => (
+                <SourceCard 
+                  key={source.id}
+                  source={source}
+                  onTestConnection={handleTestConnection}
+                  onDelete={handleDeleteSource}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptySourcesState />
+          )}
+        </>
       )}
+
+      <ShopifyPrivateAppModal
+        open={showShopifyModal}
+        onOpenChange={setShowShopifyModal}
+        onSuccess={() => {
+          loadCredentials();
+          setSelectedCredential(null);
+        }}
+      />
 
       <HelpFloatingButton />
     </div>

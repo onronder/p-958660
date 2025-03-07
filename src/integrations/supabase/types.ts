@@ -502,6 +502,42 @@ export type Database = {
         }
         Relationships: []
       }
+      shopify_credentials: {
+        Row: {
+          api_key: string
+          api_token: string
+          created_at: string | null
+          id: string
+          last_connection_status: boolean | null
+          last_connection_time: string | null
+          store_name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          api_token: string
+          created_at?: string | null
+          id?: string
+          last_connection_status?: boolean | null
+          last_connection_time?: string | null
+          store_name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          api_token?: string
+          created_at?: string | null
+          id?: string
+          last_connection_status?: boolean | null
+          last_connection_time?: string | null
+          store_name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       sources: {
         Row: {
           created_at: string | null
@@ -731,6 +767,13 @@ export type Database = {
       reset_dismissed_help_messages: {
         Args: {
           p_user_id: string
+        }
+        Returns: boolean
+      }
+      test_shopify_connection: {
+        Args: {
+          store_url: string
+          token: string
         }
         Returns: boolean
       }
