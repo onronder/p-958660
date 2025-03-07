@@ -25,9 +25,9 @@ const WooCommerceConfigForm: React.FC<WooCommerceConfigFormProps> = ({
   setApiSecret
 }) => {
   return (
-    <div className="grid gap-4">
+    <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="sourceName">Source Name</Label>
+        <Label htmlFor="sourceName">Integration Name</Label>
         <Input
           id="sourceName"
           placeholder="My WooCommerce Store"
@@ -47,28 +47,24 @@ const WooCommerceConfigForm: React.FC<WooCommerceConfigFormProps> = ({
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="apiKey">Consumer Key</Label>
+        <Label htmlFor="apiKey">API Key</Label>
         <Input
           id="apiKey"
-          type="password"
-          placeholder="ck_..."
+          placeholder="ck_xxxxxxxxxxxx"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="apiSecret">Consumer Secret</Label>
+        <Label htmlFor="apiSecret">API Secret</Label>
         <Input
           id="apiSecret"
           type="password"
-          placeholder="cs_..."
+          placeholder="cs_xxxxxxxxxxxx"
           value={apiSecret}
           onChange={(e) => setApiSecret(e.target.value)}
         />
-        <p className="text-xs text-muted-foreground">
-          Found in WooCommerce &gt; Settings &gt; Advanced &gt; REST API
-        </p>
       </div>
     </div>
   );
