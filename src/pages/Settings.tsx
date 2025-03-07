@@ -54,6 +54,7 @@ const Settings = () => {
       {showTour && <OnboardingTour onComplete={() => setShowTour(false)} />}
       
       <InfoBanner 
+        messageId="settings-info"
         message={
           <span>
             <span className="font-bold">⚙️ Settings</span> - Customize your account, manage security, and configure app preferences to personalize your FlowTechs experience.

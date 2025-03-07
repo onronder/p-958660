@@ -61,6 +61,7 @@ const Jobs = () => {
   return (
     <div className="space-y-8">
       <InfoBanner 
+        messageId="jobs-info"
         message={
           <span>
             <span className="font-bold">⚡ The Jobs</span> page allows you to schedule and manage automated data extraction and transformation tasks, ensuring your data is always up-to-date.

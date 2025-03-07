@@ -1,228 +1,138 @@
 
-import { useEffect } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { BellRing, Clock, MoonStar } from "lucide-react";
-import { Slider } from "@/components/ui/slider";
 import { useSettings } from "@/hooks/useSettings";
-
-const preferencesFormSchema = z.object({
-  dark_mode: z.boolean().default(false),
-  notifications_enabled: z.boolean().default(true),
-  auto_logout_minutes: z.number().min(5).max(240),
-});
-
-type PreferencesFormValues = z.infer<typeof preferencesFormSchema>;
-
-const autoLogoutOptions = [
-  { value: 15, label: "15 minutes" },
-  { value: 30, label: "30 minutes" },
-  { value: 60, label: "1 hour" },
-  { value: 120, label: "2 hours" },
-  { value: 240, label: "4 hours" },
-];
+import { useDismissibleHelp } from "@/hooks/useDismissibleHelp";
+import { Loader2, RefreshCw } from "lucide-react";
 
 const PreferencesSettings = () => {
-  const { profile, isLoading, fetchProfile, updatePreferences } = useSettings();
-
-  const form = useForm<PreferencesFormValues>({
-    resolver: zodResolver(preferencesFormSchema),
-    defaultValues: {
-      dark_mode: false,
-      notifications_enabled: true,
-      auto_logout_minutes: 60,
-    },
-  });
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  useEffect(() => {
-    if (profile) {
-      form.reset({
-        dark_mode: profile.dark_mode || false,
-        notifications_enabled: profile.notifications_enabled || true,
-        auto_logout_minutes: profile.auto_logout_minutes || 60,
-      });
-    }
-  }, [profile, form]);
-
-  const onSubmit = async (data: PreferencesFormValues) => {
-    await updatePreferences(data);
+  const { profile, updatePreferences, isLoading } = useSettings();
+  const { resetAllDismissedMessages, isResetting } = useDismissibleHelp();
+  
+  const handleDarkModeChange = (checked: boolean) => {
+    updatePreferences({ dark_mode: checked });
+  };
+  
+  const handleNotificationsChange = (checked: boolean) => {
+    updatePreferences({ notifications_enabled: checked });
+  };
+  
+  const handleAutoLogoutChange = (value: string) => {
+    updatePreferences({ auto_logout_minutes: parseInt(value) });
   };
 
-  // Handle dark mode toggle directly for immediate feedback
-  const handleDarkModeToggle = async (enabled: boolean) => {
-    form.setValue('dark_mode', enabled);
+  const handleResetHelpMessages = async () => {
+    await resetAllDismissedMessages();
     
-    // Apply dark mode immediately for better UX
-    if (enabled) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
-    // Store preference in localStorage for persistence
-    localStorage.setItem('theme', enabled ? 'dark' : 'light');
-    
-    // Update in backend
-    await updatePreferences({ dark_mode: enabled });
+    // You might want to refresh the page or affected components here
+    // so the banners show up immediately
+    window.location.reload();
   };
-
-  if (isLoading && !profile) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-[100px] w-full rounded-md" />
-        <Skeleton className="h-[100px] w-full rounded-md" />
-        <Skeleton className="h-[100px] w-full rounded-md" />
-      </div>
-    );
-  }
-
+  
   return (
     <div className="space-y-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MoonStar className="h-5 w-5" /> Appearance
-              </CardTitle>
-              <CardDescription>
-                Customize the appearance of the application
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="dark_mode"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Dark Mode</FormLabel>
-                      <FormDescription>
-                        Switch between light and dark themes
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={handleDarkModeToggle}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BellRing className="h-5 w-5" /> Notifications
-              </CardTitle>
-              <CardDescription>
-                Configure notification preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="notifications_enabled"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Enable Notifications</FormLabel>
-                      <FormDescription>
-                        Receive notifications for job completions, failures, and system updates
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={(checked) => {
-                          field.onChange(checked);
-                          updatePreferences({ notifications_enabled: checked });
-                        }}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" /> Session
-              </CardTitle>
-              <CardDescription>
-                Configure your session preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="auto_logout_minutes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Auto Logout</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        const minutes = parseInt(value, 10);
-                        field.onChange(minutes);
-                        updatePreferences({ auto_logout_minutes: minutes });
-                      }}
-                      value={field.value.toString()}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select auto logout time" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {autoLogoutOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value.toString()}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Automatically log out after a period of inactivity
-                    </FormDescription>
-                    <Slider
-                      value={[field.value]}
-                      min={15}
-                      max={240}
-                      step={15}
-                      className="mt-2"
-                      onValueChange={(vals) => {
-                        field.onChange(vals[0]);
-                        updatePreferences({ auto_logout_minutes: vals[0] });
-                      }}
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          <Button type="submit" disabled={form.formState.isSubmitting || isLoading}>
-            {form.formState.isSubmitting ? "Saving..." : "Save Preferences"}
-          </Button>
-        </form>
-      </Form>
+      <Card>
+        <CardHeader>
+          <CardTitle>Interface Preferences</CardTitle>
+          <CardDescription>
+            Customize the appearance and behavior of the application.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="dark-mode">Dark Mode</Label>
+              <div className="text-sm text-muted-foreground">
+                Enable dark mode for reduced eye strain in low-light environments.
+              </div>
+            </div>
+            <Switch
+              id="dark-mode"
+              checked={profile?.dark_mode || false}
+              onCheckedChange={handleDarkModeChange}
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="enable-notifications">Enable Notifications</Label>
+              <div className="text-sm text-muted-foreground">
+                Receive important notifications about system updates and job status changes.
+              </div>
+            </div>
+            <Switch
+              id="enable-notifications"
+              checked={profile?.notifications_enabled || false}
+              onCheckedChange={handleNotificationsChange}
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="auto-logout">Auto Logout (minutes)</Label>
+            <Select
+              value={profile?.auto_logout_minutes?.toString() || "30"}
+              onValueChange={handleAutoLogoutChange}
+              disabled={isLoading}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a timeout" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="15">15 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="60">1 hour</SelectItem>
+                <SelectItem value="120">2 hours</SelectItem>
+                <SelectItem value="240">4 hours</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              The system will automatically log you out after this period of inactivity.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Help & Guidance</CardTitle>
+          <CardDescription>
+            Manage how help content is displayed throughout the application.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Help Messages</Label>
+              <div className="text-sm text-muted-foreground">
+                Reset all previously dismissed help messages in the application.
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={handleResetHelpMessages}
+              disabled={isResetting}
+            >
+              {isResetting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Resetting...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Restore Help Messages
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

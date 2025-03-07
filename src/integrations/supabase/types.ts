@@ -460,6 +460,7 @@ export type Database = {
           company: string | null
           created_at: string | null
           dark_mode: boolean | null
+          dismissed_help_messages: Json | null
           first_name: string | null
           id: string
           language: string | null
@@ -474,6 +475,7 @@ export type Database = {
           company?: string | null
           created_at?: string | null
           dark_mode?: boolean | null
+          dismissed_help_messages?: Json | null
           first_name?: string | null
           id: string
           language?: string | null
@@ -488,6 +490,7 @@ export type Database = {
           company?: string | null
           created_at?: string | null
           dark_mode?: boolean | null
+          dismissed_help_messages?: Json | null
           first_name?: string | null
           id?: string
           language?: string | null
@@ -707,6 +710,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      dismiss_help_message: {
+        Args: {
+          message_id: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       generate_api_key: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -715,6 +725,12 @@ export type Database = {
         Args: {
           user_id: string
           requested_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
+      reset_dismissed_help_messages: {
+        Args: {
+          p_user_id: string
         }
         Returns: boolean
       }
