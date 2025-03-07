@@ -11,19 +11,19 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 142.1 76.2% 36.3%;
+    --primary: 240 50% 60%; /* Indigo/purple primary color */
     --primary-foreground: 355.7 100% 97.3%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
+    --accent: 260 50% 60%; /* Violet accent color */
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 142.1 76.2% 36.3%;
+    --ring: 240 50% 60%;
     --success: 152.2 76% 40.4%;
     --warning: 38.8 92.2% 50.8%;
     --radius: 0.5rem;
@@ -42,19 +42,19 @@
     --card-foreground: 0 0% 92%;
     --popover: 0 0% 9%;
     --popover-foreground: 0 0% 92%;
-    --primary: 142.1 70.6% 45.3%;
+    --primary: 240 50% 60%; /* Indigo/purple primary color */
     --primary-foreground: 144.9 80.4% 10%;
     --secondary: 240 3.7% 16.9%;
     --secondary-foreground: 0 0% 92%;
     --muted: 0 0% 15%;
     --muted-foreground: 240 5% 74.9%;
-    --accent: 12 6.5% 17.1%;
+    --accent: 260 50% 60%; /* Violet accent color */
     --accent-foreground: 0 0% 92%;
     --destructive: 0 72.8% 40.6%;
     --destructive-foreground: 0 85.7% 97.3%;
     --border: 240 3.7% 18.9%;
     --input: 240 3.7% 18.9%;
-    --ring: 142.4 71.8% 39.2%;
+    --ring: 240 50% 60%;
     --success: 152.2 76% 45.4%;
     --warning: 38.8 92.2% 55.8%;
     --chart-1: 220 70% 60%;

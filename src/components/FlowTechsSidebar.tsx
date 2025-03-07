@@ -45,11 +45,11 @@ const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
   };
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 border-r border-border bg-background shadow-sm z-10">
+    <div className="sidebar">
       <div className="flex flex-col h-full">
         <div className="flex items-center p-6">
-          <h2 className="text-2xl font-bold text-primary">FlowTechs</h2>
-          <button className="ml-auto hover:bg-gray-100 rounded-full p-1 transition-all duration-200">
+          <h2 className="text-2xl font-bold text-indigo-500">FlowTechs</h2>
+          <button className="ml-auto hover:bg-gray-100 rounded-full p-1 transition-all duration-200 dark:hover:bg-gray-800">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -68,7 +68,7 @@ const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
         </div>
         
         <nav className="flex-1 px-4 overflow-y-auto">
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -96,7 +96,7 @@ const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
           <div className="mt-6">
             <div className="sidebar-section-divider" />
             <div className="flex items-center px-4 py-2 text-sm font-medium text-muted-foreground">
-              <Sparkles className="h-4 w-4 mr-2 text-accent" />
+              <Sparkles className="h-4 w-4 mr-2 text-indigo-400" />
               <span>Pro Features</span>
             </div>
             
@@ -127,7 +127,7 @@ const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
           </div>
         </nav>
 
-        <div className="p-4 mt-auto border-t border-border">
+        <div className="sidebar-footer">
           <Link
             to="/settings"
             className={cn(

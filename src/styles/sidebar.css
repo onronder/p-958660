@@ -1,41 +1,43 @@
 
 @layer base {
   :root {
-    --sidebar-background: 245 245 245; /* Light gray sidebar */
-    --sidebar-active-gradient: linear-gradient(90deg, #22c55e, #16a34a);
-    --sidebar-hover: 230 230 230;
-    --border-color: 220 220 220;
+    --sidebar-background: 255 255 255; /* White sidebar */
+    --sidebar-text: 75 85 99; /* Gray text */
+    --sidebar-active-gradient: linear-gradient(90deg, #6366f1, #8b5cf6); /* Indigo to violet gradient */
+    --sidebar-hover: 243 244 246; /* Very light gray hover */
+    --border-color: 229 231 235; /* Light border */
   }
 
   .dark {
-    --sidebar-background: 30 30 30; /* Dark sidebar */
-    --sidebar-active-gradient: linear-gradient(90deg, #22c55e, #16a34a); 
-    --sidebar-hover: 50 50 50;
-    --border-color: 70 70 70;
+    --sidebar-background: 17 24 39; /* Dark sidebar (#111827) */
+    --sidebar-text: 209 213 219; /* Light gray text */
+    --sidebar-active-gradient: linear-gradient(90deg, #6366f1, #8b5cf6); /* Same gradient in dark mode */
+    --sidebar-hover: 55 65 81; /* Dark gray hover */
+    --border-color: 75 85 99; /* Darker border */
   }
 }
 
 /* Sidebar Container */
 .sidebar {
-  @apply w-64 h-screen bg-[rgb(var(--sidebar-background))] text-foreground shadow-lg flex flex-col transition-all duration-300 border-r border-[rgba(var(--border-color),0.5)];
+  @apply w-64 h-screen bg-[rgb(var(--sidebar-background))] text-[rgb(var(--sidebar-text))] flex flex-col transition-all duration-300 border-r border-[rgba(var(--border-color),0.5)] fixed left-0 top-0 z-10;
 }
 
 /* Sidebar Logo */
 .sidebar-logo {
-  @apply text-xl font-bold text-primary flex items-center px-4 py-3;
+  @apply text-xl font-bold text-indigo-500 flex items-center px-6 py-5;
 }
 
 /* Sidebar Links */
 .sidebar-link {
-  @apply flex items-center gap-3 px-4 py-3 rounded-lg text-lg font-medium transition-all duration-200;
+  @apply flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 mx-2 my-0.5;
 }
 
 .sidebar-link:hover {
-  @apply bg-[rgba(var(--sidebar-hover),0.8)] shadow-sm;
+  @apply bg-[rgba(var(--sidebar-hover),0.6)];
 }
 
 .sidebar-link.active {
-  @apply text-white bg-gradient-to-r from-primary to-primary/80 shadow-md;
+  @apply text-white bg-gradient-to-r from-indigo-500 to-violet-500 shadow-sm;
 }
 
 /* Sidebar Separators */
@@ -45,12 +47,12 @@
 
 /* Section divider for sidebar */
 .sidebar-section-divider {
-  @apply h-px bg-[rgba(var(--border-color),0.8)] my-2 mx-4;
+  @apply h-px bg-[rgba(var(--border-color),0.8)] my-3 mx-4;
 }
 
 /* Pro Feature Styling */
 .pro-feature {
-  @apply flex justify-between items-center px-4 py-3 rounded-lg transition-all duration-200 text-muted-foreground cursor-not-allowed;
+  @apply flex justify-between items-center px-4 py-3 rounded-lg transition-all duration-200 text-muted-foreground cursor-not-allowed mx-2 my-0.5;
 }
 
 .pro-feature:hover {
@@ -58,46 +60,46 @@
 }
 
 .pro-feature-active {
-  @apply bg-primary/10 text-primary font-medium shadow-sm;
+  @apply bg-indigo-50 text-indigo-600 font-medium dark:bg-indigo-900/20 dark:text-indigo-300;
 }
 
 /* Pro label for pro features */
 .pro-label {
-  @apply text-xs font-bold text-white bg-green-600 px-2 py-0.5 rounded-full ml-2;
+  @apply text-xs font-bold text-white bg-violet-600 px-2 py-0.5 rounded-full ml-2;
 }
 
 /* Bottom Section */
 .sidebar-footer {
-  @apply mt-auto px-4 pb-4 pt-4 border-t border-[rgba(var(--border-color),0.7)];
+  @apply mt-auto px-4 pb-6 pt-4 border-t border-[rgba(var(--border-color),0.7)];
 }
 
 /* CTA Button */
 .pro-upgrade-btn {
-  @apply bg-gradient-to-r from-primary to-primary/80 text-white font-medium py-2 px-4 rounded-lg hover:shadow-md transition-all duration-200 hover:scale-102;
+  @apply bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-medium py-2 px-4 rounded-lg hover:shadow-md transition-all duration-200 hover:scale-102;
 }
 
 /* Pro section background */
 .pro-section {
-  @apply bg-[rgba(var(--sidebar-hover),0.5)] p-3 rounded-lg mt-4;
+  @apply bg-[rgba(var(--sidebar-hover),0.4)] p-3 rounded-lg mt-4;
 }
 
 /* FlowTech sidebar links */
 .flowtech-sidebar-link {
-  @apply flex items-center gap-3 px-4 py-3 rounded-lg text-lg font-medium transition-all duration-200;
+  @apply flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 mx-2 my-0.5;
 }
 
 .flowtech-sidebar-link-active {
-  @apply text-white bg-gradient-to-r from-primary to-primary/80 shadow-md;
+  @apply text-white bg-gradient-to-r from-indigo-500 to-violet-500 shadow-sm;
 }
 
 .flowtech-sidebar-link-inactive {
-  @apply text-foreground hover:bg-[rgba(var(--sidebar-hover),0.8)] hover:shadow-sm;
+  @apply text-[rgb(var(--sidebar-text))] hover:bg-[rgba(var(--sidebar-hover),0.6)];
 }
 
 .flowtech-pro-section {
-  @apply bg-[rgba(var(--sidebar-hover),0.5)] border border-[rgba(var(--border-color),0.7)] p-3 rounded-lg mt-4;
+  @apply bg-[rgba(var(--sidebar-hover),0.4)] border border-[rgba(var(--border-color),0.7)] p-3 rounded-lg mt-4 mx-2;
 }
 
 .flowtech-pro-badge {
-  @apply text-xs font-bold text-white bg-green-600 px-2 py-0.5 rounded-full ml-auto;
+  @apply text-xs font-bold text-white bg-violet-600 px-2 py-0.5 rounded-full ml-auto;
 }
