@@ -18,6 +18,13 @@ const ShopifyModalActions: React.FC<ShopifyModalActionsProps> = ({
 }) => {
   const [showHelpGuide, setShowHelpGuide] = useState(false);
 
+  const handleHelpClick = (e: React.MouseEvent) => {
+    // Prevent event propagation to stop form validation
+    e.preventDefault();
+    e.stopPropagation();
+    setShowHelpGuide(true);
+  };
+
   return (
     <>
       <DialogFooter className="sm:justify-between">
@@ -26,7 +33,7 @@ const ShopifyModalActions: React.FC<ShopifyModalActionsProps> = ({
             type="button"
             variant="outline"
             size="icon"
-            onClick={() => setShowHelpGuide(true)}
+            onClick={handleHelpClick}
             className="rounded-full"
           >
             <HelpCircle className="h-4 w-4" />

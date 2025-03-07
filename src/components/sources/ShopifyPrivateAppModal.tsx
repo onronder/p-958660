@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   Dialog,
@@ -12,6 +12,7 @@ import ShopifyFormField from "./shopify/ShopifyFormField";
 import ShopifyConnectionStatus from "./shopify/ShopifyConnectionStatus";
 import ShopifyModalActions from "./shopify/ShopifyModalActions";
 import { useShopifyConnection } from "@/hooks/useShopifyConnection";
+import ShopifyHelpGuide from "./shopify/ShopifyHelpGuide";
 
 interface ShopifyPrivateAppModalProps {
   open: boolean;
@@ -25,6 +26,7 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
   onSuccess,
 }) => {
   const location = useLocation();
+  const [showHelpOnOpen, setShowHelpOnOpen] = useState(false);
   const {
     storeName,
     setStoreName,
@@ -45,65 +47,76 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
     // Check if we should open the modal automatically from redirect
     if (location.state?.openShopifyModal) {
       onOpenChange(true);
+      // Show help guide on first open
+      setShowHelpOnOpen(true);
     }
   }, [location, onOpenChange]);
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) resetForm();
-      onOpenChange(isOpen);
-    }}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Add Shopify Store</DialogTitle>
-          <DialogDescription>
-            Connect to your Shopify store using Private App credentials.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={(isOpen) => {
+        if (!isOpen) resetForm();
+        onOpenChange(isOpen);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Shopify Store</DialogTitle>
+            <DialogDescription>
+              Connect to your Shopify store using Private App credentials.
+            </DialogDescription>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <ShopifyFormField
-            id="storeName"
-            label="Store URL"
-            value={storeName}
-            onChange={(e) => setStoreName(e.target.value)}
-            placeholder="mystore.myshopify.com"
-            tooltip="Enter your Shopify store URL (e.g., mystore.myshopify.com)"
-          />
+          <form onSubmit={handleSubmit} className="space-y-4 py-4">
+            <ShopifyFormField
+              id="storeName"
+              label="Store URL"
+              value={storeName}
+              onChange={(e) => setStoreName(e.target.value)}
+              placeholder="mystore.myshopify.com"
+              tooltip="Enter your Shopify store URL (e.g., mystore.myshopify.com)"
+            />
 
-          <ShopifyFormField
-            id="apiKey"
-            label="API Key"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="API Key"
-            tooltip="The API Key from your Shopify Private App"
-          />
+            <ShopifyFormField
+              id="apiKey"
+              label="API Key"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="API Key"
+              tooltip="The API Key from your Shopify Private App"
+            />
 
-          <ShopifyFormField
-            id="apiToken"
-            label="Admin API Access Token"
-            value={apiToken}
-            onChange={(e) => setApiToken(e.target.value)}
-            placeholder="Admin API Access Token"
-            type="password"
-            tooltip="The Admin API Access Token from your Shopify Private App"
-          />
+            <ShopifyFormField
+              id="apiToken"
+              label="Admin API Access Token"
+              value={apiToken}
+              onChange={(e) => setApiToken(e.target.value)}
+              placeholder="Admin API Access Token"
+              type="password"
+              tooltip="The Admin API Access Token from your Shopify Private App"
+            />
 
-          <ShopifyConnectionStatus
-            status={testStatus}
-            shopData={testResponseData}
-            storeName={storeName}
-          />
+            <ShopifyConnectionStatus
+              status={testStatus}
+              shopData={testResponseData}
+              storeName={storeName}
+            />
 
-          <ShopifyModalActions
-            isTesting={isTesting}
-            isSubmitting={isSubmitting}
-            onTestConnection={handleTestConnection}
-          />
-        </form>
-      </DialogContent>
-    </Dialog>
+            <ShopifyModalActions
+              isTesting={isTesting}
+              isSubmitting={isSubmitting}
+              onTestConnection={handleTestConnection}
+            />
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Separate help guide that can be auto-opened */}
+      <ShopifyHelpGuide
+        open={showHelpOnOpen}
+        onOpenChange={setShowHelpOnOpen}
+        autoOpen={open && showHelpOnOpen}
+      />
+    </>
   );
 };
 

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,12 +15,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface ShopifyHelpGuideProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  autoOpen?: boolean;
 }
 
 const ShopifyHelpGuide: React.FC<ShopifyHelpGuideProps> = ({
   open,
   onOpenChange,
+  autoOpen = false,
 }) => {
+  useEffect(() => {
+    if (autoOpen) {
+      onOpenChange(true);
+    }
+  }, [autoOpen, onOpenChange]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
