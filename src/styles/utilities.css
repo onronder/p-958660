@@ -1,0 +1,48 @@
+
+/* Animated transitions */
+.animate-fade-in {
+  @apply transition-opacity duration-300 ease-in-out;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Card shadows and hover effects */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-md;
+}
+
+/* Hover scale effect */
+.hover-scale {
+  @apply transition-transform duration-200 hover:scale-102;
+}
+
+/* Table styles */
+.table-striped tbody tr:nth-child(odd) {
+  @apply bg-gray-50;
+}
+
+.table-hover tbody tr {
+  @apply hover:bg-blue-50 transition-colors duration-150;
+}
+
+/* Input focus states */
+.input-focus {
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200;
+}
+
+/* Dropdown and combobox fixes */
+.select-content {
+  @apply bg-white !important;
+}
+
+.select-item {
+  @apply bg-white hover:bg-gray-100;
+}
+
+[data-radix-select-viewport] {
+  @apply bg-white;
+}

@@ -1,0 +1,38 @@
+
+/* FlowTechs Custom Styles */
+.glass-card {
+  @apply bg-white bg-opacity-90 border border-gray-200 shadow-sm rounded-lg transition-all duration-200;
+}
+
+.alert-info {
+  @apply bg-blue-50 text-blue-800 rounded-lg p-4;
+}
+
+.status-badge {
+  @apply px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200;
+}
+
+.status-active {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-inactive {
+  @apply bg-gray-100 text-gray-800;
+}
+
+.status-failed {
+  @apply bg-red-100 text-red-800;
+}
+
+.status-pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.info-banner {
+  @apply bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 flex items-start space-x-4 mb-4 animate-fade-in;
+}
+
+/* CTA button styles */
+.cta-button {
+  @apply bg-gradient-to-r from-primary to-accent text-white font-medium py-2 px-4 rounded-lg hover:shadow-md transition-all duration-200 hover:scale-102;
+}
