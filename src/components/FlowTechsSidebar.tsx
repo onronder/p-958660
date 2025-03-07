@@ -78,10 +78,10 @@ const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
                   <Link
                     to={item.path}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                      "flowtech-sidebar-link",
                       isActive 
-                        ? "bg-primary/10 text-primary font-medium" 
-                        : "text-secondary-foreground hover:bg-primary/5"
+                        ? "flowtech-sidebar-link-active" 
+                        : "flowtech-sidebar-link-inactive"
                     )}
                   >
                     <Icon className="h-5 w-5" />
@@ -110,10 +110,10 @@ const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
                     <Link
                       to={item.path}
                       className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                        "flowtech-sidebar-link",
                         isActive 
-                          ? "bg-accent/20 text-accent font-medium" 
-                          : "text-secondary-foreground hover:bg-accent/10"
+                          ? "pro-feature-active" 
+                          : "pro-feature"
                       )}
                     >
                       <Icon className="h-5 w-5" />
@@ -131,10 +131,10 @@ const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
           <Link
             to="/settings"
             className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 mb-2",
+              "flowtech-sidebar-link",
               location.pathname === "/settings" 
-                ? "bg-primary/10 text-primary font-medium" 
-                : "text-secondary-foreground hover:bg-primary/5"
+                ? "flowtech-sidebar-link-active" 
+                : "flowtech-sidebar-link-inactive"
             )}
           >
             <Settings className="h-5 w-5" />
@@ -144,10 +144,10 @@ const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
           <Link
             to="/help"
             className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 mb-2",
+              "flowtech-sidebar-link",
               location.pathname === "/help" 
-                ? "bg-primary/10 text-primary font-medium" 
-                : "text-secondary-foreground hover:bg-primary/5"
+                ? "flowtech-sidebar-link-active" 
+                : "flowtech-sidebar-link-inactive"
             )}
           >
             <HelpCircle className="h-5 w-5" />
@@ -156,7 +156,7 @@ const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
           
           <button
             onClick={handleLogoutClick}
-            className="flex w-full items-center gap-3 px-4 py-3 text-secondary-foreground hover:bg-primary/5 rounded-lg transition-all duration-200"
+            className="flowtech-sidebar-link flowtech-sidebar-link-inactive w-full"
           >
             <LogOut className="h-5 w-5" />
             <span>Logout</span>
