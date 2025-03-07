@@ -46,10 +46,13 @@ const Sources = () => {
   useEffect(() => {
     // Load sources when the component mounts
     loadSources();
+    loadCredentials();
     
     // Check location state for modal flags
     if (location.state?.openShopifyModal) {
       setShowShopifyModal(true);
+    } else if (location.state?.openSourceSelector) {
+      setShowSourceSelector(true);
     }
   }, []);
 
@@ -85,6 +88,7 @@ const Sources = () => {
   };
 
   const isLoading = isSourcesLoading || isCredentialsLoading;
+  const hasAnyConnections = shopifyCredentials.length > 0 || sources.length > 0;
 
   return (
     <div className="space-y-8">
@@ -142,28 +146,20 @@ const Sources = () => {
         <SourcesLoadingSkeleton />
       ) : (
         <>
-          {shopifyCredentials.length > 0 && (
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-4">Shopify Connections</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {shopifyCredentials.map((credential) => (
-                  <ShopifyCredentialCard
-                    key={credential.id}
-                    credential={credential}
-                    onRefresh={loadCredentials}
-                    onEdit={(cred) => {
-                      setSelectedCredential(cred);
-                      setShowShopifyModal(true);
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <h2 className="text-xl font-semibold mb-4">Other API Connections</h2>
-          {sources.length > 0 ? (
+          {hasAnyConnections ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {shopifyCredentials.map((credential) => (
+                <ShopifyCredentialCard
+                  key={credential.id}
+                  credential={credential}
+                  onRefresh={loadCredentials}
+                  onEdit={(cred) => {
+                    setSelectedCredential(cred);
+                    setShowShopifyModal(true);
+                  }}
+                />
+              ))}
+              
               {sources.map((source) => (
                 <SourceCard 
                   key={source.id}
