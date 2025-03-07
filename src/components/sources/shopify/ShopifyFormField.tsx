@@ -19,6 +19,7 @@ interface ShopifyFormFieldProps {
   placeholder: string;
   tooltip: string;
   type?: string;
+  disabled?: boolean;  // Added disabled prop
 }
 
 const ShopifyFormField: React.FC<ShopifyFormFieldProps> = ({
@@ -29,6 +30,7 @@ const ShopifyFormField: React.FC<ShopifyFormFieldProps> = ({
   placeholder,
   tooltip,
   type = "text",
+  disabled = false,  // Added with default value
 }) => {
   const handleHelpClick = (e: React.MouseEvent) => {
     // Prevent event propagation to stop form validation
@@ -67,6 +69,7 @@ const ShopifyFormField: React.FC<ShopifyFormFieldProps> = ({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
+        disabled={disabled}  // Pass disabled prop to Input
       />
     </div>
   );
