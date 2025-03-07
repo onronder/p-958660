@@ -1,7 +1,23 @@
 
+@layer base {
+  :root {
+    --sidebar-background: 245 245 245; /* Light gray sidebar */
+    --sidebar-active-gradient: linear-gradient(90deg, #22c55e, #16a34a);
+    --sidebar-hover: 230 230 230;
+    --border-color: 220 220 220;
+  }
+
+  .dark {
+    --sidebar-background: 30 30 30; /* Dark sidebar */
+    --sidebar-active-gradient: linear-gradient(90deg, #22c55e, #16a34a); 
+    --sidebar-hover: 50 50 50;
+    --border-color: 70 70 70;
+  }
+}
+
 /* Sidebar Container */
 .sidebar {
-  @apply w-64 h-screen bg-gray-900 text-white shadow-lg flex flex-col transition-all duration-300;
+  @apply w-64 h-screen bg-[rgb(var(--sidebar-background))] text-foreground shadow-lg flex flex-col transition-all duration-300 border-r border-[rgba(var(--border-color),0.5)];
 }
 
 /* Sidebar Logo */
@@ -11,77 +27,77 @@
 
 /* Sidebar Links */
 .sidebar-link {
-  @apply flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-gray-800;
+  @apply flex items-center gap-3 px-4 py-3 rounded-lg text-lg font-medium transition-all duration-200;
 }
 
 .sidebar-link:hover {
-  @apply dark:shadow-[0_0_12px_rgba(255,255,255,0.05)];
+  @apply bg-[rgba(var(--sidebar-hover),0.8)] shadow-sm;
 }
 
 .sidebar-link.active {
-  @apply bg-primary text-white font-bold shadow-md dark:bg-primary/70 dark:shadow-[0_0_15px_rgba(34,197,94,0.2)];
+  @apply text-white bg-gradient-to-r from-primary to-primary/80 shadow-md;
 }
 
 /* Sidebar Separators */
 .sidebar-divider {
-  @apply h-px bg-gray-700 my-2 mx-4;
+  @apply h-px bg-[rgba(var(--border-color),0.8)] my-2 mx-4;
 }
 
 /* Section divider for sidebar */
 .sidebar-section-divider {
-  @apply h-px bg-gray-700 my-2 mx-4;
+  @apply h-px bg-[rgba(var(--border-color),0.8)] my-2 mx-4;
 }
 
 /* Pro Feature Styling */
 .pro-feature {
-  @apply flex justify-between items-center p-3 rounded-md transition-all duration-200 hover:bg-gray-700 text-gray-400 cursor-not-allowed;
+  @apply flex justify-between items-center px-4 py-3 rounded-lg transition-all duration-200 text-muted-foreground cursor-not-allowed;
 }
 
 .pro-feature:hover {
-  @apply text-gray-200 dark:shadow-[0_0_10px_rgba(255,255,255,0.03)];
+  @apply bg-[rgba(var(--sidebar-hover),0.6)] text-foreground;
 }
 
 .pro-feature-active {
-  @apply bg-primary/10 text-primary font-medium dark:bg-primary/20 dark:shadow-[0_0_15px_rgba(34,197,94,0.15)];
+  @apply bg-primary/10 text-primary font-medium shadow-sm;
 }
 
 /* Pro label for pro features */
 .pro-label {
-  @apply text-xs font-bold text-green-400 bg-green-900 px-2 py-0.5 rounded-md ml-2;
+  @apply text-xs font-bold text-white bg-green-600 px-2 py-0.5 rounded-full ml-2;
 }
 
 /* Bottom Section */
 .sidebar-footer {
-  @apply mt-auto px-4 pb-4;
+  @apply mt-auto px-4 pb-4 pt-4 border-t border-[rgba(var(--border-color),0.7)];
 }
 
 /* CTA Button */
 .pro-upgrade-btn {
-  @apply bg-gradient-to-r from-primary to-secondary text-white font-medium py-2 px-4 rounded-lg hover:shadow-md transition-all duration-200 hover:scale-102;
+  @apply bg-gradient-to-r from-primary to-primary/80 text-white font-medium py-2 px-4 rounded-lg hover:shadow-md transition-all duration-200 hover:scale-102;
 }
 
 /* Pro section background */
 .pro-section {
-  @apply bg-gray-800 p-2 rounded-lg mt-2;
+  @apply bg-[rgba(var(--sidebar-hover),0.5)] p-3 rounded-lg mt-4;
 }
 
 /* FlowTech sidebar links */
 .flowtech-sidebar-link {
-  @apply flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-150;
+  @apply flex items-center gap-3 px-4 py-3 rounded-lg text-lg font-medium transition-all duration-200;
 }
 
 .flowtech-sidebar-link-active {
-  @apply bg-primary/20 text-primary font-medium border border-primary/40 dark:shadow-[0_0_15px_rgba(34,197,94,0.15)];
+  @apply text-white bg-gradient-to-r from-primary to-primary/80 shadow-md;
 }
 
 .flowtech-sidebar-link-inactive {
-  @apply text-gray-300 hover:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:shadow-[0_0_12px_rgba(255,255,255,0.03)];
+  @apply text-foreground hover:bg-[rgba(var(--sidebar-hover),0.8)] hover:shadow-sm;
 }
 
 .flowtech-pro-section {
-  @apply bg-gray-800 border border-gray-700 backdrop-blur-md p-2 rounded-md mt-2 dark:bg-white/3 dark:border-white/5;
+  @apply bg-[rgba(var(--sidebar-hover),0.5)] border border-[rgba(var(--border-color),0.7)] p-3 rounded-lg mt-4;
 }
 
 .flowtech-pro-badge {
-  @apply text-xs font-semibold text-green-400 bg-green-900/80 px-2 py-0.5 rounded-md ml-auto;
+  @apply text-xs font-bold text-white bg-green-600 px-2 py-0.5 rounded-full ml-auto;
 }
