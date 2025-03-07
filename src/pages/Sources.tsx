@@ -87,8 +87,23 @@ const Sources = () => {
     }
   };
 
+  // Get a deduplicated list of sources
+  // We prefer to show ShopifyCredentialCard for Shopify sources
+  const getDisplaySources = () => {
+    // Extract shopify credential IDs to filter out from regular sources
+    const shopifyIds = shopifyCredentials.map(cred => cred.id);
+    
+    // Filter out regular sources that are already shown as Shopify credentials
+    const filteredSources = sources.filter(source => 
+      !shopifyIds.includes(source.id) && source.source_type !== "Shopify"
+    );
+    
+    return filteredSources;
+  };
+
   const isLoading = isSourcesLoading || isCredentialsLoading;
-  const hasAnyConnections = shopifyCredentials.length > 0 || sources.length > 0;
+  const displaySources = getDisplaySources();
+  const hasAnyConnections = shopifyCredentials.length > 0 || displaySources.length > 0;
 
   return (
     <div className="space-y-8">
@@ -160,7 +175,7 @@ const Sources = () => {
                 />
               ))}
               
-              {sources.map((source) => (
+              {displaySources.map((source) => (
                 <SourceCard 
                   key={source.id}
                   source={source}
