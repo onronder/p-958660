@@ -8,6 +8,15 @@ import { SourceType } from "@/components/sources/SourceTypeCard";
 import SourceSelectionStep from "@/components/sources/SourceSelectionStep";
 import SourceConfigStep from "@/components/sources/SourceConfigStep";
 import ShopifyOAuthCallback from "@/components/sources/ShopifyOAuthCallback";
+import InfoBanner from "@/components/InfoBanner";
+import { HelpCircle } from "lucide-react";
+import HelpFloatingButton from "@/components/help/HelpFloatingButton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const AddSource = () => {
   const [step, setStep] = useState<"select-source" | "configure" | "oauth-callback">("select-source");
@@ -102,6 +111,13 @@ const AddSource = () => {
     }
   };
 
+  const showHelpTip = () => {
+    toast({
+      title: "Need Help?",
+      description: "Check our documentation for detailed instructions on connecting data sources.",
+    });
+  };
+
   // Render the appropriate step
   const renderStep = () => {
     if (step === "oauth-callback") {
@@ -110,11 +126,35 @@ const AddSource = () => {
     
     if (step === "select-source") {
       return (
-        <SourceSelectionStep 
-          sourceOptions={sourceOptions}
-          onSourceSelect={handleSourceSelection}
-          onBack={handleBack}
-        />
+        <>
+          <InfoBanner 
+            message={
+              <span>
+                Select the type of data source you want to connect. Each source type requires different authentication methods.
+              </span>
+            }
+          />
+          <div className="flex items-center mb-4">
+            <h1 className="text-3xl font-bold text-primary">Add New Source</h1>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="ml-2" onClick={showHelpTip}>
+                    <HelpCircle className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Learn about connecting data sources</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <SourceSelectionStep 
+            sourceOptions={sourceOptions}
+            onSourceSelect={handleSourceSelection}
+            onBack={handleBack}
+          />
+        </>
       );
     }
     
@@ -142,6 +182,7 @@ const AddSource = () => {
   return (
     <div className="space-y-8">
       {renderStep()}
+      <HelpFloatingButton />
     </div>
   );
 };
