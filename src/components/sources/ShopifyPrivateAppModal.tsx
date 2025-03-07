@@ -43,12 +43,18 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
     handleSubmit,
   } = useShopifyConnection(onSuccess);
 
+  // Auto-open help guide on first open
+  useEffect(() => {
+    if (open && !showHelpOnOpen) {
+      // Only show automatically on first open
+      setShowHelpOnOpen(true);
+    }
+  }, [open]);
+
   useEffect(() => {
     // Check if we should open the modal automatically from redirect
     if (location.state?.openShopifyModal) {
       onOpenChange(true);
-      // Show help guide on first open
-      setShowHelpOnOpen(true);
     }
   }, [location, onOpenChange]);
 
@@ -110,11 +116,11 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Separate help guide that can be auto-opened */}
+      {/* Help guide that automatically opens on first modal open */}
       <ShopifyHelpGuide
         open={showHelpOnOpen}
         onOpenChange={setShowHelpOnOpen}
-        autoOpen={open && showHelpOnOpen}
+        autoOpen={open}
       />
     </>
   );

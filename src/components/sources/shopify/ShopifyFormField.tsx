@@ -30,6 +30,12 @@ const ShopifyFormField: React.FC<ShopifyFormFieldProps> = ({
   tooltip,
   type = "text",
 }) => {
+  const handleHelpClick = (e: React.MouseEvent) => {
+    // Prevent event propagation to stop form validation
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -37,7 +43,12 @@ const ShopifyFormField: React.FC<ShopifyFormFieldProps> = ({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-5 w-5">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-5 w-5"
+                onClick={handleHelpClick}  // Add click handler to prevent form validation
+              >
                 <HelpCircle className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
