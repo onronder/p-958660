@@ -100,7 +100,7 @@ const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
               <span>Pro Features</span>
             </div>
             
-            <ul className="space-y-1 mt-1 pro-section">
+            <ul className="flowtech-pro-section">
               {proFeatures.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
@@ -118,7 +118,7 @@ const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
                     >
                       <Icon className="h-5 w-5" />
                       <span>{item.label}</span>
-                      <span className="pro-label ml-auto">PRO</span>
+                      <span className="flowtech-pro-badge">PRO</span>
                     </Link>
                   </li>
                 );
