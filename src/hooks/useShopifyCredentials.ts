@@ -51,10 +51,10 @@ export const useShopifyCredentials = () => {
       const shopifySources = data?.map(source => ({
         id: source.id,
         store_name: source.url,
-        api_key: source.credentials.api_key,
-        api_token: source.credentials.api_token,
-        last_connection_status: source.credentials.last_connection_status,
-        last_connection_time: source.credentials.last_connection_time,
+        api_key: source.credentials?.api_key || "",
+        api_token: source.credentials?.api_token || "",
+        last_connection_status: source.credentials?.last_connection_status || null,
+        last_connection_time: source.credentials?.last_connection_time || null,
         created_at: source.created_at
       })) || [];
       
@@ -153,7 +153,7 @@ export const useShopifyCredentials = () => {
       
       // Update credentials object
       const updatedCredentials = {
-        ...sourceData.credentials,
+        ...(sourceData.credentials as Record<string, any> || {}),
         last_connection_status: status,
         last_connection_time: new Date().toISOString(),
       };

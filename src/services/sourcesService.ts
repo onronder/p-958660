@@ -48,7 +48,7 @@ export const formatDate = (dateString?: string) => {
   }).format(date);
 };
 
-export const testShopifyConnection = async (sourceId: string, storeUrl: string, credentials: any) => {
+export const testShopifyConnection = async (sourceId: string, storeUrl: string, credentials: Record<string, any>) => {
   try {
     if (credentials.api_token) {
       // For Shopify private API
@@ -112,7 +112,7 @@ const updateSourceConnectionStatus = async (sourceId: string, status: boolean) =
     }
     
     // Update credentials with connection status
-    const credentials = sourceData.credentials || {};
+    const credentials = sourceData.credentials as Record<string, any> || {};
     const updatedCredentials = {
       ...credentials,
       last_connection_status: status,
