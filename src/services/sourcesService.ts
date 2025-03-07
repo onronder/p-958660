@@ -111,7 +111,7 @@ const updateSourceConnectionStatus = async (sourceId: string, status: boolean) =
       return;
     }
     
-    // Update credentials with connection status
+    // Properly cast credentials to Record type for type safety
     const credentials = sourceData.credentials as Record<string, any> || {};
     const updatedCredentials = {
       ...credentials,

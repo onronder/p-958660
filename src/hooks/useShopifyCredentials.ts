@@ -48,15 +48,21 @@ export const useShopifyCredentials = () => {
       }
 
       // Map sources to ShopifyCredential format for backward compatibility
-      const shopifySources = data?.map(source => ({
-        id: source.id,
-        store_name: source.url,
-        api_key: source.credentials?.api_key || "",
-        api_token: source.credentials?.api_token || "",
-        last_connection_status: source.credentials?.last_connection_status || null,
-        last_connection_time: source.credentials?.last_connection_time || null,
-        created_at: source.created_at
-      })) || [];
+      // Properly cast and handle the credentials field
+      const shopifySources = data?.map(source => {
+        // Cast credentials to a Record type before accessing properties
+        const creds = source.credentials as Record<string, any> || {};
+        
+        return {
+          id: source.id,
+          store_name: source.url,
+          api_key: creds.api_key || "",
+          api_token: creds.api_token || "",
+          last_connection_status: creds.last_connection_status || null,
+          last_connection_time: creds.last_connection_time || null,
+          created_at: source.created_at
+        };
+      }) || [];
       
       setCredentials(shopifySources);
     } catch (unexpectedError) {
@@ -151,9 +157,10 @@ export const useShopifyCredentials = () => {
         return false;
       }
       
-      // Update credentials object
+      // Update credentials object - properly cast to Record for type safety
+      const currentCreds = sourceData.credentials as Record<string, any> || {};
       const updatedCredentials = {
-        ...(sourceData.credentials as Record<string, any> || {}),
+        ...currentCreds,
         last_connection_status: status,
         last_connection_time: new Date().toISOString(),
       };
