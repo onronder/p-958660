@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Source } from "@/types/source";
 
 export interface ShopifyCredential {
   id: string;
@@ -33,29 +34,37 @@ export const useShopifyCredentials = () => {
       setIsLoading(true);
       setError(null);
       
-      const { data, error: fetchError } = await fetchUserCredentials(user.id);
+      // Fetch from the sources table instead of shopify_credentials
+      const { data, error: fetchError } = await supabase
+        .from("sources")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("source_type", "Shopify")
+        .order("created_at", { ascending: false });
       
       if (fetchError) {
         handleError(fetchError, "Failed to load Shopify credentials");
         return;
       }
+
+      // Map sources to ShopifyCredential format for backward compatibility
+      const shopifySources = data?.map(source => ({
+        id: source.id,
+        store_name: source.url,
+        api_key: source.credentials.api_key,
+        api_token: source.credentials.api_token,
+        last_connection_status: source.credentials.last_connection_status,
+        last_connection_time: source.credentials.last_connection_time,
+        created_at: source.created_at
+      })) || [];
       
-      setCredentials(data || []);
+      setCredentials(shopifySources);
     } catch (unexpectedError) {
       handleUnexpectedError(unexpectedError);
     } finally {
       setIsLoading(false);
     }
   }, [user]);
-
-  // Separate fetch function for better separation of concerns
-  const fetchUserCredentials = async (userId: string) => {
-    return await supabase
-      .from("shopify_credentials")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-  };
 
   // Error handling helpers
   const handleError = (error: any, message: string) => {
@@ -92,41 +101,14 @@ export const useShopifyCredentials = () => {
     return credential;
   }, [credentials]);
 
-  // Add a new credential
-  const addCredential = useCallback(async (newCredential: Omit<ShopifyCredential, 'id' | 'created_at'> & { user_id: string }) => {
-    try {
-      setError(null);
-      
-      const { data, error: insertError } = await supabase
-        .from("shopify_credentials")
-        .insert(newCredential)
-        .select();
-      
-      if (insertError) {
-        handleError(insertError, "Failed to add Shopify credential");
-        return null;
-      }
-      
-      toast({
-        title: "Success",
-        description: "Shopify credential added successfully",
-      });
-      
-      await loadCredentials();
-      return data?.[0] || null;
-    } catch (unexpectedError) {
-      handleUnexpectedError(unexpectedError);
-      return null;
-    }
-  }, [loadCredentials]);
-
   // Delete a credential
   const deleteCredential = useCallback(async (credentialId: string) => {
     try {
       setError(null);
       
+      // Delete from sources table
       const { error: deleteError } = await supabase
-        .from("shopify_credentials")
+        .from("sources")
         .delete()
         .eq("id", credentialId);
       
@@ -137,7 +119,7 @@ export const useShopifyCredentials = () => {
       
       toast({
         title: "Success",
-        description: "Shopify credential deleted successfully",
+        description: "Shopify source deleted successfully",
       });
       
       if (selectedCredential?.id === credentialId) {
@@ -157,11 +139,31 @@ export const useShopifyCredentials = () => {
     try {
       setError(null);
       
+      // Get current credentials first
+      const { data: sourceData, error: getError } = await supabase
+        .from("sources")
+        .select("credentials")
+        .eq("id", credentialId)
+        .single();
+        
+      if (getError) {
+        handleError(getError, "Failed to get current source data");
+        return false;
+      }
+      
+      // Update credentials object
+      const updatedCredentials = {
+        ...sourceData.credentials,
+        last_connection_status: status,
+        last_connection_time: new Date().toISOString(),
+      };
+      
+      // Update in sources table
       const { error: updateError } = await supabase
-        .from("shopify_credentials")
+        .from("sources")
         .update({
-          last_connection_status: status,
-          last_connection_time: new Date().toISOString(),
+          credentials: updatedCredentials,
+          status: status ? "Active" : "Failed"
         })
         .eq("id", credentialId);
       
@@ -186,7 +188,6 @@ export const useShopifyCredentials = () => {
     setSelectedCredential,
     loadCredentials,
     selectCredentialById,
-    addCredential,
     deleteCredential,
     updateConnectionStatus
   };

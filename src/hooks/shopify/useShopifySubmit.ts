@@ -52,41 +52,47 @@ export const useShopifySubmit = (onSuccess: () => void) => {
         return false;
       }
 
-      // Insert credentials into database
+      // Insert source into the sources table instead of shopify_credentials
       const { data: insertedData, error: insertError } = await supabase
-        .from("shopify_credentials")
+        .from("sources")
         .insert({
           user_id: user.id,
-          store_name: formattedStoreUrl,
-          api_key: apiKey,
-          api_token: apiToken,
-          last_connection_status: true,
-          last_connection_time: new Date().toISOString(),
+          name: formattedStoreUrl.split('.')[0], // Use store name as the source name
+          source_type: "Shopify",
+          url: formattedStoreUrl,
+          status: "Active",
+          credentials: {
+            api_key: apiKey,
+            api_token: apiToken,
+            last_connection_status: true,
+            last_connection_time: new Date().toISOString(),
+            store_details: testResponseData
+          }
         })
         .select('id');
 
       if (insertError) {
-        console.error("Error inserting credentials:", insertError);
+        console.error("Error inserting source:", insertError);
         toast({
           title: "Error",
-          description: insertError.message || "Failed to save credentials",
+          description: insertError.message || "Failed to save source",
           variant: "destructive",
         });
         return false;
       }
 
       // Log the inserted record ID to confirm it was saved
-      console.log("Saved credentials with ID:", insertedData[0]?.id);
+      console.log("Saved source with ID:", insertedData[0]?.id);
 
       toast({
         title: "Success",
-        description: "Shopify credentials saved successfully",
+        description: "Shopify source added successfully",
       });
 
       onSuccess();
       return true;
     } catch (error) {
-      console.error("Error saving credentials:", error);
+      console.error("Error saving source:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",

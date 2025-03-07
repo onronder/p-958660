@@ -4,7 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Source } from "@/types/source";
 import { fetchUserSources, deleteSource, testShopifyConnection } from "@/services/sourcesService";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 
 export const useSources = () => {
   const [sources, setSources] = useState<Source[]>([]);
@@ -57,17 +56,24 @@ export const useSources = () => {
         description: "Please wait while we verify the connection.",
       });
       
-      if (source.source_type === "Shopify" && source.credentials?.access_token) {
+      if (source.source_type === "Shopify") {
         await testShopifyConnection(sourceId, source.url, source.credentials);
+        
+        // Refresh sources to get updated status
+        await loadSources();
+        
+        toast({
+          title: "Connection Successful",
+          description: "The source connection is working properly.",
+        });
       } else {
-        // For other source types or if no OAuth token is available, use a simple delay for now
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // For other source types, implement specific testing logic
+        toast({
+          title: "Source Type Not Supported",
+          description: `Testing for ${source.source_type} is not implemented yet.`,
+          variant: "destructive",
+        });
       }
-      
-      toast({
-        title: "Connection Successful",
-        description: "The source connection is working properly.",
-      });
     } catch (error) {
       console.error("Error testing connection:", error);
       toast({
@@ -75,6 +81,9 @@ export const useSources = () => {
         description: "Unable to connect to the source. Please check credentials.",
         variant: "destructive",
       });
+      
+      // Refresh sources to get updated status
+      await loadSources();
     }
   };
 
