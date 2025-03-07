@@ -1,7 +1,7 @@
 
 /* Sidebar Container */
 .sidebar {
-  @apply w-64 h-screen bg-white dark:bg-gray-900 shadow-lg flex flex-col transition-all duration-300;
+  @apply w-64 h-screen bg-white dark:bg-card shadow-lg flex flex-col transition-all duration-300;
 }
 
 /* Sidebar Logo */
@@ -15,34 +15,34 @@
 }
 
 .sidebar-link:hover {
-  @apply bg-gray-200 dark:bg-gray-700 text-primary;
+  @apply bg-gray-200 dark:bg-opacity-10 dark:bg-white dark:shadow-[0_0_12px_rgba(255,255,255,0.05)] text-primary;
 }
 
 .sidebar-link.active {
-  @apply bg-primary text-white dark:bg-primary/80;
+  @apply bg-primary text-white dark:bg-primary/70 dark:shadow-[0_0_15px_rgba(34,197,94,0.2)];
 }
 
 /* Sidebar Separators */
 .sidebar-divider {
-  @apply h-px bg-gray-300 dark:bg-gray-700 my-2 mx-4;
+  @apply h-px bg-gray-300 dark:bg-gray-700/60 my-2 mx-4;
 }
 
 /* Section divider for sidebar */
 .sidebar-section-divider {
-  @apply h-px bg-gray-200 dark:bg-gray-700 my-2 mx-4;
+  @apply h-px bg-gray-200 dark:bg-gray-700/60 my-2 mx-4;
 }
 
 /* Pro Feature Styling */
 .pro-feature {
-  @apply text-gray-500 dark:text-gray-300 cursor-not-allowed;
+  @apply text-gray-500 dark:text-gray-400 cursor-not-allowed;
 }
 
 .pro-feature:hover {
-  @apply text-gray-700 dark:text-gray-100 bg-transparent;
+  @apply text-gray-700 dark:text-gray-200 bg-transparent dark:shadow-[0_0_10px_rgba(255,255,255,0.03)];
 }
 
 .pro-feature-active {
-  @apply bg-primary/10 text-primary font-medium;
+  @apply bg-primary/10 text-primary font-medium dark:bg-primary/20 dark:shadow-[0_0_15px_rgba(34,197,94,0.15)];
 }
 
 /* Pro label for pro features */
@@ -62,7 +62,7 @@
 
 /* Pro section background */
 .pro-section {
-  @apply bg-gray-100 dark:bg-gray-800 p-1 rounded-lg;
+  @apply bg-gray-100 dark:bg-gray-800/50 dark:backdrop-blur-sm p-1 rounded-lg;
 }
 
 /* FlowTech sidebar links */
@@ -71,15 +71,15 @@
 }
 
 .flowtech-sidebar-link-active {
-  @apply bg-primary/20 text-primary font-medium border border-primary/40;
+  @apply bg-primary/20 text-primary font-medium border border-primary/40 dark:shadow-[0_0_15px_rgba(34,197,94,0.15)];
 }
 
 .flowtech-sidebar-link-inactive {
-  @apply text-secondary hover:bg-primary/10;
+  @apply text-secondary hover:bg-primary/10 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:shadow-[0_0_12px_rgba(255,255,255,0.03)];
 }
 
 .flowtech-pro-section {
-  @apply bg-white/5 border border-white/10 backdrop-blur-md p-2 rounded-md mt-2;
+  @apply bg-white/5 border border-white/10 backdrop-blur-md p-2 rounded-md mt-2 dark:bg-white/3 dark:border-white/5;
 }
 
 .flowtech-pro-badge {

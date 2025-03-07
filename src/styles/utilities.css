@@ -12,7 +12,7 @@
 
 /* Card shadows and hover effects */
 .card-hover {
-  @apply transition-all duration-200 hover:shadow-md;
+  @apply transition-all duration-200 hover:shadow-md dark:hover:shadow-[0_5px_20px_-5px_rgba(0,0,0,0.3)];
 }
 
 /* Hover scale effect */
@@ -22,27 +22,44 @@
 
 /* Table styles */
 .table-striped tbody tr:nth-child(odd) {
-  @apply bg-gray-50;
+  @apply bg-gray-50 dark:bg-gray-800/30;
 }
 
 .table-hover tbody tr {
-  @apply hover:bg-blue-50 transition-colors duration-150;
+  @apply hover:bg-blue-50 transition-colors duration-150 dark:hover:bg-blue-900/20 dark:hover:shadow-[0_0_12px_rgba(59,130,246,0.1)];
 }
 
 /* Input focus states */
 .input-focus {
-  @apply focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200;
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 dark:focus:ring-primary/30 dark:focus:shadow-[0_0_10px_rgba(34,197,94,0.15)];
 }
 
 /* Dropdown and combobox fixes */
 .select-content {
-  @apply bg-white !important;
+  @apply bg-white dark:bg-card !important;
 }
 
 .select-item {
-  @apply bg-white hover:bg-gray-100;
+  @apply bg-white hover:bg-gray-100 dark:bg-card dark:hover:bg-gray-800/70;
 }
 
 [data-radix-select-viewport] {
-  @apply bg-white;
+  @apply bg-white dark:bg-card;
+}
+
+/* Dark mode specific glowing effects */
+.dark .glow-hover {
+  @apply hover:shadow-[0_0_15px_rgba(255,255,255,0.07)] transition-all duration-300;
+}
+
+.dark .glow-primary {
+  @apply shadow-[0_0_15px_rgba(34,197,94,0.15)];
+}
+
+.dark .glow-secondary {
+  @apply shadow-[0_0_15px_rgba(59,130,246,0.15)];
+}
+
+.dark .glow-accent {
+  @apply shadow-[0_0_15px_rgba(249,115,22,0.15)];
 }
