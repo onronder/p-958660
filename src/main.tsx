@@ -1,10 +1,14 @@
 
-import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.tsx'
+import './index.css'
+import { ThemeProvider } from './components/theme/ThemeProvider'
 
-const container = document.getElementById('root');
-if (!container) throw new Error('Failed to find the root element');
-const root = createRoot(container);
-
-root.render(<App />);
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <ThemeProvider defaultTheme="light">
+      <App />
+    </ThemeProvider>
+  </React.StrictMode>,
+)
