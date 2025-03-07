@@ -265,7 +265,10 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
                       <HelpCircle className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="right" className="max-w-[250px]">
+                  <TooltipContent 
+                    side="right" 
+                    className="max-w-[250px] bg-white text-foreground border border-input shadow-md"
+                  >
                     <p>Enter your Shopify store URL (e.g., mystore.myshopify.com)</p>
                   </TooltipContent>
                 </Tooltip>
@@ -289,7 +292,10 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
                       <HelpCircle className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="right" className="max-w-[250px]">
+                  <TooltipContent 
+                    side="right" 
+                    className="max-w-[250px] bg-white text-foreground border border-input shadow-md"
+                  >
                     <p>The API Key from your Shopify Private App</p>
                   </TooltipContent>
                 </Tooltip>
@@ -313,7 +319,10 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
                       <HelpCircle className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="right" className="max-w-[250px]">
+                  <TooltipContent 
+                    side="right" 
+                    className="max-w-[250px] bg-white text-foreground border border-input shadow-md"
+                  >
                     <p>The Admin API Access Token from your Shopify Private App</p>
                   </TooltipContent>
                 </Tooltip>
