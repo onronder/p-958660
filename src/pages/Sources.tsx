@@ -1,25 +1,16 @@
 
-import React, { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw, HelpCircle } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-import InfoBanner from "@/components/InfoBanner";
-import SourceCard from "@/components/SourceCard";
-import EmptySourcesState from "@/components/EmptySourcesState";
-import SourcesLoadingSkeleton from "@/components/SourcesLoadingSkeleton";
+import React, { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useSources } from "@/hooks/useSources";
-import HelpFloatingButton from "@/components/help/HelpFloatingButton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useToast } from "@/hooks/use-toast";
 import { useShopifyCredentials } from "@/hooks/useShopifyCredentials";
-import ShopifyPrivateAppModal from "@/components/sources/ShopifyPrivateAppModal";
-import ShopifyCredentialCard from "@/components/sources/ShopifyCredentialCard";
+import { useSourceSelection } from "@/hooks/useSourceSelection";
+import InfoBanner from "@/components/InfoBanner";
+import HelpFloatingButton from "@/components/help/HelpFloatingButton";
 import SourceTypeSelector from "@/components/sources/SourceTypeSelector";
+import ShopifyPrivateAppModal from "@/components/sources/ShopifyPrivateAppModal";
+import SourcesHeader from "@/components/sources/SourcesHeader";
+import SourcesList from "@/components/sources/SourcesList";
+import { useState } from "react";
 
 const Sources = () => {
   const { 
@@ -38,9 +29,13 @@ const Sources = () => {
     setSelectedCredential
   } = useShopifyCredentials();
   
-  const [showSourceSelector, setShowSourceSelector] = useState(false);
   const [showShopifyModal, setShowShopifyModal] = useState(false);
-  const { toast } = useToast();
+  const { 
+    showSourceSelector, 
+    setShowSourceSelector, 
+    handleSourceSelection 
+  } = useSourceSelection(() => setShowShopifyModal(true));
+  
   const location = useLocation();
 
   useEffect(() => {
@@ -55,37 +50,6 @@ const Sources = () => {
       setShowSourceSelector(true);
     }
   }, []);
-
-  const handleHelpClick = () => {
-    toast({
-      title: "Sources Help",
-      description: "FlowTechs connects to platforms like Shopify, WooCommerce, and databases.",
-    });
-  };
-
-  const handleSourceSelection = (sourceType: string) => {
-    setShowSourceSelector(false);
-    
-    // Handle source type selection
-    if (sourceType === "shopify") {
-      setShowShopifyModal(true);
-    } else if (sourceType === "woocommerce") {
-      toast({
-        title: "Coming Soon",
-        description: "WooCommerce integration is coming soon.",
-      });
-    } else if (sourceType === "api") {
-      toast({
-        title: "Coming Soon",
-        description: "Custom API integration is coming soon.",
-      });
-    } else if (sourceType === "googlesheets") {
-      toast({
-        title: "Coming Soon",
-        description: "Google Sheets integration is coming soon.",
-      });
-    }
-  };
 
   // Get a deduplicated list of sources
   // We prefer to show ShopifyCredentialCard for Shopify sources
@@ -104,11 +68,13 @@ const Sources = () => {
     return filteredSources;
   };
 
-  // Removed duplicate handleDeleteSource function since we're using the one from useSources hook
+  const handleRefresh = () => {
+    loadSources();
+    loadCredentials();
+  };
 
   const isLoading = isSourcesLoading || isCredentialsLoading;
   const displaySources = getDisplaySources();
-  const hasAnyConnections = shopifyCredentials.length > 0 || displaySources.length > 0;
 
   return (
     <div className="space-y-8">
@@ -121,79 +87,24 @@ const Sources = () => {
         }
       />
 
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold text-primary">My Sources</h1>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8" 
-                  onClick={handleHelpClick}
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Learn about connecting data sources</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            onClick={() => {
-              loadSources();
-              loadCredentials();
-            }} 
-            variant="outline" 
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
-          
-          <Button onClick={() => setShowSourceSelector(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add New Source
-          </Button>
-        </div>
-      </div>
+      <SourcesHeader 
+        onRefresh={handleRefresh}
+        onAddSource={() => setShowSourceSelector(true)}
+      />
 
-      {isLoading ? (
-        <SourcesLoadingSkeleton />
-      ) : (
-        <>
-          {hasAnyConnections ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {shopifyCredentials.map((credential) => (
-                <ShopifyCredentialCard
-                  key={credential.id}
-                  credential={credential}
-                  onRefresh={loadCredentials}
-                  onEdit={(cred) => {
-                    setSelectedCredential(cred);
-                    setShowShopifyModal(true);
-                  }}
-                />
-              ))}
-              
-              {displaySources.map((source) => (
-                <SourceCard 
-                  key={source.id}
-                  source={source}
-                  onTestConnection={handleTestConnection}
-                  onDelete={handleDeleteSource}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptySourcesState onAddSource={() => setShowSourceSelector(true)} />
-          )}
-        </>
-      )}
+      <SourcesList 
+        isLoading={isLoading}
+        shopifyCredentials={shopifyCredentials}
+        displaySources={displaySources}
+        onTestConnection={handleTestConnection}
+        onDeleteSource={handleDeleteSource}
+        onEditCredential={(cred) => {
+          setSelectedCredential(cred);
+          setShowShopifyModal(true);
+        }}
+        onRefreshCredentials={loadCredentials}
+        onAddSource={() => setShowSourceSelector(true)}
+      />
 
       <SourceTypeSelector
         open={showSourceSelector}
