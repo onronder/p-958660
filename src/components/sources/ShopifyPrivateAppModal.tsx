@@ -40,6 +40,8 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
     isTesting,
     testStatus,
     testResponseData,
+    errorType,
+    errorDetails,
     resetForm,
     handleTestConnection,
     handleSubmit,
@@ -116,6 +118,8 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
               status={testStatus}
               shopData={testResponseData}
               storeName={storeName}
+              errorType={errorType}
+              errorDetails={errorDetails}
             />
 
             <ShopifyModalActions

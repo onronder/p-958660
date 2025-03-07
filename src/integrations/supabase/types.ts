@@ -538,6 +538,39 @@ export type Database = {
         }
         Relationships: []
       }
+      shopify_logs: {
+        Row: {
+          api_key: string | null
+          created_at: string
+          error_details: Json | null
+          error_message: string | null
+          http_status: number | null
+          id: string
+          store_name: string
+          user_id: string | null
+        }
+        Insert: {
+          api_key?: string | null
+          created_at?: string
+          error_details?: Json | null
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          store_name: string
+          user_id?: string | null
+        }
+        Update: {
+          api_key?: string | null
+          created_at?: string
+          error_details?: Json | null
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          store_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       sources: {
         Row: {
           created_at: string | null

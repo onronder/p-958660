@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useShopifyConnectionTest } from "./shopify/useShopifyConnectionTest";
 import { useShopifySubmit } from "./shopify/useShopifySubmit";
@@ -25,6 +26,8 @@ export const useShopifyConnection = (onSuccess: () => void) => {
     isTesting, 
     testStatus, 
     testResponseData, 
+    errorType,
+    errorDetails,
     resetTestState, 
     testConnection 
   } = useShopifyConnectionTest();
@@ -87,6 +90,8 @@ export const useShopifyConnection = (onSuccess: () => void) => {
     isTesting,
     testStatus,
     testResponseData,
+    errorType,
+    errorDetails,
     resetForm,
     handleTestConnection,
     handleSubmit,
