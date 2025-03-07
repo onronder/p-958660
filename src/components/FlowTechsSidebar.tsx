@@ -100,30 +100,32 @@ const FlowTechsSidebar = ({ onLogout }: FlowTechsSidebarProps) => {
               <span>Pro Features</span>
             </div>
             
-            <ul className="flowtech-pro-section">
-              {proFeatures.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.path;
-                
-                return (
-                  <li key={item.path} className="mb-1 last:mb-0">
-                    <Link
-                      to={item.path}
-                      className={cn(
-                        "flowtech-pro-item",
-                        isActive ? "pro-feature-active" : ""
-                      )}
-                    >
-                      <Icon className="flowtech-pro-icon" />
-                      <div className="flowtech-pro-content">
-                        <span>{item.label}</span>
-                        <span className="flowtech-pro-badge">PRO</span>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="flowtech-pro-section">
+              <ul>
+                {proFeatures.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  
+                  return (
+                    <li key={item.path} className="mb-1 last:mb-0">
+                      <Link
+                        to={item.path}
+                        className={cn(
+                          "flowtech-pro-item",
+                          isActive ? "pro-feature-active" : ""
+                        )}
+                      >
+                        <Icon className="flowtech-pro-icon" />
+                        <div className="flowtech-pro-content">
+                          <span className="flex-grow text-sm">{item.label}</span>
+                          <span className="flowtech-pro-badge">PRO</span>
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
         </nav>
 
