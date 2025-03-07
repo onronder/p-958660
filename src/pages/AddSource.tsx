@@ -128,6 +128,7 @@ const AddSource = () => {
       return (
         <>
           <InfoBanner 
+            messageId="add-source-info"
             message={
               <span>
                 Select the type of data source you want to connect. Each source type requires different authentication methods.

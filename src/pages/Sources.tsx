@@ -42,6 +42,7 @@ const Sources = () => {
   return (
     <div className="space-y-8">
       <InfoBanner 
+        messageId="sources-info"
         message={
           <span>
             <span className="font-bold">⚡ The My Sources</span> page allows you to connect and manage your data sources, such as Shopify or other platforms, ensuring seamless integration for data extraction and processing.
