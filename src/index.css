@@ -184,3 +184,50 @@
 [data-radix-select-viewport] {
   @apply bg-white;
 }
+
+/* Sidebar Container */
+.sidebar {
+  @apply w-64 h-screen bg-white dark:bg-gray-900 shadow-lg flex flex-col transition-all duration-300;
+}
+
+/* Sidebar Logo */
+.sidebar-logo {
+  @apply text-xl font-bold text-primary flex items-center px-4 py-3;
+}
+
+/* Sidebar Links */
+.sidebar-link {
+  @apply flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 transition-all duration-200;
+}
+
+.sidebar-link:hover {
+  @apply bg-primary/10 text-primary dark:bg-primary/20;
+}
+
+.sidebar-link.active {
+  @apply bg-primary text-white dark:bg-primary/80;
+}
+
+/* Sidebar Separators */
+.sidebar-divider {
+  @apply h-px bg-gray-300 dark:bg-gray-700 my-2 mx-4;
+}
+
+/* Pro Feature Styling */
+.pro-feature {
+  @apply text-gray-400 dark:text-gray-500 cursor-not-allowed;
+}
+
+.pro-feature:hover {
+  @apply bg-transparent;
+}
+
+/* Bottom Section */
+.sidebar-footer {
+  @apply mt-auto px-4 pb-4;
+}
+
+/* CTA Button */
+.pro-upgrade-btn {
+  @apply bg-gradient-to-r from-primary to-secondary text-white font-medium py-2 px-4 rounded-lg hover:shadow-md transition-all duration-200 hover:scale-102;
+}
