@@ -1,27 +1,93 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { Button } from "@/components/ui/button";
-import { SunIcon, MoonIcon } from "lucide-react";
+import { SunIcon, MoonIcon, UserIcon, AlertCircle } from "lucide-react";
+import { useSettings } from "@/hooks/useSettings";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Profile = () => {
   const { theme, setTheme } = useTheme();
+  const { profile, fetchProfile, updatePreferences, isLoading } = useSettings();
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setError(null);
+        await fetchProfile();
+      } catch (err) {
+        console.error("Error loading profile:", err);
+        setError("Failed to load profile information. Please try again later.");
+      }
+    };
+    
+    loadProfile();
+  }, [fetchProfile]);
   
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    
+    // Also update the user preferences in the database
+    if (profile) {
+      updatePreferences({ 
+        dark_mode: newTheme === "dark" 
+      }).catch(err => {
+        console.error("Error updating theme preference:", err);
+      });
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-6">
+        <h1 className="text-2xl font-bold mb-4">User Profile</h1>
+        <div className="bg-card rounded-lg shadow p-6">
+          <p className="text-muted-foreground mb-6">Loading profile information...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-4">User Profile</h1>
+      
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
       <div className="bg-card rounded-lg shadow p-6">
         <p className="text-muted-foreground mb-6">
           Manage your profile information and account settings.
         </p>
+        
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>User Information</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center space-x-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={profile?.profile_picture_url || ""} />
+              <AvatarFallback>
+                <UserIcon className="h-8 w-8" />
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium">{profile?.first_name || "User"} {profile?.last_name || ""}</p>
+              <p className="text-sm text-muted-foreground">{profile?.company || "No company set"}</p>
+            </div>
+          </CardContent>
+        </Card>
         
         <Card>
           <CardHeader>
@@ -51,10 +117,6 @@ const Profile = () => {
             </Button>
           </CardContent>
         </Card>
-        
-        <div className="border border-dashed border-border rounded-lg p-8 text-center mt-6">
-          <p className="text-muted-foreground">Complete profile management will be implemented in a future update.</p>
-        </div>
       </div>
     </div>
   );

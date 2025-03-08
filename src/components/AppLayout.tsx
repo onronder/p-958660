@@ -1,21 +1,30 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import FlowTechsSidebar from "@/components/FlowTechsSidebar";
 import NotificationSidebar from "@/components/NotificationSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { useSettings } from "@/hooks/useSettings";
+import { Loader2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const AppLayout = () => {
   const { signOut } = useAuth();
   const { setTheme } = useTheme();
-  const { profile, fetchProfile } = useSettings();
+  const { profile, fetchProfile, isLoading } = useSettings();
+  const [error, setError] = useState<string | null>(null);
   
   // Fetch user profile on component mount
   useEffect(() => {
     const loadUserProfile = async () => {
-      await fetchProfile();
+      try {
+        setError(null);
+        await fetchProfile();
+      } catch (err) {
+        console.error("Error loading user profile:", err);
+        setError("Failed to load user profile. Some features may not work correctly.");
+      }
     };
     
     loadUserProfile();
@@ -42,6 +51,21 @@ const AppLayout = () => {
           <div className="flex justify-end mb-6">
             <NotificationSidebar />
           </div>
+          
+          {isLoading && (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-2">Loading profile...</span>
+            </div>
+          )}
+          
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertTitle>Profile Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
           <Outlet />
         </div>
       </main>

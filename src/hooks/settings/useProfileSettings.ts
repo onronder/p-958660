@@ -1,24 +1,32 @@
-import { useState } from "react";
+
+import { useState, useCallback } from "react";
 import { useSettingsBase, Profile } from "./useSettingsBase";
 import { useTheme } from "@/components/theme/ThemeProvider";
 
 export function useProfileSettings() {
   const { user, toast, isLoading, setIsLoading, invokeSettingsFunction, uploadProfilePicture } = useSettingsBase();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const { setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
-  // Fetch user profile
-  const fetchProfile = async () => {
+  // Fetch user profile with improved error handling
+  const fetchProfile = useCallback(async () => {
     if (!user) return null;
     
     setIsLoading(true);
     try {
+      console.log("Fetching profile for user:", user.id);
       const { profile } = await invokeSettingsFunction("get_profile");
-      setProfile(profile);
+      console.log("Received profile:", profile);
       
-      // Apply theme using ThemeProvider instead of direct DOM manipulation
-      if (profile?.dark_mode !== undefined) {
-        setTheme(profile.dark_mode ? "dark" : "light");
+      if (profile) {
+        setProfile(profile);
+        
+        // Only apply theme if it's different from current to avoid flicker
+        if (profile.dark_mode !== undefined && 
+            ((profile.dark_mode && theme !== "dark") || 
+             (!profile.dark_mode && theme !== "light"))) {
+          setTheme(profile.dark_mode ? "dark" : "light");
+        }
       }
       
       return profile;
@@ -29,11 +37,11 @@ export function useProfileSettings() {
         description: "Failed to load profile information",
         variant: "destructive",
       });
-      return null;
+      throw error; // Re-throw to allow handling by the component
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, invokeSettingsFunction, setTheme, theme, toast, setIsLoading]);
 
   // Update user profile
   const updateProfile = async (profileData: Partial<Profile>) => {
@@ -41,18 +49,22 @@ export function useProfileSettings() {
     
     setIsLoading(true);
     try {
+      console.log("Updating profile with data:", profileData);
       const { profile } = await invokeSettingsFunction("update_profile", profileData);
-      setProfile(profile);
       
-      // Apply dark mode setting if it was changed using ThemeProvider
-      if (profileData.dark_mode !== undefined) {
-        setTheme(profileData.dark_mode ? "dark" : "light");
+      if (profile) {
+        setProfile(profile);
+        
+        // Apply dark mode setting if it was changed
+        if (profileData.dark_mode !== undefined) {
+          setTheme(profileData.dark_mode ? "dark" : "light");
+        }
+        
+        toast({
+          title: "Profile Updated",
+          description: "Your profile has been updated successfully.",
+        });
       }
-      
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully.",
-      });
       
       return profile;
     } catch (error) {
@@ -62,13 +74,13 @@ export function useProfileSettings() {
         description: "Failed to update profile information",
         variant: "destructive",
       });
-      return null;
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Update user preferences
+  // Update user preferences with better error handling
   const updatePreferences = async (preferences: {
     dark_mode?: boolean;
     notifications_enabled?: boolean;
@@ -80,25 +92,26 @@ export function useProfileSettings() {
     
     setIsLoading(true);
     try {
+      console.log("Updating preferences with data:", preferences);
       const { preferences: updatedPreferences } = await invokeSettingsFunction("update_preferences", preferences);
       
-      // Update the profile in state
-      if (profile) {
+      // Update the profile in state if successful
+      if (profile && updatedPreferences) {
         setProfile({
           ...profile,
           ...preferences
         });
+        
+        // Apply dark mode setting if it was changed
+        if (preferences.dark_mode !== undefined) {
+          setTheme(preferences.dark_mode ? "dark" : "light");
+        }
+        
+        toast({
+          title: "Preferences Updated",
+          description: "Your preferences have been updated successfully.",
+        });
       }
-      
-      // Apply dark mode setting if it was changed using ThemeProvider
-      if (preferences.dark_mode !== undefined) {
-        setTheme(preferences.dark_mode ? "dark" : "light");
-      }
-      
-      toast({
-        title: "Preferences Updated",
-        description: "Your preferences have been updated successfully.",
-      });
       
       return updatedPreferences;
     } catch (error) {
@@ -108,7 +121,7 @@ export function useProfileSettings() {
         description: "Failed to update preferences",
         variant: "destructive",
       });
-      return null;
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +135,7 @@ export function useProfileSettings() {
       const { success } = await invokeSettingsFunction("complete_onboarding");
       
       // Update the profile in the state
-      if (profile) {
+      if (success && profile) {
         setProfile({
           ...profile,
           onboarding_completed: true
@@ -136,11 +149,12 @@ export function useProfileSettings() {
     }
   };
 
-  // Upload profile picture
+  // Upload profile picture with better error handling
   const updateProfilePicture = async (file: File) => {
     if (!user) return null;
     
     try {
+      console.log("Uploading profile picture");
       const pictureUrl = await uploadProfilePicture(file);
       
       // Update the profile in state with the new picture URL
@@ -164,7 +178,7 @@ export function useProfileSettings() {
         description: "Failed to update profile picture",
         variant: "destructive",
       });
-      return null;
+      throw error;
     }
   };
 
