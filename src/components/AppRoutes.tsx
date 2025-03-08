@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,7 +47,7 @@ const AppRoutes = () => {
         <Route path="/settings/api-keys" element={<ApiKeys />} />
         <Route path="/settings/webhooks" element={<Webhooks />} />
         <Route path="/settings/profile" element={<Profile />} />
-         {/* Admin only routes */}
+        {/* Admin only routes */}
         {user?.role === 'admin' && (
           <Route path="/settings/users" element={<Users />} />
         )}
