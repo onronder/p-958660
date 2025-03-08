@@ -37,26 +37,36 @@ export function useOAuthFlow() {
         throw new Error(`${provider} client ID not configured`);
       }
       
+      // Get the current deployment URL from window.location
+      const deploymentUrl = window.location.origin;
+      
+      // Use the deployment URL as the base for the redirect URI
+      const callbackUrl = `${deploymentUrl}/auth/callback`;
+      
+      console.log("Using redirect URI:", callbackUrl);
+      
       // Configure OAuth URL based on provider
       let authUrl = '';
       if (provider === 'google_drive') {
         authUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
         const params = new URLSearchParams({
           client_id: clientId,
-          redirect_uri: redirectUri,
+          redirect_uri: callbackUrl, // Use dynamically generated callback URL
           response_type: 'code',
           scope: 'https://www.googleapis.com/auth/drive.file',
           access_type: 'offline',
-          prompt: 'consent'
+          prompt: 'consent',
+          state: JSON.stringify({ provider }) // Add provider to state for callback identification
         });
         authUrl = `${authUrl}?${params.toString()}`;
       } else { // onedrive
         authUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
         const params = new URLSearchParams({
           client_id: clientId,
-          redirect_uri: redirectUri,
+          redirect_uri: callbackUrl, // Use dynamically generated callback URL
           response_type: 'code',
           scope: 'files.readwrite.all offline_access',
+          state: JSON.stringify({ provider }) // Add provider to state for callback identification
         });
         authUrl = `${authUrl}?${params.toString()}`;
       }
@@ -87,6 +97,11 @@ export function useOAuthFlow() {
         throw new Error("Authentication required");
       }
       
+      // Get the current deployment URL from window.location (if not provided)
+      const callbackUrl = redirectUri || `${window.location.origin}/auth/callback`;
+      
+      console.log("Using callback URL for token exchange:", callbackUrl);
+      
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co';
       const response = await fetch(`${supabaseUrl}/functions/v1/oauth-callback`, {
         method: "POST",
@@ -94,7 +109,7 @@ export function useOAuthFlow() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ provider, code, redirectUri })
+        body: JSON.stringify({ provider, code, redirectUri: callbackUrl })
       });
       
       if (!response.ok) {

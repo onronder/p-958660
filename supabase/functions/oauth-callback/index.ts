@@ -57,6 +57,8 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Processing OAuth callback for ${provider} with redirect URI: ${redirectUri}`);
+
     // Configure OAuth based on provider
     const tokenUrl = provider === 'google_drive'
       ? 'https://oauth2.googleapis.com/token'
@@ -91,7 +93,7 @@ serve(async (req) => {
       formData.append('scope', 'files.readwrite.all offline_access');
     }
 
-    console.log(`Requesting token from ${tokenUrl}`);
+    console.log(`Requesting token from ${tokenUrl} with redirect URI: ${redirectUri}`);
     const tokenResponse = await fetch(tokenUrl, {
       method: 'POST',
       headers: {

@@ -18,14 +18,15 @@ const OAuthCallbackHandler: React.FC = () => {
     
     if (code) {
       // Determine the provider based on the state parameter or URL
-      // The state parameter can be set during the OAuth initialization
       let provider = 'unknown';
       
       if (state) {
         try {
           const stateObj = JSON.parse(state);
           provider = stateObj.provider || 'unknown';
+          console.log("Provider extracted from state:", provider);
         } catch (e) {
+          console.error("Failed to parse state parameter:", e);
           provider = state; // If state is not JSON, use it directly
         }
       } else {
@@ -36,10 +37,12 @@ const OAuthCallbackHandler: React.FC = () => {
         } else if (referrer.includes('microsoft') || referrer.includes('live')) {
           provider = 'onedrive';
         }
+        console.log("Provider determined from referrer:", provider);
       }
       
       // Send the code back to the parent window
       if (window.opener) {
+        console.log("Sending OAuth callback to parent window:", { code, provider });
         window.opener.postMessage({ type: 'oauth_callback', code, provider }, window.location.origin);
         
         // Close this window after a brief delay to ensure the message was sent
@@ -47,6 +50,7 @@ const OAuthCallbackHandler: React.FC = () => {
           window.close();
         }, 1000);
       } else {
+        console.log("No opener window found, redirecting to destinations with OAuth data");
         // If there's no opener, redirect to the main page
         navigate('/destinations', { state: { oauth: { code, provider } } });
       }
