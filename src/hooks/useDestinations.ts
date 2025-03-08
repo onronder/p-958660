@@ -93,8 +93,8 @@ export const useDestinations = () => {
   const initiateOAuth = async (provider: 'google_drive' | 'onedrive', redirectUri: string) => {
     try {
       const clientId = provider === 'google_drive' 
-        ? process.env.GOOGLE_CLIENT_ID 
-        : process.env.MICROSOFT_CLIENT_ID;
+        ? import.meta.env.VITE_GOOGLE_CLIENT_ID 
+        : import.meta.env.VITE_MICROSOFT_CLIENT_ID;
       
       if (!clientId) {
         throw new Error(`${provider} client ID not configured`);
@@ -150,7 +150,8 @@ export const useDestinations = () => {
         throw new Error("Authentication required");
       }
       
-      const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/oauth-callback`, {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co';
+      const response = await fetch(`${supabaseUrl}/functions/v1/oauth-callback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -213,8 +214,9 @@ export const useDestinations = () => {
         config: newDestination.credentials || {}
       };
       
-      // Use string concatenation to access the functions URL
-      const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/destinations`, {
+      // Use the environmental variable for the Supabase URL
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co';
+      const response = await fetch(`${supabaseUrl}/functions/v1/destinations`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -275,8 +277,9 @@ async function fetchDestinations() {
     throw new Error("Authentication required");
   }
   
-  // Use string concatenation to access the functions URL
-  const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/destinations`, {
+  // Use the environmental variable for the Supabase URL
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co';
+  const response = await fetch(`${supabaseUrl}/functions/v1/destinations`, {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${session.access_token}`
@@ -300,8 +303,9 @@ async function deleteDestination(id: string) {
     throw new Error("Authentication required");
   }
   
-  // Use string concatenation to access the functions URL
-  const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/destinations/${id}`, {
+  // Use the environmental variable for the Supabase URL
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co';
+  const response = await fetch(`${supabaseUrl}/functions/v1/destinations/${id}`, {
     method: "DELETE",
     headers: {
       "Authorization": `Bearer ${session.access_token}`
@@ -324,8 +328,9 @@ async function testConnection(destination: Destination) {
     throw new Error("Authentication required");
   }
   
-  // Use string concatenation to access the functions URL
-  const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/test-destination-connection`, {
+  // Use the environmental variable for the Supabase URL
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co';
+  const response = await fetch(`${supabaseUrl}/functions/v1/test-destination-connection`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -355,8 +360,9 @@ async function exportToDestination(destinationId: string) {
     throw new Error("Authentication required");
   }
   
-  // Use string concatenation to access the functions URL
-  const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/export-to-destination`, {
+  // Use the environmental variable for the Supabase URL
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co';
+  const response = await fetch(`${supabaseUrl}/functions/v1/export-to-destination`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
