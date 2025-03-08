@@ -23,13 +23,22 @@ import AuthCallback from "@/pages/AuthCallback";
 
 const AppRoutes = () => {
   const { user } = useAuth();
+  
+  // Handler functions for Login and Register components
+  const handleLogin = () => {
+    console.log("Login successful");
+  };
+  
+  const handleRegister = () => {
+    console.log("Registration successful");
+  };
 
   return (
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Index />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<Login onLogin={handleLogin} />} />
+      <Route path="/register" element={<Register onRegister={handleRegister} />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
