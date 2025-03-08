@@ -10,11 +10,12 @@ export interface Destination {
   id: string;
   name: string;
   destination_type: string;
+  storage_type: string;
   status: "Active" | "Pending" | "Failed";
   export_format: string;
   schedule: string;
   last_export: string | null;
-  connection_details: Record<string, any>;
+  config: Record<string, any>;
 }
 
 export const useDestinations = () => {
@@ -88,6 +89,100 @@ export const useDestinations = () => {
     },
   });
 
+  // OAuth flow for Google Drive and OneDrive
+  const initiateOAuth = async (provider: 'google_drive' | 'onedrive', redirectUri: string) => {
+    try {
+      const clientId = provider === 'google_drive' 
+        ? process.env.GOOGLE_CLIENT_ID 
+        : process.env.MICROSOFT_CLIENT_ID;
+      
+      if (!clientId) {
+        throw new Error(`${provider} client ID not configured`);
+      }
+      
+      // Configure OAuth URL based on provider
+      let authUrl = '';
+      if (provider === 'google_drive') {
+        authUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
+        const params = new URLSearchParams({
+          client_id: clientId,
+          redirect_uri: redirectUri,
+          response_type: 'code',
+          scope: 'https://www.googleapis.com/auth/drive.file',
+          access_type: 'offline',
+          prompt: 'consent'
+        });
+        authUrl = `${authUrl}?${params.toString()}`;
+      } else { // onedrive
+        authUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
+        const params = new URLSearchParams({
+          client_id: clientId,
+          redirect_uri: redirectUri,
+          response_type: 'code',
+          scope: 'files.readwrite.all offline_access',
+        });
+        authUrl = `${authUrl}?${params.toString()}`;
+      }
+      
+      // Open the OAuth window
+      window.open(authUrl, '_blank', 'width=800,height=600');
+      
+      // Return the auth URL in case it's needed
+      return { url: authUrl };
+    } catch (error) {
+      console.error(`Error initiating ${provider} OAuth:`, error);
+      toast({
+        title: "Authentication Error",
+        description: error instanceof Error ? error.message : `Failed to start ${provider} authentication`,
+        variant: "destructive",
+      });
+      return { error };
+    }
+  };
+
+  // Handle OAuth callback (called when the OAuth flow is complete)
+  const handleOAuthCallback = async (provider: 'google_drive' | 'onedrive', code: string, redirectUri: string) => {
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      
+      if (!token) {
+        throw new Error("Authentication required");
+      }
+      
+      const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/oauth-callback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ provider, code, redirectUri })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to complete ${provider} authentication`);
+      }
+      
+      const data = await response.json();
+      
+      toast({
+        title: "Authentication Successful",
+        description: `Successfully connected to ${provider === 'google_drive' ? 'Google Drive' : 'Microsoft OneDrive'}`,
+      });
+      
+      return data;
+    } catch (error) {
+      console.error(`Error handling ${provider} OAuth callback:`, error);
+      toast({
+        title: "Authentication Error",
+        description: error instanceof Error ? error.message : `Failed to complete ${provider} authentication`,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   // Filter destinations by status if a filter is selected
   const filteredDestinations = selectedStatus
     ? data?.filter((dest) => dest.status === selectedStatus)
@@ -103,6 +198,21 @@ export const useDestinations = () => {
         throw new Error("Authentication required");
       }
       
+      // Transform the destination data to match the new schema
+      const transformedDestination = {
+        name: newDestination.name,
+        destination_type: newDestination.type, // Keep for backwards compatibility
+        storage_type: newDestination.type === 'Google Drive' ? 'google_drive' :
+                      newDestination.type === 'Microsoft OneDrive' ? 'onedrive' :
+                      newDestination.type === 'AWS S3' ? 'aws_s3' :
+                      newDestination.type === 'FTP/SFTP' ? 'ftp_sftp' :
+                      'custom_api',
+        status: "Pending",
+        export_format: newDestination.exportFormat,
+        schedule: newDestination.schedule,
+        config: newDestination.credentials || {}
+      };
+      
       // Use string concatenation to access the functions URL
       const response = await fetch(`${process.env.SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co'}/functions/v1/destinations`, {
         method: "POST",
@@ -110,7 +220,7 @@ export const useDestinations = () => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(newDestination)
+        body: JSON.stringify(transformedDestination)
       });
       
       if (!response.ok) {
@@ -152,6 +262,8 @@ export const useDestinations = () => {
     exportMutation,
     handleAddDestination,
     handleRetryExport,
+    initiateOAuth,
+    handleOAuthCallback
   };
 };
 
@@ -221,7 +333,8 @@ async function testConnection(destination: Destination) {
     },
     body: JSON.stringify({
       destination_type: destination.destination_type,
-      connection_details: destination.connection_details
+      storage_type: destination.storage_type,
+      connection_details: destination.config
     })
   });
   

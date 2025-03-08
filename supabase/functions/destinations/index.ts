@@ -67,7 +67,7 @@ serve(async (req) => {
       const requestData = await req.json();
       
       // Validate required fields
-      const requiredFields = ['destination_type', 'name', 'connection_details', 'export_format', 'schedule'];
+      const requiredFields = ['name', 'export_format', 'schedule'];
       for (const field of requiredFields) {
         if (!requestData[field]) {
           return new Response(
@@ -77,9 +77,28 @@ serve(async (req) => {
         }
       }
       
+      // Validate that we have either destination_type or storage_type
+      if (!requestData.destination_type && !requestData.storage_type) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required field: storage_type or destination_type' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Ensure we have storage_type
+      if (!requestData.storage_type) {
+        requestData.storage_type = convertDestinationToStorageType(requestData.destination_type);
+      }
+      
       // Set initial status to Pending
       requestData.status = 'Pending';
       requestData.user_id = user.id;
+      
+      // Rename "credentials" to "config" if it exists
+      if (requestData.credentials && !requestData.config) {
+        requestData.config = requestData.credentials;
+        delete requestData.credentials;
+      }
       
       const { data, error } = await supabase
         .from('destinations')
@@ -87,11 +106,31 @@ serve(async (req) => {
         .select();
       
       if (error) {
+        // Log the error
+        await supabase
+          .from('destination_logs')
+          .insert({
+            user_id: user.id,
+            event_type: 'destination_create_error',
+            message: `Failed to create destination: ${error.message}`,
+            details: { error: error.message, data: requestData }
+          });
+          
         return new Response(
           JSON.stringify({ error: error.message }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+      
+      // Log the successful creation
+      await supabase
+        .from('destination_logs')
+        .insert({
+          user_id: user.id,
+          destination_id: data[0].id,
+          event_type: 'destination_created',
+          message: `Created destination: ${requestData.name}`
+        });
       
       return new Response(
         JSON.stringify({ destination: data[0] }),
@@ -114,6 +153,17 @@ serve(async (req) => {
       const requestData = await req.json();
       requestData.updated_at = new Date().toISOString();
       
+      // Ensure we have storage_type if destination_type exists
+      if (requestData.destination_type && !requestData.storage_type) {
+        requestData.storage_type = convertDestinationToStorageType(requestData.destination_type);
+      }
+      
+      // Rename "credentials" to "config" if it exists
+      if (requestData.credentials && !requestData.config) {
+        requestData.config = requestData.credentials;
+        delete requestData.credentials;
+      }
+      
       const { data, error } = await supabase
         .from('destinations')
         .update(requestData)
@@ -122,6 +172,17 @@ serve(async (req) => {
         .select();
       
       if (error) {
+        // Log the error
+        await supabase
+          .from('destination_logs')
+          .insert({
+            user_id: user.id,
+            destination_id: id,
+            event_type: 'destination_update_error',
+            message: `Failed to update destination: ${error.message}`,
+            details: { error: error.message, data: requestData }
+          });
+          
         return new Response(
           JSON.stringify({ error: error.message }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -134,6 +195,16 @@ serve(async (req) => {
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+      
+      // Log the successful update
+      await supabase
+        .from('destination_logs')
+        .insert({
+          user_id: user.id,
+          destination_id: id,
+          event_type: 'destination_updated',
+          message: `Updated destination: ${data[0].name}`
+        });
       
       return new Response(
         JSON.stringify({ destination: data[0] }),
@@ -153,6 +224,14 @@ serve(async (req) => {
         );
       }
       
+      // Get the destination first to log its name
+      const { data: destination } = await supabase
+        .from('destinations')
+        .select('name')
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .single();
+      
       const { error } = await supabase
         .from('destinations')
         .delete()
@@ -160,11 +239,31 @@ serve(async (req) => {
         .eq('user_id', user.id);
       
       if (error) {
+        // Log the error
+        await supabase
+          .from('destination_logs')
+          .insert({
+            user_id: user.id,
+            destination_id: id,
+            event_type: 'destination_delete_error',
+            message: `Failed to delete destination: ${error.message}`,
+            details: { error: error.message }
+          });
+          
         return new Response(
           JSON.stringify({ error: error.message }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+      
+      // Log the successful deletion
+      await supabase
+        .from('destination_logs')
+        .insert({
+          user_id: user.id,
+          event_type: 'destination_deleted',
+          message: `Deleted destination: ${destination?.name || id}`
+        });
       
       return new Response(
         JSON.stringify({ success: true, message: 'Destination deleted successfully' }),
@@ -187,3 +286,15 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to convert destination_type to storage_type
+function convertDestinationToStorageType(destinationType: string): string {
+  switch (destinationType) {
+    case 'Google Drive': return 'google_drive';
+    case 'Microsoft OneDrive': return 'onedrive';
+    case 'AWS S3': return 'aws_s3';
+    case 'FTP/SFTP': return 'ftp_sftp';
+    case 'Custom API': return 'custom_api';
+    default: return 'custom_api';
+  }
+}

@@ -1,11 +1,13 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useDestinations } from "@/hooks/useDestinations";
+import { useToast } from "@/hooks/use-toast";
 
 interface AddDestinationModalProps {
   isOpen: boolean;
@@ -23,9 +25,59 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
   const [name, setName] = useState<string>("");
   const [exportFormat, setExportFormat] = useState<string>("CSV");
   const [schedule, setSchedule] = useState<string>("Manual");
+  const { initiateOAuth, handleOAuthCallback } = useDestinations();
+  const { toast } = useToast();
   
   // These would be expanded with more fields based on the destination type
   const [credentials, setCredentials] = useState<any>({});
+  const [oauthComplete, setOauthComplete] = useState<boolean>(false);
+
+  // For OAuth callback handling
+  useEffect(() => {
+    // Define a function to handle OAuth callback
+    const handleOAuthRedirect = async (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      
+      try {
+        if (event.data && event.data.type === "oauth_callback") {
+          const { provider, code } = event.data;
+          
+          if (provider && code) {
+            // Get the redirect URI (should match what was used to initiate the flow)
+            const redirectUri = `${window.location.origin}/auth/callback`;
+            
+            // Call the backend to exchange the code for a token
+            await handleOAuthCallback(
+              provider === 'google_drive' ? 'google_drive' : 'onedrive',
+              code,
+              redirectUri
+            );
+            
+            // Mark OAuth as complete
+            setOauthComplete(true);
+            
+            // Move to the next step
+            setCurrentStep(3);
+          }
+        }
+      } catch (error) {
+        console.error("Error handling OAuth callback:", error);
+        toast({
+          title: "Authentication Error",
+          description: error instanceof Error ? error.message : "Failed to complete authentication",
+          variant: "destructive",
+        });
+      }
+    };
+
+    // Add the event listener
+    window.addEventListener('message', handleOAuthRedirect);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('message', handleOAuthRedirect);
+    };
+  }, [handleOAuthCallback, toast]);
 
   const resetForm = () => {
     setCurrentStep(1);
@@ -34,6 +86,7 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
     setExportFormat("CSV");
     setSchedule("Manual");
     setCredentials({});
+    setOauthComplete(false);
   };
 
   const handleClose = () => {
@@ -42,9 +95,16 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
   };
 
   const handleSubmit = () => {
+    const storageType = destinationType === 'Google Drive' ? 'google_drive' :
+                        destinationType === 'Microsoft OneDrive' ? 'onedrive' :
+                        destinationType === 'AWS S3' ? 'aws_s3' :
+                        destinationType === 'FTP/SFTP' ? 'ftp_sftp' :
+                        'custom_api';
+                        
     onAdd({
       name,
       type: destinationType,
+      storageType,
       status: "Pending", // New destinations start as pending
       exportFormat,
       schedule,
@@ -56,6 +116,29 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
 
   const updateCredential = (field: string, value: string) => {
     setCredentials(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleOAuthLogin = async (provider: 'google_drive' | 'onedrive') => {
+    try {
+      // The redirect URI should be a page that can receive the OAuth code
+      const redirectUri = `${window.location.origin}/auth/callback`;
+      
+      // Initiate the OAuth flow
+      await initiateOAuth(provider, redirectUri);
+      
+      // Let the user know they need to authorize
+      toast({
+        title: "Authorization Required",
+        description: `Please authorize with ${provider === 'google_drive' ? 'Google' : 'Microsoft'} in the new window.`,
+      });
+    } catch (error) {
+      console.error("Error initiating OAuth flow:", error);
+      toast({
+        title: "Authentication Error",
+        description: error instanceof Error ? error.message : "Failed to start authentication",
+        variant: "destructive",
+      });
+    }
   };
 
   const renderStepOne = () => (
@@ -172,7 +255,10 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
           <p className="text-sm text-muted-foreground mb-4 text-center">
             Connect to Google Drive by authorizing FlowTechs to access your account.
           </p>
-          <Button className="w-full max-w-xs">
+          <Button 
+            className="w-full max-w-xs"
+            onClick={() => handleOAuthLogin('google_drive')}
+          >
             Sign in with Google
           </Button>
         </div>
@@ -183,7 +269,10 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
           <p className="text-sm text-muted-foreground mb-4 text-center">
             Connect to Microsoft OneDrive by authorizing FlowTechs to access your account.
           </p>
-          <Button className="w-full max-w-xs">
+          <Button 
+            className="w-full max-w-xs"
+            onClick={() => handleOAuthLogin('onedrive')}
+          >
             Sign in with Microsoft
           </Button>
         </div>
@@ -319,6 +408,29 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
     </div>
   );
 
+  // Check if we should enable the next button in step 2
+  const canProceedFromStep2 = () => {
+    if (name === "") return false;
+    
+    if (destinationType === "Google Drive" || destinationType === "Microsoft OneDrive") {
+      return oauthComplete;
+    }
+    
+    if (destinationType === "AWS S3") {
+      return credentials.accessKey && credentials.secretKey && credentials.bucket && credentials.region;
+    }
+    
+    if (destinationType === "FTP/SFTP") {
+      return credentials.host && credentials.username && credentials.password;
+    }
+    
+    if (destinationType === "Custom API") {
+      return credentials.baseUrl;
+    }
+    
+    return false;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
@@ -367,7 +479,7 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
             {currentStep < 3 ? (
               <Button 
                 onClick={() => setCurrentStep(prev => prev + 1)}
-                disabled={currentStep === 1 && !destinationType || currentStep === 2 && !name}
+                disabled={currentStep === 1 && !destinationType || currentStep === 2 && !canProceedFromStep2()}
               >
                 Next
               </Button>

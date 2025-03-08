@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDestinations } from "@/hooks/useDestinations";
 import AddDestinationModal from "@/components/destinations/AddDestinationModal";
@@ -8,10 +9,14 @@ import DestinationsHeader from "@/components/destinations/DestinationsHeader";
 import DestinationsStatusFilter from "@/components/destinations/DestinationsStatusFilter";
 import DestinationsErrorDisplay from "@/components/destinations/DestinationsErrorDisplay";
 import DestinationsList from "@/components/destinations/DestinationsList";
+import { useToast } from "@/hooks/use-toast";
 
 const Destinations = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const { user } = useAuth();
+  const location = useLocation();
+  const { toast } = useToast();
+  
   const {
     filteredDestinations,
     isLoading,
@@ -23,7 +28,34 @@ const Destinations = () => {
     exportMutation,
     handleAddDestination,
     handleRetryExport,
+    handleOAuthCallback
   } = useDestinations();
+
+  // Handle OAuth callback data if it exists in the URL state
+  useEffect(() => {
+    if (location.state?.oauth) {
+      const { code, provider } = location.state.oauth;
+      
+      if (code && provider) {
+        const redirectUri = `${window.location.origin}/auth/callback`;
+        
+        handleOAuthCallback(provider, code, redirectUri)
+          .then(() => {
+            toast({
+              title: "Authentication Successful",
+              description: `Successfully connected to ${provider === 'google_drive' ? 'Google Drive' : 'Microsoft OneDrive'}`,
+            });
+          })
+          .catch((error) => {
+            toast({
+              title: "Authentication Error",
+              description: error.message || `Failed to complete ${provider} authentication`,
+              variant: "destructive",
+            });
+          });
+      }
+    }
+  }, [location.state, handleOAuthCallback, toast]);
 
   // Handle adding a new destination
   const onAddDestination = async (newDestination: any) => {

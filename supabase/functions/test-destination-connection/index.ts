@@ -49,32 +49,65 @@ serve(async (req) => {
     }
 
     const requestData = await req.json();
+    const storageType = requestData.storage_type || getStorageTypeFromDestinationType(requestData.destination_type);
+    const connectionDetails = requestData.connection_details || requestData.config || {};
     
     // Test connection based on destination type
     let connectionResult = { success: false, message: 'Connection test failed' };
     
-    switch (requestData.destination_type) {
-      case 'Google Drive':
-        connectionResult = await testGoogleDriveConnection(requestData.connection_details);
+    switch (storageType) {
+      case 'google_drive':
+        connectionResult = await testGoogleDriveConnection(connectionDetails, user.id);
         break;
-      case 'Microsoft OneDrive':
-        connectionResult = await testOneDriveConnection(requestData.connection_details);
+      case 'onedrive':
+        connectionResult = await testOneDriveConnection(connectionDetails, user.id);
         break;
-      case 'AWS S3':
-        connectionResult = await testAwsS3Connection(requestData.connection_details);
+      case 'aws_s3':
+        connectionResult = await testAwsS3Connection(connectionDetails);
         break;
-      case 'FTP/SFTP':
-        connectionResult = await testFtpConnection(requestData.connection_details);
+      case 'ftp_sftp':
+        connectionResult = await testFtpConnection(connectionDetails);
         break;
-      case 'Custom API':
-        connectionResult = await testCustomApiConnection(requestData.connection_details);
+      case 'custom_api':
+        connectionResult = await testCustomApiConnection(connectionDetails);
         break;
       default:
-        return new Response(
-          JSON.stringify({ error: 'Unsupported destination type' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        // Try using the old destination_type values
+        switch (requestData.destination_type) {
+          case 'Google Drive':
+            connectionResult = await testGoogleDriveConnection(connectionDetails, user.id);
+            break;
+          case 'Microsoft OneDrive':
+            connectionResult = await testOneDriveConnection(connectionDetails, user.id);
+            break;
+          case 'AWS S3':
+            connectionResult = await testAwsS3Connection(connectionDetails);
+            break;
+          case 'FTP/SFTP':
+            connectionResult = await testFtpConnection(connectionDetails);
+            break;
+          case 'Custom API':
+            connectionResult = await testCustomApiConnection(connectionDetails);
+            break;
+          default:
+            return new Response(
+              JSON.stringify({ error: 'Unsupported destination type' }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+        }
     }
+    
+    // Log the test result to the destination_logs table
+    await supabase.from('destination_logs').insert({
+      user_id: user.id,
+      event_type: connectionResult.success ? 'connection_test_success' : 'connection_test_failure',
+      message: connectionResult.message,
+      details: { 
+        storage_type: storageType, 
+        destination_type: requestData.destination_type,
+        error: connectionResult.success ? null : connectionResult.error 
+      }
+    });
     
     return new Response(
       JSON.stringify(connectionResult),
@@ -91,40 +124,110 @@ serve(async (req) => {
   }
 });
 
+// Helper function to convert old destination_type to new storage_type
+function getStorageTypeFromDestinationType(destinationType: string): string {
+  switch (destinationType) {
+    case 'Google Drive': return 'google_drive';
+    case 'Microsoft OneDrive': return 'onedrive';
+    case 'AWS S3': return 'aws_s3';
+    case 'FTP/SFTP': return 'ftp_sftp';
+    case 'Custom API': return 'custom_api';
+    default: return 'custom_api';
+  }
+}
+
 // Helper functions to test connections
-async function testGoogleDriveConnection(credentials: any) {
+async function testGoogleDriveConnection(credentials: any, userId: string) {
   try {
-    // In a real implementation, we would use Google Drive API to verify the token
-    // For demonstration, we'll simulate a successful connection if access_token exists
-    if (!credentials.access_token) {
-      return { success: false, message: 'Access token is missing' };
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // For OAuth-based connections, we need to check if we have valid tokens
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('storage_tokens')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('provider', 'google_drive')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    
+    if (tokenError || !tokenData) {
+      return { 
+        success: false, 
+        message: 'Google Drive authentication required', 
+        error: 'No valid Google Drive token found'
+      };
     }
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Check if token is expired
+    if (tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
+      return { 
+        success: false, 
+        message: 'Google Drive token has expired, please reauthenticate', 
+        error: 'Token expired'
+      };
+    }
+    
+    // At this point we have a valid token, let's try to use it
+    // For a real implementation, we would make a request to the Google Drive API
     
     return { success: true, message: 'Successfully connected to Google Drive' };
   } catch (error) {
     console.error('Google Drive connection error:', error);
-    return { success: false, message: error.message || 'Failed to connect to Google Drive' };
+    return { 
+      success: false, 
+      message: error.message || 'Failed to connect to Google Drive',
+      error: error
+    };
   }
 }
 
-async function testOneDriveConnection(credentials: any) {
+async function testOneDriveConnection(credentials: any, userId: string) {
   try {
-    // In a real implementation, we would use Microsoft Graph API to verify the token
-    // For demonstration, we'll simulate a successful connection if access_token exists
-    if (!credentials.access_token) {
-      return { success: false, message: 'Access token is missing' };
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // For OAuth-based connections, we need to check if we have valid tokens
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('storage_tokens')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('provider', 'onedrive')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    
+    if (tokenError || !tokenData) {
+      return { 
+        success: false, 
+        message: 'Microsoft OneDrive authentication required', 
+        error: 'No valid OneDrive token found'
+      };
     }
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Check if token is expired
+    if (tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
+      return { 
+        success: false, 
+        message: 'Microsoft OneDrive token has expired, please reauthenticate', 
+        error: 'Token expired'
+      };
+    }
+    
+    // At this point we have a valid token, let's try to use it
+    // For a real implementation, we would make a request to the Microsoft Graph API
     
     return { success: true, message: 'Successfully connected to Microsoft OneDrive' };
   } catch (error) {
     console.error('OneDrive connection error:', error);
-    return { success: false, message: error.message || 'Failed to connect to Microsoft OneDrive' };
+    return { 
+      success: false, 
+      message: error.message || 'Failed to connect to Microsoft OneDrive',
+      error: error
+    };
   }
 }
 
@@ -134,17 +237,22 @@ async function testAwsS3Connection(credentials: any) {
     if (!credentials.accessKey || !credentials.secretKey || !credentials.bucket || !credentials.region) {
       return { 
         success: false, 
-        message: 'Missing required AWS S3 credentials (accessKey, secretKey, bucket, region)' 
+        message: 'Missing required AWS S3 credentials (accessKey, secretKey, bucket, region)',
+        error: 'Incomplete credentials'
       };
     }
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // In a real implementation, we would use AWS SDK to verify the credentials
+    // For demonstration, we'll simulate a successful connection
     
     return { success: true, message: 'Successfully connected to AWS S3 bucket' };
   } catch (error) {
     console.error('AWS S3 connection error:', error);
-    return { success: false, message: error.message || 'Failed to connect to AWS S3' };
+    return { 
+      success: false, 
+      message: error.message || 'Failed to connect to AWS S3',
+      error: error
+    };
   }
 }
 
@@ -154,17 +262,22 @@ async function testFtpConnection(credentials: any) {
     if (!credentials.host || !credentials.username || !credentials.password) {
       return { 
         success: false, 
-        message: 'Missing required FTP credentials (host, username, password)' 
+        message: 'Missing required FTP credentials (host, username, password)',
+        error: 'Incomplete credentials'
       };
     }
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // In a real implementation, we would use an FTP client to verify the connection
+    // For demonstration, we'll simulate a successful connection
     
     return { success: true, message: 'Successfully connected to FTP server' };
   } catch (error) {
     console.error('FTP connection error:', error);
-    return { success: false, message: error.message || 'Failed to connect to FTP server' };
+    return { 
+      success: false, 
+      message: error.message || 'Failed to connect to FTP server',
+      error: error
+    };
   }
 }
 
@@ -172,15 +285,23 @@ async function testCustomApiConnection(credentials: any) {
   try {
     // Validate required Custom API credentials
     if (!credentials.baseUrl) {
-      return { success: false, message: 'Base URL is required' };
+      return { 
+        success: false, 
+        message: 'Base URL is required',
+        error: 'Missing baseUrl'
+      };
     }
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // In a real implementation, we would make an HTTP request to the API
+    // For demonstration, we'll simulate a successful connection
     
     return { success: true, message: 'Successfully connected to API endpoint' };
   } catch (error) {
     console.error('Custom API connection error:', error);
-    return { success: false, message: error.message || 'Failed to connect to API endpoint' };
+    return { 
+      success: false, 
+      message: error.message || 'Failed to connect to API endpoint',
+      error: error
+    };
   }
 }

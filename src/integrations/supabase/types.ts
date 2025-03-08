@@ -102,9 +102,47 @@ export type Database = {
         }
         Relationships: []
       }
+      destination_logs: {
+        Row: {
+          created_at: string | null
+          destination_id: string | null
+          details: Json | null
+          event_type: string
+          id: string
+          message: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          destination_id?: string | null
+          details?: Json | null
+          event_type: string
+          id?: string
+          message?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          destination_id?: string | null
+          details?: Json | null
+          event_type?: string
+          id?: string
+          message?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "destination_logs_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       destinations: {
         Row: {
-          connection_details: Json
+          config: Json
           created_at: string | null
           destination_type: string | null
           export_format: string | null
@@ -113,11 +151,12 @@ export type Database = {
           name: string
           schedule: string | null
           status: string | null
+          storage_type: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          connection_details: Json
+          config: Json
           created_at?: string | null
           destination_type?: string | null
           export_format?: string | null
@@ -126,11 +165,12 @@ export type Database = {
           name: string
           schedule?: string | null
           status?: string | null
+          storage_type?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          connection_details?: Json
+          config?: Json
           created_at?: string | null
           destination_type?: string | null
           export_format?: string | null
@@ -139,6 +179,7 @@ export type Database = {
           name?: string
           schedule?: string | null
           status?: string | null
+          storage_type?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -612,6 +653,36 @@ export type Database = {
           status?: string
           updated_at?: string | null
           url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      storage_tokens: {
+        Row: {
+          access_token: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          provider: string
+          refresh_token: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          provider: string
+          refresh_token?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          provider?: string
+          refresh_token?: string | null
           user_id?: string
         }
         Relationships: []
