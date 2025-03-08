@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 import { useDestinations } from "@/hooks/useDestinations";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,6 +31,11 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
   
   const [credentials, setCredentials] = useState<any>({});
   const [oauthComplete, setOauthComplete] = useState<boolean>(false);
+  const [oauthError, setOauthError] = useState<{
+    error: string;
+    description: string;
+    detailedMessage?: string;
+  } | null>(null);
 
   useEffect(() => {
     const handleOAuthRedirect = async (event: MessageEvent) => {
@@ -48,8 +55,16 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
             );
             
             setOauthComplete(true);
+            setOauthError(null);
             
             setCurrentStep(3);
+          } else if (event.data && event.data.type === "oauth_error") {
+            console.error("OAuth error:", event.data);
+            setOauthError({
+              error: event.data.error,
+              description: event.data.description || "Authentication failed",
+              detailedMessage: event.data.detailedMessage
+            });
           }
         }
       } catch (error) {
@@ -77,6 +92,7 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
     setSchedule("Manual");
     setCredentials({});
     setOauthComplete(false);
+    setOauthError(null);
   };
 
   const handleClose = () => {
@@ -110,6 +126,7 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
 
   const handleOAuthLogin = async (provider: 'google_drive' | 'onedrive') => {
     try {
+      setOauthError(null);
       const redirectUri = `${window.location.origin}/auth/callback`;
       
       await initiateOAuth(provider, redirectUri);
@@ -186,6 +203,27 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
           onChange={(e) => setName(e.target.value)}
         />
       </div>
+      
+      {oauthError && (
+        <Alert variant="destructive" className="my-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>{oauthError.description}</AlertTitle>
+          <AlertDescription>
+            {oauthError.detailedMessage || "Please try again or contact support."}
+            {oauthError.error === "access_denied" && (
+              <div className="mt-2">
+                <p className="text-sm mt-2">To fix this:</p>
+                <ol className="list-decimal list-inside text-sm mt-1">
+                  <li>Go to Google Cloud Console</li>
+                  <li>Navigate to "APIs & Services" &gt; "OAuth consent screen"</li>
+                  <li>Add your email as a test user</li>
+                  <li>Try again</li>
+                </ol>
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
       
       {destinationType === "FTP/SFTP" && (
         <div className="space-y-4">

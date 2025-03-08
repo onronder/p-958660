@@ -16,22 +16,40 @@ const OAuthCallbackHandler: React.FC = () => {
     const code = params.get('code');
     const state = params.get('state');
     const error = params.get('error');
+    const errorDescription = params.get('error_description');
     
     if (error) {
-      console.error("OAuth error:", error, params.get('error_description'));
+      console.error("OAuth error:", error, errorDescription);
+      
+      // Special handling for access_denied error (unverified app)
+      let errorMessage = errorDescription || "Authentication failed";
+      let detailedMessage = "";
+      
+      if (error === "access_denied") {
+        errorMessage = "Application not verified";
+        detailedMessage = "The OAuth application is still in testing mode. You need to be added as a test user in Google Cloud Console.";
+      }
+      
       // Handle the error by showing a message or redirecting
       if (window.opener) {
         window.opener.postMessage({ 
           type: 'oauth_error', 
           error,
-          description: params.get('error_description') 
+          description: errorMessage,
+          detailedMessage
         }, window.location.origin);
         
         setTimeout(() => {
           window.close();
         }, 1000);
       } else {
-        navigate('/destinations', { state: { oauthError: error, description: params.get('error_description') } });
+        navigate('/destinations', { 
+          state: { 
+            oauthError: error, 
+            description: errorMessage,
+            detailedMessage
+          } 
+        });
       }
       return;
     }
