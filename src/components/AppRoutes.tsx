@@ -20,6 +20,7 @@ import Profile from "@/pages/settings/Profile";
 import Users from "@/pages/settings/Users";
 import ProtectedRoute from "./ProtectedRoute";
 import AuthCallback from "@/pages/AuthCallback";
+import AppLayout from "./AppLayout";
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -45,23 +46,25 @@ const AppRoutes = () => {
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/sources" element={<Sources />} />
-        <Route path="/transformations" element={<Transformations />} />
-        <Route path="/destinations" element={<Destinations />} />
-        <Route path="/jobs" element={<Jobs />} />
-        <Route path="/settings" element={<Settings />} />
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/sources" element={<Sources />} />
+          <Route path="/transformations" element={<Transformations />} />
+          <Route path="/destinations" element={<Destinations />} />
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/settings" element={<Settings />} />
 
-        {/* Settings sub-routes */}
-        <Route path="/settings/api-keys" element={<ApiKeys />} />
-        <Route path="/settings/webhooks" element={<Webhooks />} />
-        <Route path="/settings/profile" element={<Profile />} />
-        {/* Admin only routes */}
-        {user?.role === 'admin' && (
-          <Route path="/settings/users" element={<Users />} />
-        )}
-        
-        <Route path="/help" element={<Help />} />
+          {/* Settings sub-routes */}
+          <Route path="/settings/api-keys" element={<ApiKeys />} />
+          <Route path="/settings/webhooks" element={<Webhooks />} />
+          <Route path="/settings/profile" element={<Profile />} />
+          {/* Admin only routes */}
+          {user?.role === 'admin' && (
+            <Route path="/settings/users" element={<Users />} />
+          )}
+          
+          <Route path="/help" element={<Help />} />
+        </Route>
       </Route>
     </Routes>
   );

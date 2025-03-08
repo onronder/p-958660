@@ -1,13 +1,11 @@
 
+import React from "react";
+import { Outlet } from "react-router-dom";
 import FlowTechsSidebar from "@/components/FlowTechsSidebar";
 import NotificationSidebar from "@/components/NotificationSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface AppLayoutProps {
-  children: React.ReactNode;
-}
-
-const AppLayout = ({ children }: AppLayoutProps) => {
+const AppLayout = () => {
   const { signOut } = useAuth();
   
   const handleLogout = async () => {
@@ -23,7 +21,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           <div className="flex justify-end mb-6">
             <NotificationSidebar />
           </div>
-          {children}
+          <Outlet />
         </div>
       </main>
     </div>
