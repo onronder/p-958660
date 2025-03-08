@@ -7,34 +7,87 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSettings } from "@/hooks/useSettings";
 import { useDismissibleHelp } from "@/hooks/useDismissibleHelp";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 const PreferencesSettings = () => {
   const { profile, updatePreferences, isLoading } = useSettings();
   const { resetAllDismissedMessages, isResetting } = useDismissibleHelp();
+  const { theme, setTheme } = useTheme();
+  const [error, setError] = useState<string | null>(null);
   
-  const handleDarkModeChange = (checked: boolean) => {
-    updatePreferences({ dark_mode: checked });
+  const handleDarkModeChange = async (checked: boolean) => {
+    try {
+      setError(null);
+      
+      // Update theme provider immediately for better UX
+      setTheme(checked ? "dark" : "light");
+      
+      // Then save to backend
+      await updatePreferences({ dark_mode: checked });
+    } catch (err) {
+      console.error("Failed to update dark mode setting:", err);
+      setError("Failed to save theme preference. Please try again.");
+      
+      // Revert theme if backend update fails
+      setTheme(profile?.dark_mode ? "dark" : "light");
+    }
   };
   
-  const handleNotificationsChange = (checked: boolean) => {
-    updatePreferences({ notifications_enabled: checked });
+  const handleNotificationsChange = async (checked: boolean) => {
+    try {
+      setError(null);
+      await updatePreferences({ notifications_enabled: checked });
+    } catch (err) {
+      console.error("Failed to update notifications setting:", err);
+      setError("Failed to save notification preference. Please try again.");
+    }
   };
   
-  const handleAutoLogoutChange = (value: string) => {
-    updatePreferences({ auto_logout_minutes: parseInt(value) });
+  const handleAutoLogoutChange = async (value: string) => {
+    try {
+      setError(null);
+      await updatePreferences({ auto_logout_minutes: parseInt(value) });
+    } catch (err) {
+      console.error("Failed to update auto logout setting:", err);
+      setError("Failed to save auto logout preference. Please try again.");
+    }
   };
 
   const handleResetHelpMessages = async () => {
-    await resetAllDismissedMessages();
-    
-    // You might want to refresh the page or affected components here
-    // so the banners show up immediately
-    window.location.reload();
+    try {
+      setError(null);
+      await resetAllDismissedMessages();
+      
+      // You might want to refresh the page or affected components here
+      // so the banners show up immediately
+      window.location.reload();
+    } catch (err) {
+      console.error("Failed to reset help messages:", err);
+      setError("Failed to reset help messages. Please try again.");
+    }
   };
+  
+  if (!profile && isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="mr-2 h-6 w-6 animate-spin text-primary" />
+        <span>Loading preferences...</span>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
       <Card>
         <CardHeader>
           <CardTitle>Interface Preferences</CardTitle>
@@ -52,7 +105,7 @@ const PreferencesSettings = () => {
             </div>
             <Switch
               id="dark-mode"
-              checked={profile?.dark_mode || false}
+              checked={theme === "dark"}
               onCheckedChange={handleDarkModeChange}
               disabled={isLoading}
             />

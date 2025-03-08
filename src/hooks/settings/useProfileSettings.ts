@@ -1,15 +1,25 @@
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useSettingsBase, Profile } from "./useSettingsBase";
 import { useTheme } from "@/components/theme/ThemeProvider";
 
 export function useProfileSettings() {
   const { user, toast, isLoading, setIsLoading, invokeSettingsFunction, uploadProfilePicture } = useSettingsBase();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const { theme, setTheme } = useTheme();
+  const { setTheme } = useTheme();
   const fetchInProgress = useRef(false);
   const lastFetchTime = useRef(0);
   const CACHE_TIME = 10000; // 10 seconds cache
+  const fetchAttempts = useRef(0);
+  const MAX_RETRY_ATTEMPTS = 3;
+
+  // Clean up theme and profiles on unmount
+  useEffect(() => {
+    return () => {
+      // Reset fetch attempt counter on unmount
+      fetchAttempts.current = 0;
+    };
+  }, []);
 
   // Fetch user profile with improved error handling and caching
   const fetchProfile = useCallback(async () => {
@@ -32,36 +42,44 @@ export function useProfileSettings() {
     setIsLoading(true);
     
     try {
-      console.log("Fetching profile for user:", user.id);
+      // Increment attempt counter
+      fetchAttempts.current += 1;
+      
+      console.log(`Fetching profile for user: ${user.id} (Attempt ${fetchAttempts.current})`);
       const { profile: fetchedProfile } = await invokeSettingsFunction("get_profile");
       console.log("Received profile:", fetchedProfile);
       
       if (fetchedProfile) {
         setProfile(fetchedProfile);
         lastFetchTime.current = Date.now();
-        
-        // Only apply theme if it's different from current to avoid flicker
-        if (fetchedProfile.dark_mode !== undefined && 
-            ((fetchedProfile.dark_mode && theme !== "dark") || 
-             (!fetchedProfile.dark_mode && theme !== "light"))) {
-          setTheme(fetchedProfile.dark_mode ? "dark" : "light");
-        }
+        fetchAttempts.current = 0; // Reset counter on success
       }
       
       return fetchedProfile;
     } catch (error) {
       console.error("Error fetching profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load profile information. Please try again later.",
-        variant: "destructive",
-      });
+      
+      // Determine if we should retry
+      if (fetchAttempts.current >= MAX_RETRY_ATTEMPTS) {
+        toast({
+          title: "Error",
+          description: "Failed to load profile after multiple attempts. Please reload the page.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load profile information. Please try again later.",
+          variant: "destructive",
+        });
+      }
+      
       throw error; // Re-throw to allow handling by the component
     } finally {
       setIsLoading(false);
       fetchInProgress.current = false;
     }
-  }, [user, invokeSettingsFunction, setTheme, theme, toast, setIsLoading, profile]);
+  }, [user, invokeSettingsFunction, setTheme, toast, setIsLoading, profile]);
 
   // Update user profile
   const updateProfile = async (profileData: Partial<Profile>) => {
