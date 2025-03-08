@@ -113,52 +113,105 @@ serve(async (req) => {
 
     const tokenData = await tokenResponse.json();
     
-    // Insert or update token in the storage_tokens table
-    const { data: tokenRecord, error: tokenError } = await supabase
-      .from('storage_tokens')
-      .upsert({
-        user_id: user.id,
-        provider,
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token || null,
-        expires_at: tokenData.expires_in ? 
-          new Date(Date.now() + tokenData.expires_in * 1000).toISOString() : 
-          null
-      }, { onConflict: 'user_id, provider' })
-      .select();
-    
-    if (tokenError) {
-      console.error('Failed to store token:', tokenError);
+    try {
+      // First, check if the storage_tokens table exists
+      const { data: tableExists, error: tableCheckError } = await supabase
+        .from('storage_tokens')
+        .select('id')
+        .limit(1);
+        
+      if (tableCheckError) {
+        console.error('Error checking storage_tokens table:', tableCheckError);
+        
+        // Create the storage_tokens table if it doesn't exist
+        const createTableQuery = `
+          CREATE TABLE IF NOT EXISTS storage_tokens (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID NOT NULL REFERENCES auth.users(id),
+            provider TEXT NOT NULL,
+            access_token TEXT NOT NULL,
+            refresh_token TEXT,
+            expires_at TIMESTAMP WITH TIME ZONE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+            UNIQUE(user_id, provider)
+          );
+        `;
+        
+        const { error: createError } = await supabase.rpc('exec_sql', { query: createTableQuery });
+        
+        if (createError) {
+          console.error('Failed to create storage_tokens table:', createError);
+          throw new Error('Failed to create storage_tokens table');
+        }
+      }
+      
+      // Insert or update token in the storage_tokens table
+      const { data: tokenRecord, error: tokenError } = await supabase
+        .from('storage_tokens')
+        .upsert({
+          user_id: user.id,
+          provider,
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token || null,
+          expires_at: tokenData.expires_in ? 
+            new Date(Date.now() + tokenData.expires_in * 1000).toISOString() : 
+            null,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id, provider' })
+        .select();
+        
+      if (tokenError) {
+        console.error('Failed to store token:', tokenError);
+        throw new Error(`Failed to store token: ${tokenError.message}`);
+      }
+      
+      // Log the successful token exchange
+      try {
+        await supabase
+          .from('destination_logs')
+          .insert({
+            user_id: user.id,
+            event_type: 'oauth_token_exchange',
+            message: `Successfully exchanged OAuth code for ${provider} token`,
+          });
+      } catch (logError) {
+        console.error('Failed to log event (non-critical):', logError);
+        // Don't fail the overall operation if just the logging fails
+      }
+      
       return new Response(
-        JSON.stringify({ error: 'Failed to store token' }),
+        JSON.stringify({ 
+          success: true, 
+          provider,
+          expires_in: tokenData.expires_in || null,
+          token_id: tokenRecord && tokenRecord.length > 0 ? tokenRecord[0]?.id : null
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+      
+    } catch (dbError) {
+      console.error('Database operation failed:', dbError);
+      
+      // Return a more detailed error message
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to store token', 
+          details: dbError instanceof Error ? dbError.message : 'Unknown database error' 
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    // Log the successful token exchange
-    await supabase
-      .from('destination_logs')
-      .insert({
-        user_id: user.id,
-        event_type: 'oauth_token_exchange',
-        message: `Successfully exchanged OAuth code for ${provider} token`,
-      });
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        provider,
-        expires_in: tokenData.expires_in || null,
-        token_id: tokenRecord ? tokenRecord[0]?.id : null
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
 
   } catch (error) {
     console.error('Error processing OAuth callback:', error);
     
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({ 
+        error: 'Internal server error', 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
