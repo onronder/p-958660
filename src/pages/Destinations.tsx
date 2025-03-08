@@ -37,6 +37,7 @@ const Destinations = () => {
       const { code, provider } = location.state.oauth;
       
       if (code && provider) {
+        console.log("Received OAuth callback from URL state:", { code, provider });
         const redirectUri = `${window.location.origin}/auth/callback`;
         
         handleOAuthCallback(provider, code, redirectUri)
@@ -45,6 +46,8 @@ const Destinations = () => {
               title: "Authentication Successful",
               description: `Successfully connected to ${provider === 'google_drive' ? 'Google Drive' : 'Microsoft OneDrive'}`,
             });
+            // Clear the state after processing
+            window.history.replaceState({}, document.title, location.pathname);
           })
           .catch((error) => {
             toast({
@@ -59,9 +62,14 @@ const Destinations = () => {
 
   // Handle adding a new destination
   const onAddDestination = async (newDestination: any) => {
+    console.log("Adding new destination:", newDestination);
     const success = await handleAddDestination(newDestination);
     if (success) {
       setIsAddModalOpen(false);
+      toast({
+        title: "Destination Added",
+        description: `${newDestination.name} has been added to your destinations.`,
+      });
     }
   };
 

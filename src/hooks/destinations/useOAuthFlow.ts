@@ -97,10 +97,9 @@ export function useOAuthFlow() {
   // Handle OAuth callback (called when the OAuth flow is complete)
   const handleOAuthCallback = async (provider: 'google_drive' | 'onedrive', code: string, redirectUri: string) => {
     try {
-      const session = await supabase.auth.getSession();
-      const token = session.data.session?.access_token;
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!token) {
+      if (!session) {
         throw new Error("Authentication required");
       }
       
@@ -115,7 +114,7 @@ export function useOAuthFlow() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${session.access_token}`
         },
         body: JSON.stringify({ provider, code, redirectUri: callbackUrl })
       });

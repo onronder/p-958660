@@ -19,12 +19,15 @@ const OAuthCallbackHandler: React.FC = () => {
     if (code) {
       // Determine the provider based on the state parameter or URL
       let provider = 'unknown';
+      let origin = window.location.origin; // Default to current origin
       
       if (state) {
         try {
           const stateObj = JSON.parse(state);
           provider = stateObj.provider || 'unknown';
+          origin = stateObj.origin || window.location.origin;
           console.log("Provider extracted from state:", provider);
+          console.log("Origin extracted from state:", origin);
         } catch (e) {
           console.error("Failed to parse state parameter:", e);
           provider = state; // If state is not JSON, use it directly
@@ -43,7 +46,7 @@ const OAuthCallbackHandler: React.FC = () => {
       // Send the code back to the parent window
       if (window.opener) {
         console.log("Sending OAuth callback to parent window:", { code, provider });
-        window.opener.postMessage({ type: 'oauth_callback', code, provider }, window.location.origin);
+        window.opener.postMessage({ type: 'oauth_callback', code, provider }, origin);
         
         // Close this window after a brief delay to ensure the message was sent
         setTimeout(() => {

@@ -113,6 +113,8 @@ export async function exportToDestination(destinationId: string) {
 
 // Function to add a new destination
 export async function addDestination(newDestination: any) {
+  console.log("API: Adding destination:", newDestination);
+  
   const { data: { session } } = await supabase.auth.getSession();
   
   if (!session) {
@@ -134,6 +136,8 @@ export async function addDestination(newDestination: any) {
     config: newDestination.credentials || {}
   };
   
+  console.log("API: Transformed destination:", transformedDestination);
+  
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co';
   const response = await fetch(`${supabaseUrl}/functions/v1/destinations`, {
     method: "POST",
@@ -149,5 +153,8 @@ export async function addDestination(newDestination: any) {
     throw new Error(errorData.error || "Failed to add destination");
   }
   
-  return response.json();
+  const responseData = await response.json();
+  console.log("API: Response after adding destination:", responseData);
+  
+  return responseData;
 }

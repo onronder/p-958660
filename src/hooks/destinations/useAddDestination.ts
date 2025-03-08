@@ -9,6 +9,8 @@ export const useAddDestination = () => {
 
   const handleAddDestination = async (newDestination: any) => {
     try {
+      console.log("Handling add destination:", newDestination);
+      
       await addDestination(newDestination);
       
       toast({
@@ -16,9 +18,11 @@ export const useAddDestination = () => {
         description: `${newDestination.name} has been added successfully.`,
       });
       
+      // Invalidate and refetch destinations to show the new one
       queryClient.invalidateQueries({ queryKey: ["destinations"] });
       return true;
     } catch (error) {
+      console.error("Error adding destination:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to add destination",
