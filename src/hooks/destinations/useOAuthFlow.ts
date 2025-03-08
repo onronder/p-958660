@@ -56,7 +56,7 @@ export function useOAuthFlow() {
           scope: 'https://www.googleapis.com/auth/drive.file',
           access_type: 'offline',
           prompt: 'consent',
-          state: JSON.stringify({ provider }) // Add provider to state for callback identification
+          state: JSON.stringify({ provider, origin: deploymentUrl }) // Add origin to state for validation
         });
         authUrl = `${authUrl}?${params.toString()}`;
       } else { // onedrive
@@ -66,13 +66,20 @@ export function useOAuthFlow() {
           redirect_uri: callbackUrl, // Use dynamically generated callback URL
           response_type: 'code',
           scope: 'files.readwrite.all offline_access',
-          state: JSON.stringify({ provider }) // Add provider to state for callback identification
+          state: JSON.stringify({ provider, origin: deploymentUrl }) // Add origin to state for validation
         });
         authUrl = `${authUrl}?${params.toString()}`;
       }
       
+      // Log the full URL being used
+      console.log(`Full ${provider} OAuth URL:`, authUrl);
+      
       // Open the OAuth window
-      window.open(authUrl, '_blank', 'width=800,height=600');
+      const oauthWindow = window.open(authUrl, '_blank', 'width=800,height=600');
+      
+      if (!oauthWindow) {
+        throw new Error("Popup blocked! Please allow popups for this site.");
+      }
       
       // Return the auth URL in case it's needed
       return { url: authUrl };
@@ -97,8 +104,9 @@ export function useOAuthFlow() {
         throw new Error("Authentication required");
       }
       
-      // Get the current deployment URL from window.location (if not provided)
-      const callbackUrl = redirectUri || `${window.location.origin}/auth/callback`;
+      // Use the deployment URL to generate callback URL
+      const deploymentUrl = window.location.origin;
+      const callbackUrl = `${deploymentUrl}/auth/callback`;
       
       console.log("Using callback URL for token exchange:", callbackUrl);
       
