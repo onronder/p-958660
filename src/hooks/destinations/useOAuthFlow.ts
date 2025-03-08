@@ -54,8 +54,8 @@ export function useOAuthFlow() {
           redirect_uri: callbackUrl, // Use dynamically generated callback URL
           response_type: 'code',
           scope: 'https://www.googleapis.com/auth/drive.file',
-          access_type: 'offline',
-          prompt: 'consent',
+          access_type: 'offline', // Ensure this is set to 'offline' to get refresh token
+          prompt: 'consent', // Force consent screen to ensure refresh token
           state: JSON.stringify({ provider, origin: deploymentUrl }) // Add origin to state for validation
         });
         authUrl = `${authUrl}?${params.toString()}`;
@@ -65,7 +65,7 @@ export function useOAuthFlow() {
           client_id: clientId,
           redirect_uri: callbackUrl, // Use dynamically generated callback URL
           response_type: 'code',
-          scope: 'files.readwrite.all offline_access',
+          scope: 'files.readwrite.all offline_access', // 'offline_access' is Microsoft's equivalent to 'access_type=offline'
           state: JSON.stringify({ provider, origin: deploymentUrl }) // Add origin to state for validation
         });
         authUrl = `${authUrl}?${params.toString()}`;
