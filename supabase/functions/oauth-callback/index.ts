@@ -114,36 +114,12 @@ serve(async (req) => {
     const tokenData = await tokenResponse.json();
     
     try {
-      // First, check if the storage_tokens table exists
-      const { data: tableExists, error: tableCheckError } = await supabase
-        .from('storage_tokens')
-        .select('id')
-        .limit(1);
-        
-      if (tableCheckError) {
-        console.error('Error checking storage_tokens table:', tableCheckError);
-        
-        // Create the storage_tokens table if it doesn't exist
-        const createTableQuery = `
-          CREATE TABLE IF NOT EXISTS storage_tokens (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            user_id UUID NOT NULL REFERENCES auth.users(id),
-            provider TEXT NOT NULL,
-            access_token TEXT NOT NULL,
-            refresh_token TEXT,
-            expires_at TIMESTAMP WITH TIME ZONE,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-            UNIQUE(user_id, provider)
-          );
-        `;
-        
-        const { error: createError } = await supabase.rpc('exec_sql', { query: createTableQuery });
-        
-        if (createError) {
-          console.error('Failed to create storage_tokens table:', createError);
-          throw new Error('Failed to create storage_tokens table');
-        }
+      // Check if storage_tokens table exists, and create it if it doesn't
+      const tableExists = await checkTableExists(supabase, 'storage_tokens');
+      
+      if (!tableExists) {
+        console.log('Creating storage_tokens table...');
+        await createStorageTokensTable(supabase);
       }
       
       // Insert or update token in the storage_tokens table
@@ -168,13 +144,7 @@ serve(async (req) => {
       
       // Log the successful token exchange
       try {
-        await supabase
-          .from('destination_logs')
-          .insert({
-            user_id: user.id,
-            event_type: 'oauth_token_exchange',
-            message: `Successfully exchanged OAuth code for ${provider} token`,
-          });
+        await logEvent(supabase, user.id, 'oauth_token_exchange', `Successfully exchanged OAuth code for ${provider} token`);
       } catch (logError) {
         console.error('Failed to log event (non-critical):', logError);
         // Don't fail the overall operation if just the logging fails
@@ -216,3 +186,85 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to check if a table exists
+async function checkTableExists(supabase, tableName) {
+  try {
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('id')
+      .limit(1);
+      
+    return !error;
+  } catch (e) {
+    console.error(`Error checking if ${tableName} exists:`, e);
+    return false;
+  }
+}
+
+// Helper function to create the storage_tokens table
+async function createStorageTokensTable(supabase) {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS storage_tokens (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES auth.users(id),
+      provider TEXT NOT NULL,
+      access_token TEXT NOT NULL,
+      refresh_token TEXT,
+      expires_at TIMESTAMP WITH TIME ZONE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+      UNIQUE(user_id, provider)
+    );
+  `;
+  
+  const { error: createError } = await supabase.rpc('exec_sql', { query: createTableQuery });
+  
+  if (createError) {
+    console.error('Failed to create storage_tokens table:', createError);
+    throw new Error('Failed to create storage_tokens table');
+  }
+  
+  console.log('storage_tokens table created successfully');
+}
+
+// Helper function to log events
+async function logEvent(supabase, userId, eventType, message, details = {}) {
+  try {
+    // Check if destination_logs table exists
+    const logsTableExists = await checkTableExists(supabase, 'destination_logs');
+    
+    if (!logsTableExists) {
+      console.log('Creating destination_logs table...');
+      const createLogsTableQuery = `
+        CREATE TABLE IF NOT EXISTS destination_logs (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id UUID REFERENCES auth.users(id),
+          event_type TEXT NOT NULL,
+          message TEXT NOT NULL,
+          details JSONB,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+        );
+      `;
+      
+      const { error: createError } = await supabase.rpc('exec_sql', { query: createLogsTableQuery });
+      
+      if (createError) {
+        console.error('Failed to create destination_logs table:', createError);
+        return; // Continue without logging
+      }
+    }
+    
+    await supabase
+      .from('destination_logs')
+      .insert({
+        user_id: userId,
+        event_type: eventType,
+        message,
+        details
+      });
+  } catch (error) {
+    console.error('Error logging event:', error);
+    // Don't throw, just continue without logging
+  }
+}
