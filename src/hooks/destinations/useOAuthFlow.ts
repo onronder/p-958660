@@ -9,9 +9,29 @@ export function useOAuthFlow() {
   // OAuth flow for Google Drive and OneDrive
   const initiateOAuth = async (provider: 'google_drive' | 'onedrive', redirectUri: string) => {
     try {
-      const clientId = provider === 'google_drive' 
-        ? import.meta.env.VITE_GOOGLE_CLIENT_ID 
-        : import.meta.env.VITE_MICROSOFT_CLIENT_ID;
+      // Fetch client ID from Supabase Edge Function to get the actual value
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("Authentication required");
+      }
+      
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co';
+      const response = await fetch(`${supabaseUrl}/functions/v1/get-oauth-config`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ provider })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to get ${provider} configuration`);
+      }
+      
+      const { clientId } = await response.json();
       
       if (!clientId) {
         throw new Error(`${provider} client ID not configured`);
