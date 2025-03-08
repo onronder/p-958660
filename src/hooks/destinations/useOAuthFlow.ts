@@ -37,9 +37,9 @@ export function useOAuthFlow() {
         throw new Error(`${provider} client ID not configured`);
       }
       
-      // Use the passed redirectUri parameter directly instead of constructing it
-      // This ensures it matches exactly what's registered in the OAuth provider's console
-      const callbackUrl = redirectUri;
+      // Always use the exact origin/callback combination for OAuth
+      // This ensures that the redirect URI is consistent and matches what's registered in the OAuth provider
+      const callbackUrl = `${window.location.origin}/auth/callback`;
       
       console.log("Using redirect URI:", callbackUrl);
       
@@ -104,9 +104,9 @@ export function useOAuthFlow() {
         throw new Error("Authentication required");
       }
       
-      // Use the passed redirectUri parameter directly
-      // This ensures it matches exactly what was used in the authorization request
-      const callbackUrl = redirectUri;
+      // Always use the exact origin/callback combination for OAuth
+      // This ensures consistency with the authorization request
+      const callbackUrl = `${window.location.origin}/auth/callback`;
       
       console.log("Using callback URL for token exchange:", callbackUrl);
       

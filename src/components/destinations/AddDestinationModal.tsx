@@ -45,6 +45,7 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
           const { provider, code } = event.data;
           
           if (provider && code) {
+            // Use the consistent redirect URI
             const redirectUri = `${window.location.origin}/auth/callback`;
             
             await handleOAuthCallback(
@@ -126,6 +127,8 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
   const handleOAuthLogin = async (provider: 'google_drive' | 'onedrive') => {
     try {
       setOauthError(null);
+      
+      // Use the consistent redirect URI
       const redirectUri = `${window.location.origin}/auth/callback`;
       
       await initiateOAuth(provider, redirectUri);

@@ -31,6 +31,20 @@ const OAuthError: React.FC<OAuthErrorProps> = ({ error }) => {
             </ol>
           </div>
         )}
+        {(error.error === "redirect_uri_mismatch" || error.description.includes("Redirect URI mismatch")) && (
+          <div className="mt-2">
+            <p className="text-sm mt-2">To fix this:</p>
+            <ol className="list-decimal list-inside text-sm mt-1">
+              <li>Go to Google Cloud Console or Microsoft Azure Portal</li>
+              <li>Navigate to your OAuth application settings</li>
+              <li>Add the following URL to your authorized redirect URIs:</li>
+              <li className="font-mono text-xs break-all mt-1 bg-muted p-2 rounded">
+                {window.location.origin}/auth/callback
+              </li>
+              <li>Save changes and try again</li>
+            </ol>
+          </div>
+        )}
       </AlertDescription>
     </Alert>
   );

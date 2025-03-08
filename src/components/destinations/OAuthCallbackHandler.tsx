@@ -30,6 +30,13 @@ const OAuthCallbackHandler: React.FC = () => {
         detailedMessage = "The OAuth application is still in testing mode. You need to be added as a test user in Google Cloud Console.";
       }
       
+      // Handle redirect_uri_mismatch error
+      if (error === "redirect_uri_mismatch" || errorDescription?.includes("redirect_uri_mismatch")) {
+        errorMessage = "Redirect URI mismatch";
+        detailedMessage = "The redirect URI in the request doesn't match the one registered in the OAuth provider. Please ensure that the URL " + 
+                          window.location.origin + "/auth/callback is registered in your Google/Microsoft developer console.";
+      }
+      
       // Handle the error by showing a message or redirecting
       if (window.opener) {
         window.opener.postMessage({ 
