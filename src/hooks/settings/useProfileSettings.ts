@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useSettingsBase, Profile } from "./useSettingsBase";
 import { useTheme } from "@/components/theme/ThemeProvider";
 
@@ -7,41 +7,61 @@ export function useProfileSettings() {
   const { user, toast, isLoading, setIsLoading, invokeSettingsFunction, uploadProfilePicture } = useSettingsBase();
   const [profile, setProfile] = useState<Profile | null>(null);
   const { theme, setTheme } = useTheme();
+  const fetchInProgress = useRef(false);
+  const lastFetchTime = useRef(0);
+  const CACHE_TIME = 10000; // 10 seconds cache
 
-  // Fetch user profile with improved error handling
+  // Fetch user profile with improved error handling and caching
   const fetchProfile = useCallback(async () => {
     if (!user) return null;
     
+    // Check if fetch is already in progress
+    if (fetchInProgress.current) {
+      console.log("Profile fetch already in progress, skipping duplicate request");
+      return profile;
+    }
+    
+    // Check if we have recent data
+    const now = Date.now();
+    if (profile && (now - lastFetchTime.current < CACHE_TIME)) {
+      console.log("Using cached profile data");
+      return profile;
+    }
+    
+    fetchInProgress.current = true;
     setIsLoading(true);
+    
     try {
       console.log("Fetching profile for user:", user.id);
-      const { profile } = await invokeSettingsFunction("get_profile");
-      console.log("Received profile:", profile);
+      const { profile: fetchedProfile } = await invokeSettingsFunction("get_profile");
+      console.log("Received profile:", fetchedProfile);
       
-      if (profile) {
-        setProfile(profile);
+      if (fetchedProfile) {
+        setProfile(fetchedProfile);
+        lastFetchTime.current = Date.now();
         
         // Only apply theme if it's different from current to avoid flicker
-        if (profile.dark_mode !== undefined && 
-            ((profile.dark_mode && theme !== "dark") || 
-             (!profile.dark_mode && theme !== "light"))) {
-          setTheme(profile.dark_mode ? "dark" : "light");
+        if (fetchedProfile.dark_mode !== undefined && 
+            ((fetchedProfile.dark_mode && theme !== "dark") || 
+             (!fetchedProfile.dark_mode && theme !== "light"))) {
+          setTheme(fetchedProfile.dark_mode ? "dark" : "light");
         }
       }
       
-      return profile;
+      return fetchedProfile;
     } catch (error) {
       console.error("Error fetching profile:", error);
       toast({
         title: "Error",
-        description: "Failed to load profile information",
+        description: "Failed to load profile information. Please try again later.",
         variant: "destructive",
       });
       throw error; // Re-throw to allow handling by the component
     } finally {
       setIsLoading(false);
+      fetchInProgress.current = false;
     }
-  }, [user, invokeSettingsFunction, setTheme, theme, toast, setIsLoading]);
+  }, [user, invokeSettingsFunction, setTheme, theme, toast, setIsLoading, profile]);
 
   // Update user profile
   const updateProfile = async (profileData: Partial<Profile>) => {
@@ -54,6 +74,7 @@ export function useProfileSettings() {
       
       if (profile) {
         setProfile(profile);
+        lastFetchTime.current = Date.now();
         
         // Apply dark mode setting if it was changed
         if (profileData.dark_mode !== undefined) {
@@ -97,10 +118,13 @@ export function useProfileSettings() {
       
       // Update the profile in state if successful
       if (profile && updatedPreferences) {
-        setProfile({
+        const updatedProfile = {
           ...profile,
           ...preferences
-        });
+        };
+        
+        setProfile(updatedProfile);
+        lastFetchTime.current = Date.now();
         
         // Apply dark mode setting if it was changed
         if (preferences.dark_mode !== undefined) {
@@ -136,10 +160,13 @@ export function useProfileSettings() {
       
       // Update the profile in the state
       if (success && profile) {
-        setProfile({
+        const updatedProfile = {
           ...profile,
           onboarding_completed: true
-        });
+        };
+        
+        setProfile(updatedProfile);
+        lastFetchTime.current = Date.now();
       }
       
       return success;
@@ -159,10 +186,13 @@ export function useProfileSettings() {
       
       // Update the profile in state with the new picture URL
       if (profile && pictureUrl) {
-        setProfile({
+        const updatedProfile = {
           ...profile,
           profile_picture_url: pictureUrl
-        });
+        };
+        
+        setProfile(updatedProfile);
+        lastFetchTime.current = Date.now();
       }
       
       toast({

@@ -14,21 +14,26 @@ const AppLayout = () => {
   const { setTheme } = useTheme();
   const { profile, fetchProfile, isLoading } = useSettings();
   const [error, setError] = useState<string | null>(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
-  // Fetch user profile on component mount
+  // Fetch user profile on component mount - only once
   useEffect(() => {
     const loadUserProfile = async () => {
+      if (initialLoadComplete) return;
+      
       try {
         setError(null);
         await fetchProfile();
+        setInitialLoadComplete(true);
       } catch (err) {
         console.error("Error loading user profile:", err);
         setError("Failed to load user profile. Some features may not work correctly.");
+        setInitialLoadComplete(true);
       }
     };
     
     loadUserProfile();
-  }, [fetchProfile]);
+  }, [fetchProfile, initialLoadComplete]);
   
   // Sync theme with profile settings
   useEffect(() => {
@@ -52,7 +57,7 @@ const AppLayout = () => {
             <NotificationSidebar />
           </div>
           
-          {isLoading && (
+          {isLoading && !initialLoadComplete && (
             <div className="flex justify-center items-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <span className="ml-2">Loading profile...</span>

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
@@ -12,38 +12,28 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Profile = () => {
   const { theme, setTheme } = useTheme();
-  const { profile, fetchProfile, updatePreferences, isLoading } = useSettings();
+  const { profile, updatePreferences, isLoading } = useSettings();
   const [error, setError] = useState<string | null>(null);
   
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        setError(null);
-        await fetchProfile();
-      } catch (err) {
-        console.error("Error loading profile:", err);
-        setError("Failed to load profile information. Please try again later.");
-      }
-    };
-    
-    loadProfile();
-  }, [fetchProfile]);
-  
   const toggleTheme = () => {
+    if (isLoading) return;
+    
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
     
     // Also update the user preferences in the database
     if (profile) {
+      setError(null);
       updatePreferences({ 
         dark_mode: newTheme === "dark" 
       }).catch(err => {
         console.error("Error updating theme preference:", err);
+        setError("Failed to save theme preference. Please try again later.");
       });
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !profile) {
     return (
       <div className="container mx-auto py-6">
         <h1 className="text-2xl font-bold mb-4">User Profile</h1>
@@ -106,13 +96,27 @@ const Profile = () => {
                 <Switch
                   id="dark-mode"
                   checked={theme === "dark"}
+                  disabled={isLoading}
                   onCheckedChange={toggleTheme}
                 />
                 <MoonIcon className={`h-5 w-5 ${theme === 'dark' ? 'text-primary' : 'text-muted-foreground'}`} />
               </div>
             </div>
             
-            <Button variant="outline" onClick={() => setTheme("system")}>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setTheme("system");
+                if (profile) {
+                  updatePreferences({ 
+                    dark_mode: window.matchMedia('(prefers-color-scheme: dark)').matches 
+                  }).catch(err => {
+                    console.error("Error updating theme preference:", err);
+                  });
+                }
+              }}
+              disabled={isLoading}
+            >
               Use System Theme
             </Button>
           </CardContent>
