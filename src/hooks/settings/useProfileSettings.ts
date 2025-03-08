@@ -1,10 +1,11 @@
-
 import { useState } from "react";
 import { useSettingsBase, Profile } from "./useSettingsBase";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 export function useProfileSettings() {
   const { user, toast, isLoading, setIsLoading, invokeSettingsFunction, uploadProfilePicture } = useSettingsBase();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const { setTheme } = useTheme();
 
   // Fetch user profile
   const fetchProfile = async () => {
@@ -15,11 +16,9 @@ export function useProfileSettings() {
       const { profile } = await invokeSettingsFunction("get_profile");
       setProfile(profile);
       
-      // Apply dark mode setting if available
-      if (profile?.dark_mode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
+      // Apply theme using ThemeProvider instead of direct DOM manipulation
+      if (profile?.dark_mode !== undefined) {
+        setTheme(profile.dark_mode ? "dark" : "light");
       }
       
       return profile;
@@ -45,13 +44,9 @@ export function useProfileSettings() {
       const { profile } = await invokeSettingsFunction("update_profile", profileData);
       setProfile(profile);
       
-      // Apply dark mode setting if it was changed
+      // Apply dark mode setting if it was changed using ThemeProvider
       if (profileData.dark_mode !== undefined) {
-        if (profileData.dark_mode) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
+        setTheme(profileData.dark_mode ? "dark" : "light");
       }
       
       toast({
@@ -65,6 +60,52 @@ export function useProfileSettings() {
       toast({
         title: "Error",
         description: "Failed to update profile information",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update user preferences
+  const updatePreferences = async (preferences: {
+    dark_mode?: boolean;
+    notifications_enabled?: boolean;
+    timezone?: string;
+    language?: string;
+    auto_logout_minutes?: number;
+  }) => {
+    if (!user) return null;
+    
+    setIsLoading(true);
+    try {
+      const { preferences: updatedPreferences } = await invokeSettingsFunction("update_preferences", preferences);
+      
+      // Update the profile in state
+      if (profile) {
+        setProfile({
+          ...profile,
+          ...preferences
+        });
+      }
+      
+      // Apply dark mode setting if it was changed using ThemeProvider
+      if (preferences.dark_mode !== undefined) {
+        setTheme(preferences.dark_mode ? "dark" : "light");
+      }
+      
+      toast({
+        title: "Preferences Updated",
+        description: "Your preferences have been updated successfully.",
+      });
+      
+      return updatedPreferences;
+    } catch (error) {
+      console.error("Error updating preferences:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update preferences",
         variant: "destructive",
       });
       return null;
@@ -95,59 +136,6 @@ export function useProfileSettings() {
     }
   };
 
-  // Update user preferences
-  const updatePreferences = async (preferences: {
-    dark_mode?: boolean;
-    notifications_enabled?: boolean;
-    timezone?: string;
-    language?: string;
-    auto_logout_minutes?: number;
-  }) => {
-    if (!user) return null;
-    
-    setIsLoading(true);
-    try {
-      const { preferences: updatedPreferences } = await invokeSettingsFunction("update_preferences", preferences);
-      
-      // Update the profile in state
-      if (profile) {
-        setProfile({
-          ...profile,
-          ...preferences
-        });
-      }
-      
-      // Apply dark mode setting if it was changed
-      if (preferences.dark_mode !== undefined) {
-        if (preferences.dark_mode) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-        
-        // Store dark mode preference in localStorage
-        localStorage.setItem('theme', preferences.dark_mode ? 'dark' : 'light');
-      }
-      
-      toast({
-        title: "Preferences Updated",
-        description: "Your preferences have been updated successfully.",
-      });
-      
-      return updatedPreferences;
-    } catch (error) {
-      console.error("Error updating preferences:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update preferences",
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
   // Upload profile picture
   const updateProfilePicture = async (file: File) => {
     if (!user) return null;
