@@ -21,6 +21,12 @@ import Users from "@/pages/settings/Users";
 import ProtectedRoute from "./ProtectedRoute";
 import AuthCallback from "@/pages/AuthCallback";
 import AppLayout from "./AppLayout";
+import Transform from "@/pages/Transform";
+import Storage from "@/pages/Storage";
+import Analytics from "@/pages/Analytics";
+import Insights from "@/pages/Insights";
+import Notifications from "@/pages/Notifications";
+import Transactions from "@/pages/Transactions";
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -53,6 +59,12 @@ const AppRoutes = () => {
           <Route path="/destinations" element={<Destinations />} />
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/transform" element={<Transform />} />
+          <Route path="/storage" element={<Storage />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/insights" element={<Insights />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/transactions" element={<Transactions />} />
 
           {/* Settings sub-routes */}
           <Route path="/settings/api-keys" element={<ApiKeys />} />
