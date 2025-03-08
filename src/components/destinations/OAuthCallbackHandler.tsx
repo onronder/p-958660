@@ -15,6 +15,26 @@ const OAuthCallbackHandler: React.FC = () => {
     const params = new URLSearchParams(location.search);
     const code = params.get('code');
     const state = params.get('state');
+    const error = params.get('error');
+    
+    if (error) {
+      console.error("OAuth error:", error, params.get('error_description'));
+      // Handle the error by showing a message or redirecting
+      if (window.opener) {
+        window.opener.postMessage({ 
+          type: 'oauth_error', 
+          error,
+          description: params.get('error_description') 
+        }, window.location.origin);
+        
+        setTimeout(() => {
+          window.close();
+        }, 1000);
+      } else {
+        navigate('/destinations', { state: { oauthError: error, description: params.get('error_description') } });
+      }
+      return;
+    }
     
     if (code) {
       // Determine the provider based on the state parameter or URL

@@ -37,13 +37,14 @@ export function useOAuthFlow() {
         throw new Error(`${provider} client ID not configured`);
       }
       
-      // Get the current deployment URL from window.location
-      const deploymentUrl = window.location.origin;
-      
-      // Use the deployment URL as the base for the redirect URI
-      const callbackUrl = `${deploymentUrl}/auth/callback`;
+      // Use the passed redirectUri parameter directly instead of constructing it
+      // This ensures it matches exactly what's registered in the OAuth provider's console
+      const callbackUrl = redirectUri;
       
       console.log("Using redirect URI:", callbackUrl);
+      
+      // Get the current deployment URL for the state parameter
+      const deploymentUrl = window.location.origin;
       
       // Configure OAuth URL based on provider
       let authUrl = '';
@@ -51,7 +52,7 @@ export function useOAuthFlow() {
         authUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
         const params = new URLSearchParams({
           client_id: clientId,
-          redirect_uri: callbackUrl, // Use dynamically generated callback URL
+          redirect_uri: callbackUrl,
           response_type: 'code',
           scope: 'https://www.googleapis.com/auth/drive.file',
           access_type: 'offline', // Ensure this is set to 'offline' to get refresh token
@@ -63,7 +64,7 @@ export function useOAuthFlow() {
         authUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
         const params = new URLSearchParams({
           client_id: clientId,
-          redirect_uri: callbackUrl, // Use dynamically generated callback URL
+          redirect_uri: callbackUrl,
           response_type: 'code',
           scope: 'files.readwrite.all offline_access', // 'offline_access' is Microsoft's equivalent to 'access_type=offline'
           state: JSON.stringify({ provider, origin: deploymentUrl }) // Add origin to state for validation
@@ -103,9 +104,9 @@ export function useOAuthFlow() {
         throw new Error("Authentication required");
       }
       
-      // Use the deployment URL to generate callback URL
-      const deploymentUrl = window.location.origin;
-      const callbackUrl = `${deploymentUrl}/auth/callback`;
+      // Use the passed redirectUri parameter directly
+      // This ensures it matches exactly what was used in the authorization request
+      const callbackUrl = redirectUri;
       
       console.log("Using callback URL for token exchange:", callbackUrl);
       

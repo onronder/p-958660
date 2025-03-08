@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -28,13 +27,10 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
   const { initiateOAuth, handleOAuthCallback } = useDestinations();
   const { toast } = useToast();
   
-  // These would be expanded with more fields based on the destination type
   const [credentials, setCredentials] = useState<any>({});
   const [oauthComplete, setOauthComplete] = useState<boolean>(false);
 
-  // For OAuth callback handling
   useEffect(() => {
-    // Define a function to handle OAuth callback
     const handleOAuthRedirect = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       
@@ -43,20 +39,16 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
           const { provider, code } = event.data;
           
           if (provider && code) {
-            // Get the redirect URI (should match what was used to initiate the flow)
             const redirectUri = `${window.location.origin}/auth/callback`;
             
-            // Call the backend to exchange the code for a token
             await handleOAuthCallback(
               provider === 'google_drive' ? 'google_drive' : 'onedrive',
               code,
               redirectUri
             );
             
-            // Mark OAuth as complete
             setOauthComplete(true);
             
-            // Move to the next step
             setCurrentStep(3);
           }
         }
@@ -70,10 +62,8 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
       }
     };
 
-    // Add the event listener
     window.addEventListener('message', handleOAuthRedirect);
     
-    // Clean up
     return () => {
       window.removeEventListener('message', handleOAuthRedirect);
     };
@@ -105,7 +95,7 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
       name,
       type: destinationType,
       storageType,
-      status: "Pending", // New destinations start as pending
+      status: "Pending",
       exportFormat,
       schedule,
       lastExport: null,
@@ -120,13 +110,10 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
 
   const handleOAuthLogin = async (provider: 'google_drive' | 'onedrive') => {
     try {
-      // The redirect URI should be a page that can receive the OAuth code
       const redirectUri = `${window.location.origin}/auth/callback`;
       
-      // Initiate the OAuth flow
       await initiateOAuth(provider, redirectUri);
       
-      // Let the user know they need to authorize
       toast({
         title: "Authorization Required",
         description: `Please authorize with ${provider === 'google_drive' ? 'Google' : 'Microsoft'} in the new window.`,
@@ -408,7 +395,6 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
     </div>
   );
 
-  // Check if we should enable the next button in step 2
   const canProceedFromStep2 = () => {
     if (name === "") return false;
     
@@ -495,7 +481,6 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
   );
 };
 
-// Helper component for step indicators
 const StepIndicator: React.FC<{ step: number; currentStep: number }> = ({ step, currentStep }) => {
   const isCompleted = step < currentStep;
   const isActive = step === currentStep;
@@ -512,7 +497,6 @@ const StepIndicator: React.FC<{ step: number; currentStep: number }> = ({ step, 
   );
 };
 
-// Helper component for destination type selection
 const DestinationTypeButton: React.FC<{ 
   type: string; 
   selected: boolean;
