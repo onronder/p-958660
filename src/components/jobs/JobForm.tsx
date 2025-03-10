@@ -4,7 +4,8 @@ import { JobFrequency, JobStatus } from '@/types/job';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { createJob, calculateNextRun } from '@/services/jobSchedulerService';
+import { createJob } from '@/services/jobs/jobCrudService';
+import { calculateNextRun } from '@/services/jobs/jobSchedulerService';
 import { useTransformations } from '@/hooks/useTransformations';
 import { useDestinations } from '@/hooks/useDestinations';
 
