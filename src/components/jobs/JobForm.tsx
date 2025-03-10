@@ -33,8 +33,8 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
   const [jobFrequency, setJobFrequency] = useState<JobFrequency>("Daily");
   const [jobSchedule, setJobSchedule] = useState("06:00");
   const [jobSource, setJobSource] = useState("");
-  const [transformationId, setTransformationId] = useState("");
-  const [destinationId, setDestinationId] = useState("");
+  const [transformationId, setTransformationId] = useState("none");
+  const [destinationId, setDestinationId] = useState("none");
   
   const { transformations = [], isLoading: transformationsLoading } = useTransformations();
   const { destinations = [], isLoading: destinationsLoading } = useDestinations();
@@ -67,8 +67,8 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
         description: jobDescription,
         source_id: jobSource,
         source_name: sourceName,
-        transformation_id: transformationId || null,
-        destination_id: destinationId || null,
+        transformation_id: transformationId === "none" ? null : transformationId,
+        destination_id: destinationId === "none" ? null : destinationId,
         frequency: jobFrequency,
         schedule: jobSchedule,
         next_run: nextRun,

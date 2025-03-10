@@ -36,7 +36,7 @@ const JobDestinationSelect = ({
           <SelectValue placeholder="Select a destination (optional)" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">None</SelectItem>
+          <SelectItem key="none" value="none">None</SelectItem>
           {destinations.map((destination) => (
             <SelectItem key={destination.id} value={destination.id}>
               {destination.name}
