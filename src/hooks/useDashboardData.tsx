@@ -43,12 +43,13 @@ export const useDashboardData = () => {
   const { toast } = useToast();
 
   const fetchDashboardData = async (): Promise<DashboardData> => {
-    if (!user || !session) {
+    if (!user || !session || !session.access_token) {
       console.log("User not authenticated, returning default data");
       return { ...defaultDashboardData };
     }
 
     try {
+      console.log("Fetching dashboard data with access token");
       // Call the edge function with auth token
       const { data, error } = await supabase.functions.invoke("get-dashboard-metrics", {
         method: "GET",
@@ -92,7 +93,7 @@ export const useDashboardData = () => {
   } = useQuery({
     queryKey: ["dashboardData", user?.id],
     queryFn: fetchDashboardData,
-    enabled: !!user && !!session,
+    enabled: !!user && !!session && !!session.access_token,
     retry: 1, // Limit retries to avoid infinite loading state
     // Removed the refetchInterval for on-demand updates only
   });
