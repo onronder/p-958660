@@ -64,7 +64,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
       
       console.log("Creating job with parameters:", {
         name: jobName,
-        description: jobDescription || null, // Ensure description is null if empty
+        description: jobDescription || null, 
         source_id: jobSource,
         source_name: sourceName,
         transformation_id: transformationId === "none" ? null : transformationId,
@@ -75,7 +75,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
       
       const newJob = await createJob({
         name: jobName,
-        description: jobDescription || null, // Ensure description is null if empty
+        description: jobDescription || null,
         source_id: jobSource,
         source_name: sourceName,
         transformation_id: transformationId === "none" ? null : transformationId,
@@ -83,7 +83,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
         frequency: jobFrequency,
         schedule: jobSchedule,
         next_run: nextRun,
-        status: "Active" as JobStatus
+        status: "active" as JobStatus // Use lowercase status to match database expectation
       });
 
       if (newJob) {

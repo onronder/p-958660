@@ -1,6 +1,6 @@
 
 export type JobFrequency = "Once" | "Hourly" | "Daily" | "Weekly" | "Monthly";
-export type JobStatus = "Active" | "Paused" | "Completed" | "Failed";
+export type JobStatus = "active" | "paused" | "completed" | "failed";
 
 export interface Job {
   id: string;
