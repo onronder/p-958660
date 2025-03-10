@@ -45,6 +45,7 @@ const Transform = () => {
 
   const handleSave = async (transformation: Transformation) => {
     await saveTransformation(transformation);
+    setIsModalOpen(false);
   };
 
   const handleApply = async (transformationId: string) => {
