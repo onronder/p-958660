@@ -83,7 +83,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
         frequency: jobFrequency,
         schedule: jobSchedule,
         next_run: nextRun,
-        status: "active" as JobStatus // Use lowercase status to match database expectation
+        status: "active" as JobStatus // Use lowercase status to match database constraint
       });
 
       if (newJob) {

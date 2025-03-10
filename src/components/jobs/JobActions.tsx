@@ -14,9 +14,9 @@ interface JobActionsProps {
 const JobActions = ({ job, onToggleStatus, onRunNow, onDelete }: JobActionsProps) => {
   return (
     <div className="flex items-center gap-2">
-      {job.status !== "Completed" && (
+      {job.status !== "completed" && (
         <>
-          {job.status === "Active" ? (
+          {job.status === "active" ? (
             <Button 
               variant="ghost" 
               size="sm" 

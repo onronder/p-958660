@@ -11,23 +11,26 @@ const JobStatusBadge: React.FC<JobStatusBadgeProps> = ({ status }) => {
   let variant = "default";
   
   switch (status) {
-    case "Active":
+    case "active":
       variant = "success";
       break;
-    case "Paused":
+    case "paused":
       variant = "warning";
       break;
-    case "Completed":
+    case "completed":
       variant = "accent";
       break;
-    case "Failed":
+    case "failed":
       variant = "destructive";
       break;
     default:
       variant = "default";
   }
   
-  return <Badge variant={variant as any} className="animate-fade-in">{status}</Badge>;
+  // Capitalize first letter for display
+  const displayStatus = status.charAt(0).toUpperCase() + status.slice(1);
+  
+  return <Badge variant={variant as any} className="animate-fade-in">{displayStatus}</Badge>;
 };
 
 export default JobStatusBadge;

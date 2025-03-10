@@ -11,9 +11,9 @@ export const createJob = async (jobData: Omit<Job, "id" | "created_at" | "update
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
     
-    // Ensure status is lowercased to match database constraint
+    // Ensure status is lowercase to match database constraint
     let validStatus: JobStatus;
-    if (jobData.status) {
+    if (typeof jobData.status === 'string') {
       // Convert to lowercase and check if it's a valid status
       const status = jobData.status.toLowerCase() as JobStatus;
       if (status === "active" || status === "paused" || 
@@ -69,11 +69,11 @@ export const createJob = async (jobData: Omit<Job, "id" | "created_at" | "update
   }
 };
 
-// Toggle job status (Active/Paused)
+// Toggle job status (active/paused)
 export const toggleJobStatus = async (jobId: string, currentStatus: JobStatus): Promise<Job | null> => {
   try {
-    // Convert status to lowercase for database compatibility
-    const newStatus = currentStatus === "active" ? "paused" : "active";
+    // Toggle between active and paused status
+    const newStatus: JobStatus = currentStatus === "active" ? "paused" : "active";
     
     const { data, error } = await supabase
       .from("jobs")
