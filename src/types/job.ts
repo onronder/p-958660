@@ -18,6 +18,8 @@ export interface Job {
   created_at: string;
   updated_at: string;
   user_id: string;
+  is_deleted?: boolean;
+  deletion_marked_at?: string | null;
 }
 
 export interface JobRun {

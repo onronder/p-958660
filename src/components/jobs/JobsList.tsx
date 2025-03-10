@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { Job } from "@/types/job";
 import { toast } from "@/hooks/use-toast";
-import { triggerJobExecution, toggleJobStatus, deleteJob } from "@/services/jobSchedulerService";
+import { triggerJobExecution } from "@/services/jobSchedulerService";
+import { toggleJobStatus, deleteJob } from "@/services/jobs/jobCrudService";
 import LoadingState from "./LoadingState";
 import EmptyJobsState from "./EmptyJobsState";
 import JobsTable from "./JobsTable";
@@ -27,6 +28,12 @@ const JobsList = ({
     const updatedJob = await toggleJobStatus(job.id, job.status);
     if (updatedJob) {
       onJobsUpdated();
+      
+      const actionType = job.status === "active" ? "paused" : "resumed";
+      toast({
+        title: `Job ${actionType}`,
+        description: `The job "${job.name}" has been ${actionType}.`,
+      });
     }
   };
 
@@ -44,8 +51,14 @@ const JobsList = ({
   };
 
   const handleDeleteJob = async (jobId: string, jobName: string) => {
-    if (await deleteJob(jobId)) {
-      onJobsUpdated();
+    if (window.confirm(`Are you sure you want to delete job "${jobName}"?`)) {
+      if (await deleteJob(jobId)) {
+        onJobsUpdated();
+        toast({
+          title: "Job Deleted",
+          description: `The job "${jobName}" has been moved to deleted jobs.`,
+        });
+      }
     }
   };
 
