@@ -43,7 +43,7 @@ const JobTransformationSelect = ({
           <SelectValue placeholder="Select a transformation (optional)" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">None</SelectItem>
+          <SelectItem key="none" value="none">None</SelectItem>
           {filteredTransformations.map((transformation) => (
             <SelectItem key={transformation.id} value={transformation.id}>
               {transformation.name}
