@@ -20,10 +20,20 @@ const ModalNavigation: React.FC<ModalNavigationProps> = ({
   canProceedFromStep2,
   destinationType
 }) => {
+  // Handle going to previous step
+  const goToPreviousStep = () => {
+    setCurrentStep(currentStep - 1);
+  };
+  
+  // Handle going to next step
+  const goToNextStep = () => {
+    setCurrentStep(currentStep + 1);
+  };
+
   return (
     <DialogFooter className="flex justify-between">
       {currentStep > 1 && (
-        <Button variant="outline" onClick={() => setCurrentStep(prev => prev - 1)}>
+        <Button variant="outline" onClick={goToPreviousStep}>
           Back
         </Button>
       )}
@@ -33,7 +43,7 @@ const ModalNavigation: React.FC<ModalNavigationProps> = ({
         </Button>
         {currentStep < 3 ? (
           <Button 
-            onClick={() => setCurrentStep(prev => prev + 1)}
+            onClick={goToNextStep}
             disabled={currentStep === 1 && !destinationType || currentStep === 2 && !canProceedFromStep2()}
           >
             Next
