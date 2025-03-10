@@ -31,6 +31,7 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
     setExportFormat,
     schedule,
     setSchedule,
+    credentials,
     updateCredential,
     handleOAuthLogin,
     oauthError,
@@ -95,6 +96,7 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
               updateCredential={updateCredential}
               handleOAuthLogin={handleOAuthLogin}
               oauthError={oauthError}
+              credentials={credentials}
             />
           )}
           

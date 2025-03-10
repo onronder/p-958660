@@ -8,18 +8,21 @@ import FtpSftpConfig from "./FtpSftpConfig";
 import AwsS3Config from "./AwsS3Config";
 import CustomApiConfig from "./CustomApiConfig";
 import OAuthError from "./OAuthError";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 interface StepTwoProps {
   destinationType: string;
   name: string;
   setName: (name: string) => void;
-  updateCredential: (field: string, value: string) => void;
+  updateCredential: (field: string, value: any) => void;
   handleOAuthLogin: (provider: 'google_drive' | 'onedrive') => void;
   oauthError: {
     error: string;
     description: string;
     detailedMessage?: string;
   } | null;
+  credentials: Record<string, any>;
 }
 
 const StepTwo: React.FC<StepTwoProps> = ({ 
@@ -28,7 +31,8 @@ const StepTwo: React.FC<StepTwoProps> = ({
   setName,
   updateCredential,
   handleOAuthLogin,
-  oauthError
+  oauthError,
+  credentials
 }) => {
   return (
     <div className="space-y-4 py-4">
@@ -36,7 +40,7 @@ const StepTwo: React.FC<StepTwoProps> = ({
         <Label htmlFor="name">Destination Name</Label>
         <Input 
           id="name" 
-          placeholder="e.g., Monthly Backup Drive" 
+          placeholder="e.g., Monthly Backup Server" 
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -45,15 +49,34 @@ const StepTwo: React.FC<StepTwoProps> = ({
       <OAuthError error={oauthError} />
       
       {destinationType === "Google Drive" && (
-        <GoogleDriveConfig handleOAuthLogin={handleOAuthLogin} />
+        <div>
+          <Alert variant="warning" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Google Drive integration is coming soon. Please select another destination type.
+            </AlertDescription>
+          </Alert>
+          <GoogleDriveConfig handleOAuthLogin={handleOAuthLogin} />
+        </div>
       )}
       
       {destinationType === "Microsoft OneDrive" && (
-        <OneDriveConfig handleOAuthLogin={handleOAuthLogin} />
+        <div>
+          <Alert variant="warning" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Microsoft OneDrive integration is coming soon. Please select another destination type.
+            </AlertDescription>
+          </Alert>
+          <OneDriveConfig handleOAuthLogin={handleOAuthLogin} />
+        </div>
       )}
       
       {destinationType === "FTP/SFTP" && (
-        <FtpSftpConfig updateCredential={updateCredential} />
+        <FtpSftpConfig 
+          updateCredential={updateCredential} 
+          credentials={credentials} 
+        />
       )}
       
       {destinationType === "AWS S3" && (

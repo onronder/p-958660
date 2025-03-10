@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Destination } from "@/hooks/destinations/types";
 
@@ -121,15 +120,28 @@ export async function addDestination(newDestination: any) {
     throw new Error("Authentication required");
   }
   
-  // Transform the destination data to match the new schema
-  const transformedDestination = {
-    name: newDestination.name,
-    destination_type: newDestination.type, // Keep for backwards compatibility
-    storage_type: newDestination.type === 'Google Drive' ? 'google_drive' :
+  // Get storage type from destination type
+  let storageType = newDestination.storageType;
+  
+  // If not already set, derive it from the type field
+  if (!storageType) {
+    storageType = newDestination.type === 'Google Drive' ? 'google_drive' :
                   newDestination.type === 'Microsoft OneDrive' ? 'onedrive' :
                   newDestination.type === 'AWS S3' ? 'aws_s3' :
                   newDestination.type === 'FTP/SFTP' ? 'ftp_sftp' :
-                  'custom_api',
+                  'custom_api';
+  }
+  
+  // For SFTP/FTP connections, use the protocol as the storage_type if available
+  if (storageType === 'ftp_sftp' && newDestination.credentials?.protocol) {
+    storageType = newDestination.credentials.protocol;
+  }
+  
+  // Transform the destination data to match the schema
+  const transformedDestination = {
+    name: newDestination.name,
+    destination_type: newDestination.type, // Keep for backwards compatibility
+    storage_type: storageType,
     status: "Pending",
     export_format: newDestination.exportFormat,
     schedule: newDestination.schedule,

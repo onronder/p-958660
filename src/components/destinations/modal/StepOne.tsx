@@ -2,6 +2,7 @@
 import React from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import DestinationTypeButton from "./DestinationTypeButton";
+import { Badge } from "@/components/ui/badge";
 
 interface StepOneProps {
   destinationType: string;
@@ -21,16 +22,26 @@ const StepOne: React.FC<StepOneProps> = ({ destinationType, setDestinationType }
         </TabsList>
         <TabsContent value="cloud" className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <DestinationTypeButton 
-              type="Google Drive" 
-              selected={destinationType === "Google Drive"}
-              onClick={() => setDestinationType("Google Drive")}
-            />
-            <DestinationTypeButton 
-              type="Microsoft OneDrive" 
-              selected={destinationType === "Microsoft OneDrive"}
-              onClick={() => setDestinationType("Microsoft OneDrive")}
-            />
+            <div className="relative">
+              <DestinationTypeButton 
+                type="Google Drive" 
+                selected={false}
+                onClick={() => {}}
+                disabled={true}
+              />
+              <Badge className="absolute -top-2 -right-2 bg-amber-500">Coming Soon</Badge>
+            </div>
+            
+            <div className="relative">
+              <DestinationTypeButton 
+                type="Microsoft OneDrive" 
+                selected={false}
+                onClick={() => {}}
+                disabled={true}
+              />
+              <Badge className="absolute -top-2 -right-2 bg-amber-500">Coming Soon</Badge>
+            </div>
+            
             <DestinationTypeButton 
               type="AWS S3" 
               selected={destinationType === "AWS S3"}

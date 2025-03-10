@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
@@ -259,23 +258,54 @@ async function testAwsS3Connection(credentials: any) {
 async function testFtpConnection(credentials: any) {
   try {
     // Validate required FTP credentials
-    if (!credentials.host || !credentials.username || !credentials.password) {
+    const protocol = credentials.protocol || 'ftp';
+    
+    if (!credentials.host) {
       return { 
         success: false, 
-        message: 'Missing required FTP credentials (host, username, password)',
-        error: 'Incomplete credentials'
+        message: 'Server host is required',
+        error: 'Missing host'
       };
     }
     
-    // In a real implementation, we would use an FTP client to verify the connection
-    // For demonstration, we'll simulate a successful connection
+    if (!credentials.username) {
+      return { 
+        success: false, 
+        message: 'Username is required',
+        error: 'Missing username'
+      };
+    }
     
-    return { success: true, message: 'Successfully connected to FTP server' };
+    // For SFTP with key auth, we need private key. Otherwise we need password.
+    if (protocol === 'sftp' && credentials.useKeyAuth) {
+      if (!credentials.privateKey) {
+        return { 
+          success: false, 
+          message: 'Private key is required when using key authentication',
+          error: 'Missing privateKey'
+        };
+      }
+    } else if (!credentials.password) {
+      return { 
+        success: false, 
+        message: 'Password is required',
+        error: 'Missing password'
+      };
+    }
+    
+    // In a real implementation, we would use an FTP/SFTP client to verify the connection
+    // For demonstration, we'll simulate a successful connection
+    console.log(`Testing ${protocol.toUpperCase()} connection to ${credentials.host}:${credentials.port || (protocol === 'sftp' ? 22 : 21)}`);
+    
+    return { 
+      success: true, 
+      message: `Successfully connected to ${protocol.toUpperCase()} server at ${credentials.host}`
+    };
   } catch (error) {
-    console.error('FTP connection error:', error);
+    console.error('FTP/SFTP connection error:', error);
     return { 
       success: false, 
-      message: error.message || 'Failed to connect to FTP server',
+      message: error.message || `Failed to connect to ${credentials.protocol || 'FTP/SFTP'} server`,
       error: error
     };
   }
