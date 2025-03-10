@@ -19,16 +19,16 @@ interface JobTransformationSelectProps {
 }
 
 const JobTransformationSelect = ({ 
-  transformations, 
+  transformations = [], 
   transformationId, 
   setTransformationId,
   sourceId,
   isLoading
 }: JobTransformationSelectProps) => {
   // Filter transformations to only show those for the selected source
-  const filteredTransformations = transformations.filter(
-    t => t.source_id === sourceId
-  );
+  const filteredTransformations = sourceId 
+    ? transformations.filter(t => t.source_id === sourceId) 
+    : [];
   
   return (
     <div className="grid grid-cols-4 items-center gap-4">
@@ -39,7 +39,7 @@ const JobTransformationSelect = ({
         value={transformationId} 
         onValueChange={setTransformationId}
       >
-        <SelectTrigger className="col-span-3" disabled={isLoading}>
+        <SelectTrigger className="col-span-3" disabled={isLoading || !sourceId}>
           <SelectValue placeholder="Select a transformation (optional)" />
         </SelectTrigger>
         <SelectContent>

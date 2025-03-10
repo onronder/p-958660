@@ -18,7 +18,7 @@ interface JobDestinationSelectProps {
 }
 
 const JobDestinationSelect = ({ 
-  destinations, 
+  destinations = [], 
   destinationId, 
   setDestinationId,
   isLoading
