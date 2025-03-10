@@ -12,6 +12,7 @@ import InfoBanner from "@/components/InfoBanner";
 import CreateJobDialog from "@/components/jobs/CreateJobDialog";
 import JobsList from "@/components/jobs/JobsList";
 import DeletedJobsTable from "@/components/jobs/DeletedJobsTable";
+import LoadingState from "@/components/jobs/LoadingState";
 import { useSources } from "@/hooks/useSources";
 
 const Jobs = () => {
