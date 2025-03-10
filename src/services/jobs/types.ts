@@ -7,7 +7,7 @@ export type JobCreateData = Omit<Job, "id" | "created_at" | "updated_at" | "user
 // Add a helper function to validate job status
 export const validateJobStatus = (status: any): JobStatus => {
   // Define valid statuses based on the database constraint
-  const validStatuses: JobStatus[] = ["active", "paused", "completed", "failed"];
+  const validStatuses: JobStatus[] = ["active", "paused", "completed", "failed", "pending"];
   
   // First check if it's a valid string
   if (typeof status === 'string') {
@@ -20,6 +20,6 @@ export const validateJobStatus = (status: any): JobStatus => {
     }
   }
   
-  // Default to "active" if status is invalid or not provided
-  return "active";
+  // Default to "pending" if status is invalid or not provided
+  return "pending";
 };
