@@ -20,6 +20,6 @@ export const validateJobStatus = (status: any): JobStatus => {
     }
   }
   
-  // Default to "pending" if status is invalid or not provided
-  return "pending";
+  // Default to "active" if status is invalid or not provided
+  return "active";
 };

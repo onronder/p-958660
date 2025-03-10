@@ -33,6 +33,10 @@ export const createJob = async (jobData: JobCreateData): Promise<Job | null> => 
     
     if (error) {
       console.error("Error creating job:", error);
+      console.error("Error details:", error.details);
+      console.error("Error hint:", error.hint);
+      console.error("Error message:", error.message);
+      
       toast({
         title: "Error",
         description: "Failed to create job. Please try again.",
