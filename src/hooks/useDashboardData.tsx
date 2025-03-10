@@ -39,24 +39,16 @@ const defaultDashboardData: DashboardData = {
 };
 
 export const useDashboardData = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { toast } = useToast();
 
   const fetchDashboardData = async (): Promise<DashboardData> => {
-    if (!user) {
+    if (!user || !session) {
       console.log("User not authenticated, returning default data");
       return { ...defaultDashboardData };
     }
 
     try {
-      // Get the session token for authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        console.error("No active session found");
-        return { ...defaultDashboardData };
-      }
-
       // Call the edge function with auth token
       const { data, error } = await supabase.functions.invoke("get-dashboard-metrics", {
         method: "GET",
@@ -100,7 +92,7 @@ export const useDashboardData = () => {
   } = useQuery({
     queryKey: ["dashboardData", user?.id],
     queryFn: fetchDashboardData,
-    enabled: !!user,
+    enabled: !!user && !!session,
     retry: 1, // Limit retries to avoid infinite loading state
     // Removed the refetchInterval for on-demand updates only
   });

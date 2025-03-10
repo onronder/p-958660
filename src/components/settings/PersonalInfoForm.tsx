@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -10,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 
+// Make sure all select options have valid values
 const timezones = [
   { value: "UTC", label: "UTC (Coordinated Universal Time)" },
   { value: "America/New_York", label: "Eastern Time (ET)" },
@@ -40,8 +42,8 @@ const profileFormSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
   company: z.string().optional(),
-  timezone: z.string(),
-  language: z.string(),
+  timezone: z.string().min(1, "Timezone is required"),
+  language: z.string().min(1, "Language is required"),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -148,13 +150,11 @@ const PersonalInfoForm = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {timezones
-                          .filter(tz => tz.value.trim() !== '')
-                          .map((tz) => (
-                            <SelectItem key={tz.value} value={tz.value}>
-                              {tz.label}
-                            </SelectItem>
-                          ))}
+                        {timezones.map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value}>
+                            {tz.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -179,13 +179,11 @@ const PersonalInfoForm = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {languages
-                          .filter(lang => lang.value.trim() !== '')
-                          .map((lang) => (
-                            <SelectItem key={lang.value} value={lang.value}>
-                              {lang.label}
-                            </SelectItem>
-                          ))}
+                        {languages.map((lang) => (
+                          <SelectItem key={lang.value} value={lang.value}>
+                            {lang.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
