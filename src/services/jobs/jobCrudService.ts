@@ -218,8 +218,8 @@ export const fetchJobs = async (includeDeleted: boolean = false): Promise<Job[]>
       return [];
     }
     
-    // Fix the type instantiation issue by using a more direct type assertion
-    return data as any[] as Job[];
+    // Resolve type instantiation issue by using a simple type assertion without deep nesting
+    return (data || []) as Job[];
   } catch (error) {
     console.error("Error fetching jobs:", error);
     return [];
@@ -244,8 +244,8 @@ export const fetchDeletedJobs = async (): Promise<Job[]> => {
       return [];
     }
     
-    // Fix the type instantiation issue by using a more direct type assertion
-    return data as any[] as Job[];
+    // Resolve type instantiation issue by using a simple type assertion without deep nesting
+    return (data || []) as Job[];
   } catch (error) {
     console.error("Error fetching deleted jobs:", error);
     return [];
