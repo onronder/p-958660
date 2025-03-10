@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Job, JobStatus } from "@/types/job";
 import { toast } from "@/hooks/use-toast";
@@ -24,20 +23,6 @@ export const createJob = async (jobData: JobCreateData): Promise<Job | null> => 
     };
     
     console.log("Creating job with data:", JSON.stringify(jobToCreate, null, 2));
-    
-    // First, let's query the database to see what job statuses are actually accepted
-    const { data: jobStatuses, error: statusError } = await supabase
-      .from("jobs")
-      .select("status")
-      .limit(5);
-    
-    if (jobStatuses) {
-      console.log("Example job statuses from database:", jobStatuses);
-    }
-    
-    if (statusError) {
-      console.error("Error checking job statuses:", statusError);
-    }
     
     const { data, error } = await supabase
       .from("jobs")

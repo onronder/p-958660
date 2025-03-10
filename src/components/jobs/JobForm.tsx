@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { JobFrequency, JobStatus } from '@/types/job';
 import { Button } from '@/components/ui/button';
@@ -62,21 +61,8 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
       const sourceName = sources?.find(s => s.id === jobSource)?.name || "";
       const nextRun = calculateNextRun(jobFrequency, jobSchedule);
       
-      // Use "active" status which should be accepted by the database
+      // Use "active" status which is now confirmed to be accepted by the database
       const jobStatus: JobStatus = "active";
-      
-      console.log("Creating job with parameters:", {
-        name: jobName,
-        description: jobDescription || null, 
-        source_id: jobSource,
-        source_name: sourceName,
-        transformation_id: transformationId === "none" ? null : transformationId,
-        destination_id: destinationId === "none" ? null : destinationId,
-        frequency: jobFrequency,
-        schedule: jobSchedule,
-        next_run: nextRun,
-        status: jobStatus
-      });
       
       const newJob = await createJob({
         name: jobName,
