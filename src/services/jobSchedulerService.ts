@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Job, JobFrequency, JobStatus, JobRun } from "@/types/job";
 import { toast } from "@/hooks/use-toast";
@@ -269,19 +268,24 @@ export const triggerJobExecution = async (jobId: string): Promise<boolean> => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Different processing based on job type or associated resources
-      if (job.transformation_id) {
-        // Process transformation job
+      if (job.transformation_id && job.destination_id) {
+        // Process full ETL job (extract, transform, load)
+        console.log(`Processing ETL job with transformation: ${job.transformation_id} and destination: ${job.destination_id}`);
+        rowsProcessed = Math.floor(Math.random() * 1500) + 200; // Simulate rows processed
+        success = true;
+      } else if (job.transformation_id) {
+        // Process transformation job only
         console.log(`Processing transformation job for transformation: ${job.transformation_id}`);
         rowsProcessed = Math.floor(Math.random() * 1000) + 100; // Simulate rows processed
         success = true;
       } else if (job.destination_id) {
-        // Process export job
+        // Process export job only
         console.log(`Processing export job for destination: ${job.destination_id}`);
         rowsProcessed = Math.floor(Math.random() * 500) + 50; // Simulate rows processed
         success = true;
       } else {
-        // Generic job processing
-        console.log(`Processing generic job: ${job.name}`);
+        // Generic job processing (extract only)
+        console.log(`Processing generic extraction job: ${job.name}`);
         rowsProcessed = Math.floor(Math.random() * 200) + 20; // Simulate rows processed
         success = true;
       }

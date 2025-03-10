@@ -15,6 +15,8 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import JobScheduleInput from "./JobScheduleInput";
+import { useTransformations } from "@/hooks/useTransformations";
+import { useDestinations } from "@/hooks/useDestinations";
 
 interface Source {
   id: string;
@@ -34,6 +36,11 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
   const [jobFrequency, setJobFrequency] = useState<JobFrequency>("Daily");
   const [jobSchedule, setJobSchedule] = useState("06:00");
   const [jobSource, setJobSource] = useState("");
+  const [transformationId, setTransformationId] = useState("");
+  const [destinationId, setDestinationId] = useState("");
+  
+  const { transformations } = useTransformations();
+  const { destinations } = useDestinations();
 
   useEffect(() => {
     if (sources.length > 0 && !jobSource) {
@@ -62,6 +69,8 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
         description: jobDescription,
         source_id: jobSource,
         source_name: sourceName,
+        transformation_id: transformationId || null,
+        destination_id: destinationId || null,
         frequency: jobFrequency,
         schedule: jobSchedule,
         next_run: nextRun,
@@ -82,6 +91,11 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
       setIsCreatingJob(false);
     }
   };
+  
+  // Filter transformations to only show those for the selected source
+  const filteredTransformations = transformations.filter(
+    t => t.source_id === jobSource
+  );
   
   return (
     <>
@@ -122,6 +136,48 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
               {sources.map((source) => (
                 <SelectItem key={source.id} value={source.id}>
                   {source.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="transformation" className="text-right">
+            Transformation
+          </Label>
+          <Select 
+            value={transformationId} 
+            onValueChange={setTransformationId}
+          >
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder="Select a transformation (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">None</SelectItem>
+              {filteredTransformations.map((transformation) => (
+                <SelectItem key={transformation.id} value={transformation.id}>
+                  {transformation.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="destination" className="text-right">
+            Destination
+          </Label>
+          <Select 
+            value={destinationId} 
+            onValueChange={setDestinationId}
+          >
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder="Select a destination (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">None</SelectItem>
+              {destinations.map((destination) => (
+                <SelectItem key={destination.id} value={destination.id}>
+                  {destination.name}
                 </SelectItem>
               ))}
             </SelectContent>

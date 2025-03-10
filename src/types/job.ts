@@ -8,8 +8,8 @@ export interface Job {
   description?: string;
   source_id: string;
   source_name: string;
-  transformation_id?: string;
-  destination_id?: string;
+  transformation_id?: string | null;
+  destination_id?: string | null;
   frequency: JobFrequency;
   schedule: string;
   last_run?: string;
