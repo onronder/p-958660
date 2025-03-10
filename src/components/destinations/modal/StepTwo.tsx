@@ -50,7 +50,7 @@ const StepTwo: React.FC<StepTwoProps> = ({
       
       {destinationType === "Google Drive" && (
         <div>
-          <Alert variant="warning" className="mb-4">
+          <Alert variant="destructive" className="mb-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               Google Drive integration is coming soon. Please select another destination type.
@@ -62,7 +62,7 @@ const StepTwo: React.FC<StepTwoProps> = ({
       
       {destinationType === "Microsoft OneDrive" && (
         <div>
-          <Alert variant="warning" className="mb-4">
+          <Alert variant="destructive" className="mb-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               Microsoft OneDrive integration is coming soon. Please select another destination type.
