@@ -13,6 +13,7 @@ export const createJob = async (jobData: Omit<Job, "id" | "created_at" | "update
     
     const jobToCreate = {
       ...jobData,
+      description: jobData.description || null, // Ensure description is null if empty/undefined
       user_id: userData.user.id,
       status: jobData.status || "Active" as JobStatus,
     };

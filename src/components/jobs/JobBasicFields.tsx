@@ -28,6 +28,7 @@ const JobBasicFields = ({
           onChange={(e) => setJobName(e.target.value)}
           placeholder="Daily Order Sync"
           className="col-span-3"
+          required
         />
       </div>
       
@@ -37,9 +38,9 @@ const JobBasicFields = ({
         </Label>
         <Input
           id="description"
-          value={jobDescription}
+          value={jobDescription || ''}
           onChange={(e) => setJobDescription(e.target.value)}
-          placeholder="Sync orders daily"
+          placeholder="Sync orders daily (optional)"
           className="col-span-3"
         />
       </div>

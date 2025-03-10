@@ -29,7 +29,7 @@ interface JobFormProps {
 const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
   const [isCreatingJob, setIsCreatingJob] = useState(false);
   const [jobName, setJobName] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
+  const [jobDescription, setJobDescription] = useState<string>("");
   const [jobFrequency, setJobFrequency] = useState<JobFrequency>("Daily");
   const [jobSchedule, setJobSchedule] = useState("06:00");
   const [jobSource, setJobSource] = useState("");
@@ -64,7 +64,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
       
       console.log("Creating job with parameters:", {
         name: jobName,
-        description: jobDescription,
+        description: jobDescription || null, // Ensure description is null if empty
         source_id: jobSource,
         source_name: sourceName,
         transformation_id: transformationId === "none" ? null : transformationId,
@@ -75,7 +75,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
       
       const newJob = await createJob({
         name: jobName,
-        description: jobDescription,
+        description: jobDescription || null, // Ensure description is null if empty
         source_id: jobSource,
         source_name: sourceName,
         transformation_id: transformationId === "none" ? null : transformationId,

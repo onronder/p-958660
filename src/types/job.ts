@@ -5,7 +5,7 @@ export type JobStatus = "Active" | "Paused" | "Completed" | "Failed";
 export interface Job {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   source_id: string;
   source_name: string;
   transformation_id?: string | null;
