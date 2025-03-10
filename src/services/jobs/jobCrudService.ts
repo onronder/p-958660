@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Job, JobStatus } from "@/types/job";
 import { toast } from "@/hooks/use-toast";
@@ -12,25 +11,15 @@ export const createJob = async (jobData: JobCreateData): Promise<Job | null> => 
     if (!userData.user) throw new Error("User not authenticated");
     
     // Ensure status is lowercase to match database constraint
-    let validStatus: JobStatus;
-    if (typeof jobData.status === 'string') {
-      // Convert to lowercase and check if it's a valid status
-      const status = jobData.status.toLowerCase() as JobStatus;
-      if (status === "active" || status === "paused" || 
-          status === "completed" || status === "failed") {
-        validStatus = status;
-      } else {
-        validStatus = "active";
-      }
-    } else {
-      validStatus = "active";
-    }
+    const validStatus: JobStatus = (typeof jobData.status === 'string' 
+      ? jobData.status.toLowerCase() 
+      : 'active') as JobStatus;
     
     const jobToCreate = {
       ...jobData,
-      description: jobData.description || null, // Ensure description is null if empty/undefined
-      transformation_id: jobData.transformation_id || null, // Ensure transformation_id is null if not provided
-      destination_id: jobData.destination_id || null, // Ensure destination_id is null if not provided
+      description: jobData.description || null,
+      transformation_id: jobData.transformation_id || null,
+      destination_id: jobData.destination_id || null,
       user_id: userData.user.id,
       status: validStatus,
     };
