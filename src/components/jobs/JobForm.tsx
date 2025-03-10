@@ -1,22 +1,22 @@
 
-import { useState, useEffect } from "react";
-import { JobFrequency } from "@/types/job";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
-import { toast } from "@/hooks/use-toast";
-import { createJob, calculateNextRun } from "@/services/jobSchedulerService";
+import React, { useState, useEffect } from 'react';
+import { JobFrequency } from '@/types/job';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { DialogFooter } from '@/components/ui/dialog';
+import { toast } from '@/hooks/use-toast';
+import { createJob, calculateNextRun } from '@/services/jobSchedulerService';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from "@/components/ui/select";
-import JobScheduleInput from "./JobScheduleInput";
-import { useTransformations } from "@/hooks/useTransformations";
-import { useDestinations } from "@/hooks/useDestinations";
+} from '@/components/ui/select';
+import JobScheduleInput from './JobScheduleInput';
+import { useTransformations } from '@/hooks/useTransformations';
+import { useDestinations } from '@/hooks/useDestinations';
 
 interface Source {
   id: string;
@@ -39,11 +39,11 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
   const [transformationId, setTransformationId] = useState("");
   const [destinationId, setDestinationId] = useState("");
   
-  const { transformations } = useTransformations();
-  const { destinations } = useDestinations();
+  const { transformations = [], isLoading: transformationsLoading } = useTransformations();
+  const { destinations = [], isLoading: destinationsLoading } = useDestinations();
 
   useEffect(() => {
-    if (sources.length > 0 && !jobSource) {
+    if (sources?.length > 0 && !jobSource) {
       setJobSource(sources[0].id);
     }
   }, [sources, jobSource]);
@@ -61,7 +61,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
     setIsCreatingJob(true);
 
     try {
-      const sourceName = sources.find(s => s.id === jobSource)?.name || "";
+      const sourceName = sources?.find(s => s.id === jobSource)?.name || "";
       const nextRun = calculateNextRun(jobFrequency, jobSchedule);
       
       const newJob = await createJob({
@@ -112,6 +112,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
             className="col-span-3"
           />
         </div>
+        
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="description" className="text-right">
             Description
@@ -124,6 +125,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
             className="col-span-3"
           />
         </div>
+        
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="source" className="text-right">
             Source
@@ -133,7 +135,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
               <SelectValue placeholder="Select a source" />
             </SelectTrigger>
             <SelectContent>
-              {sources.map((source) => (
+              {sources?.map((source) => (
                 <SelectItem key={source.id} value={source.id}>
                   {source.name}
                 </SelectItem>
@@ -141,6 +143,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
             </SelectContent>
           </Select>
         </div>
+        
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="transformation" className="text-right">
             Transformation
@@ -149,7 +152,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
             value={transformationId} 
             onValueChange={setTransformationId}
           >
-            <SelectTrigger className="col-span-3">
+            <SelectTrigger className="col-span-3" disabled={transformationsLoading}>
               <SelectValue placeholder="Select a transformation (optional)" />
             </SelectTrigger>
             <SelectContent>
@@ -162,6 +165,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
             </SelectContent>
           </Select>
         </div>
+        
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="destination" className="text-right">
             Destination
@@ -170,7 +174,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
             value={destinationId} 
             onValueChange={setDestinationId}
           >
-            <SelectTrigger className="col-span-3">
+            <SelectTrigger className="col-span-3" disabled={destinationsLoading}>
               <SelectValue placeholder="Select a destination (optional)" />
             </SelectTrigger>
             <SelectContent>
@@ -183,6 +187,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
             </SelectContent>
           </Select>
         </div>
+        
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="frequency" className="text-right">
             Frequency
@@ -207,6 +212,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
           onScheduleChange={setJobSchedule} 
         />
       </div>
+      
       <DialogFooter>
         <Button 
           type="button" 
