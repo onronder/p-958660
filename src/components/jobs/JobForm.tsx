@@ -62,6 +62,17 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
       const sourceName = sources?.find(s => s.id === jobSource)?.name || "";
       const nextRun = calculateNextRun(jobFrequency, jobSchedule);
       
+      console.log("Creating job with parameters:", {
+        name: jobName,
+        description: jobDescription,
+        source_id: jobSource,
+        source_name: sourceName,
+        transformation_id: transformationId === "none" ? null : transformationId,
+        destination_id: destinationId === "none" ? null : destinationId,
+        frequency: jobFrequency,
+        schedule: jobSchedule,
+      });
+      
       const newJob = await createJob({
         name: jobName,
         description: jobDescription,
@@ -76,6 +87,10 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
       });
 
       if (newJob) {
+        toast({
+          title: "Success",
+          description: "Job created successfully.",
+        });
         onJobCreated(newJob);
       }
     } catch (error) {

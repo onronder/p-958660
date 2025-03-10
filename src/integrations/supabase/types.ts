@@ -366,6 +366,7 @@ export type Database = {
       jobs: {
         Row: {
           created_at: string | null
+          description: string | null
           destination_id: string | null
           duration: unknown | null
           frequency: string | null
@@ -386,6 +387,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
           destination_id?: string | null
           duration?: unknown | null
           frequency?: string | null
@@ -406,6 +408,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          description?: string | null
           destination_id?: string | null
           duration?: unknown | null
           frequency?: string | null

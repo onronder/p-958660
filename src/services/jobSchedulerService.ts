@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Job, JobFrequency, JobStatus, JobRun } from "@/types/job";
 import { toast } from "@/hooks/use-toast";
@@ -15,6 +16,8 @@ export const createJob = async (jobData: Omit<Job, "id" | "created_at" | "update
       user_id: userData.user.id,
       status: jobData.status || "Active" as JobStatus,
     };
+    
+    console.log("Creating job with data:", jobToCreate);
     
     const { data, error } = await supabase
       .from("jobs")
