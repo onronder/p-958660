@@ -39,7 +39,6 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
   const { transformations = [], isLoading: transformationsLoading } = useTransformations();
   const { destinations = [], isLoading: destinationsLoading } = useDestinations();
 
-  // Set default source when sources are loaded
   useEffect(() => {
     if (sources?.length > 0 && !jobSource) {
       setJobSource(sources[0].id);

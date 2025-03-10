@@ -1,7 +1,8 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Job, JobStatus } from "@/types/job";
 import { toast } from "@/hooks/use-toast";
-import { JobCreateData } from "./types";
+import { JobCreateData, validateJobStatus } from "./types";
 import { createNotification } from "../notificationService";
 
 // Create a new job
@@ -10,13 +11,16 @@ export const createJob = async (jobData: JobCreateData): Promise<Job | null> => 
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
     
+    // Make sure status is always a valid value that the database accepts
+    const validStatus = validateJobStatus(jobData.status);
+    
     const jobToCreate = {
       ...jobData,
       description: jobData.description || null,
       transformation_id: jobData.transformation_id || null,
       destination_id: jobData.destination_id || null,
       user_id: userData.user.id,
-      status: "active" as JobStatus, // Ensure status is always "active" for new jobs
+      status: validStatus,
     };
     
     console.log("Creating job with data:", jobToCreate);
