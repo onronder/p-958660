@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 /**
@@ -9,6 +9,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const OAuthCallbackHandler: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
   useEffect(() => {
     // Extract the code and state from the URL
@@ -53,6 +55,9 @@ const OAuthCallbackHandler: React.FC = () => {
         });
       }
       
+      setStatus('error');
+      setErrorDetails(`${errorMessage}: ${detailedMessage}`);
+      
       // Handle the error by showing a message or redirecting
       if (window.opener) {
         console.log("Sending OAuth error to parent window:", { 
@@ -70,16 +75,18 @@ const OAuthCallbackHandler: React.FC = () => {
         
         setTimeout(() => {
           window.close();
-        }, 1000);
+        }, 5000); // Keep window open longer to show error
       } else {
         console.log("No opener window found, redirecting to destinations with error");
-        navigate('/destinations', { 
-          state: { 
-            oauthError: error, 
-            description: errorMessage,
-            detailedMessage
-          } 
-        });
+        setTimeout(() => {
+          navigate('/destinations', { 
+            state: { 
+              oauthError: error, 
+              description: errorMessage,
+              detailedMessage
+            } 
+          });
+        }, 5000); // Delay redirect to show error
       }
       return;
     }
@@ -112,6 +119,8 @@ const OAuthCallbackHandler: React.FC = () => {
         console.log("Provider determined from referrer:", provider, "Full referrer:", referrer);
       }
       
+      setStatus('success');
+      
       // Send the code back to the parent window
       if (window.opener) {
         console.log("Sending OAuth callback to parent window:", { 
@@ -134,19 +143,48 @@ const OAuthCallbackHandler: React.FC = () => {
       }
     } else {
       // If there's no code, show an error
+      setStatus('error');
+      setErrorDetails('No code parameter found in OAuth callback URL');
       console.error('No code parameter found in OAuth callback URL:', window.location.href);
     }
   }, [location, navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-4">Authentication in progress...</h1>
-        <p className="mb-2">Please wait while we complete the authentication process.</p>
-        <p className="text-sm text-muted-foreground">You can close this window after the process completes.</p>
+      <div className="text-center max-w-md">
+        <h1 className="text-2xl font-bold mb-4">
+          {status === 'processing' && "Authentication in progress..."}
+          {status === 'success' && "Authentication successful!"}
+          {status === 'error' && "Authentication failed"}
+        </h1>
+        
+        {status === 'processing' && (
+          <>
+            <p className="mb-2">Please wait while we complete the authentication process.</p>
+            <p className="text-sm text-muted-foreground">You can close this window after the process completes.</p>
+          </>
+        )}
+        
+        {status === 'success' && (
+          <p className="mb-2">You have successfully authenticated. This window will close automatically.</p>
+        )}
+        
+        {status === 'error' && errorDetails && (
+          <div className="mt-2 p-4 bg-destructive/10 border border-destructive rounded-md">
+            <p className="text-destructive font-medium">Error: {errorDetails}</p>
+            <p className="mt-2 text-sm">If you're seeing this error, check that you've:</p>
+            <ul className="text-sm list-disc list-inside mt-1 text-left">
+              <li>Set up OAuth correctly in Google Cloud Console</li>
+              <li>Added yourself as a test user if using an unverified app</li>
+              <li>Added <code className="bg-muted p-1 rounded">{window.location.origin}/auth/callback</code> as an authorized redirect URI</li>
+            </ul>
+          </div>
+        )}
         
         <div className="mt-6">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          {status === 'processing' && (
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          )}
         </div>
       </div>
     </div>
