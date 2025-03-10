@@ -11,11 +11,14 @@ export const createJob = async (jobData: Omit<Job, "id" | "created_at" | "update
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
     
+    // Make sure status is a valid enum value
+    const validStatus: JobStatus = (jobData.status as JobStatus) || "Active";
+    
     const jobToCreate = {
       ...jobData,
       description: jobData.description || null, // Ensure description is null if empty/undefined
       user_id: userData.user.id,
-      status: jobData.status || "Active" as JobStatus,
+      status: validStatus,
     };
     
     console.log("Creating job with data:", jobToCreate);

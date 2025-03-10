@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { JobFrequency } from '@/types/job';
+import { JobFrequency, JobStatus } from '@/types/job';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -83,7 +83,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
         frequency: jobFrequency,
         schedule: jobSchedule,
         next_run: nextRun,
-        status: "Active"
+        status: "Active" as JobStatus
       });
 
       if (newJob) {
