@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Transformation } from "@/types/transformation";
@@ -50,7 +49,7 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
     addDerivedColumn,
     removeDerivedColumn,
     updateDerivedColumn,
-    insertFunctionToExpression,
+    handleInsertFunction,
     generatePreview,
     handleSave
   } = useTransformationModal({
@@ -63,11 +62,6 @@ const TransformationModal: React.FC<TransformationModalProps> = ({
   const validateCurrentState = () => {
     const validator = validateExpressions();
     return validator(skipTransformation, fields, derivedColumns);
-  };
-
-  // Function to handle function insertion in the right format
-  const handleInsertFunction = (func, index) => {
-    insertFunctionToExpression(index, func.syntax || func.name + "()");
   };
 
   return (
