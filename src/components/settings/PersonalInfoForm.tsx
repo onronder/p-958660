@@ -76,10 +76,6 @@ const PersonalInfoForm = () => {
     await updateProfile(data);
   };
 
-  const validateSelectValue = (value: string) => {
-    return value && value.trim() !== '';
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -152,13 +148,13 @@ const PersonalInfoForm = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {timezones.map((tz) => (
-                          validateSelectValue(tz.value) && (
+                        {timezones
+                          .filter(tz => tz.value.trim() !== '')
+                          .map((tz) => (
                             <SelectItem key={tz.value} value={tz.value}>
                               {tz.label}
                             </SelectItem>
-                          )
-                        ))}
+                          ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -183,13 +179,13 @@ const PersonalInfoForm = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {languages.map((lang) => (
-                          validateSelectValue(lang.value) && (
+                        {languages
+                          .filter(lang => lang.value.trim() !== '')
+                          .map((lang) => (
                             <SelectItem key={lang.value} value={lang.value}>
                               {lang.label}
                             </SelectItem>
-                          )
-                        ))}
+                          ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
