@@ -51,6 +51,8 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
           
           if (provider && code) {
             await processOAuthCallback(provider, code);
+            // Move to the next step after successful authentication
+            setCurrentStep(3);
           } else if (event.data && event.data.type === "oauth_error") {
             console.error("OAuth error:", event.data);
           }
@@ -65,7 +67,7 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
     return () => {
       window.removeEventListener('message', handleOAuthRedirect);
     };
-  }, [processOAuthCallback]);
+  }, [processOAuthCallback, setCurrentStep]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>

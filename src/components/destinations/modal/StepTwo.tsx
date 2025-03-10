@@ -10,6 +10,7 @@ import CustomApiConfig from "./CustomApiConfig";
 import OAuthError from "./OAuthError";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { OAuthError as OAuthErrorType } from "@/hooks/destinations/modal/types";
 
 interface StepTwoProps {
   destinationType: string;
@@ -17,11 +18,7 @@ interface StepTwoProps {
   setName: (name: string) => void;
   updateCredential: (field: string, value: any) => void;
   handleOAuthLogin: (provider: 'google_drive' | 'onedrive') => void;
-  oauthError: {
-    error: string;
-    description: string;
-    detailedMessage?: string;
-  } | null;
+  oauthError: OAuthErrorType | null;
   credentials: Record<string, any>;
 }
 

@@ -1,25 +1,39 @@
 
 import { useState } from "react";
-import { useDestinations } from "@/hooks/useDestinations";
+import { useAddDestination } from "@/hooks/destinations/useAddDestination";
 import { useToast } from "@/hooks/use-toast";
+import { useOAuthModal } from "./modal/useOAuthModal";
+import { useValidation } from "./modal/useValidation";
+import { DestinationModalState } from "./modal/types";
 
 export const useAddDestinationModal = (onClose: () => void, onAdd: (destination: any) => void) => {
+  // Basic state
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [destinationType, setDestinationType] = useState<string>("");
   const [name, setName] = useState<string>("");
   const [exportFormat, setExportFormat] = useState<string>("CSV");
   const [schedule, setSchedule] = useState<string>("Manual");
-  const { initiateOAuth, handleOAuthCallback } = useDestinations();
-  const { toast } = useToast();
-  
-  const [credentials, setCredentials] = useState<any>({});
-  const [oauthComplete, setOauthComplete] = useState<boolean>(false);
-  const [oauthError, setOauthError] = useState<{
-    error: string;
-    description: string;
-    detailedMessage?: string;
-  } | null>(null);
+  const [credentials, setCredentials] = useState<Record<string, any>>({});
 
+  // Import sub-hooks
+  const { toast } = useToast();
+  const { 
+    oauthComplete,
+    oauthError,
+    setOauthComplete,
+    setOauthError,
+    handleOAuthLogin,
+    processOAuthCallback 
+  } = useOAuthModal();
+  
+  const { canProceedFromStep2 } = useValidation(
+    destinationType,
+    name,
+    credentials,
+    oauthComplete
+  );
+
+  // Reset form to initial state
   const resetForm = () => {
     setCurrentStep(1);
     setDestinationType("");
@@ -31,11 +45,13 @@ export const useAddDestinationModal = (onClose: () => void, onAdd: (destination:
     setOauthError(null);
   };
 
+  // Close modal and reset form
   const handleClose = () => {
     resetForm();
     onClose();
   };
 
+  // Handle form submission
   const handleSubmit = () => {
     // Get storage type from destination type
     const storageType = destinationType === 'Google Drive' ? 'google_drive' :
@@ -76,125 +92,13 @@ export const useAddDestinationModal = (onClose: () => void, onAdd: (destination:
     resetForm();
   };
 
+  // Update a credential field
   const updateCredential = (field: string, value: any) => {
     setCredentials(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleOAuthLogin = async (provider: 'google_drive' | 'onedrive') => {
-    try {
-      setOauthError(null);
-      
-      // Use the consistent redirect URI
-      const redirectUri = `${window.location.origin}/auth/callback`;
-      
-      // Log authentication attempt
-      console.log(`Attempting OAuth login for ${provider}`, {
-        redirectUri,
-        origin: window.location.origin,
-        windowLocation: window.location.href
-      });
-      
-      await initiateOAuth(provider, redirectUri);
-      
-      toast({
-        title: "Authorization Required",
-        description: `Please authorize with ${provider === 'google_drive' ? 'Google' : 'Microsoft'} in the new window.`,
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Error initiating OAuth flow:", error);
-      
-      setOauthError({
-        error: "oauth_initiation_failed",
-        description: error instanceof Error ? error.message : "Failed to start authentication",
-        detailedMessage: "Check browser console for more details"
-      });
-      
-      toast({
-        title: "Authentication Error",
-        description: error instanceof Error ? error.message : "Failed to start authentication",
-        variant: "destructive",
-      });
-      
-      return false;
-    }
-  };
-
-  const processOAuthCallback = async (provider: string, code: string) => {
-    try {
-      console.log(`Processing OAuth callback for ${provider} with code`, {
-        codePresent: !!code,
-        provider
-      });
-      
-      const redirectUri = `${window.location.origin}/auth/callback`;
-      await handleOAuthCallback(
-        provider === 'google_drive' ? 'google_drive' : 'onedrive',
-        code,
-        redirectUri
-      );
-      
-      console.log("OAuth callback processed successfully");
-      
-      setOauthComplete(true);
-      setOauthError(null);
-      
-      toast({
-        title: "Authentication Successful",
-        description: `Successfully connected to ${provider === 'google_drive' ? 'Google Drive' : 'Microsoft OneDrive'}`,
-      });
-      
-      // Move to the next step after successful authentication
-      setCurrentStep(3);
-      
-      return true;
-    } catch (error) {
-      console.error("Error handling OAuth callback:", error);
-      
-      setOauthError({
-        error: "callback_processing_failed",
-        description: error instanceof Error ? error.message : "Failed to process authorization",
-        detailedMessage: "An error occurred while processing the OAuth callback. Check the browser console and network logs for more details."
-      });
-      
-      toast({
-        title: "Authentication Error",
-        description: error instanceof Error ? error.message : "Failed to complete authentication",
-        variant: "destructive",
-      });
-      
-      return false;
-    }
-  };
-
-  const canProceedFromStep2 = () => {
-    if (name === "") return false;
-    
-    if (destinationType === "Google Drive" || destinationType === "Microsoft OneDrive") {
-      return oauthComplete;
-    }
-    
-    if (destinationType === "AWS S3") {
-      return credentials.accessKey && credentials.secretKey && credentials.bucket && credentials.region;
-    }
-    
-    if (destinationType === "FTP/SFTP") {
-      const hasCoreFields = credentials.host && credentials.username;
-      const hasPasswordAuth = !credentials.useKeyAuth && credentials.password;
-      const hasKeyAuth = credentials.useKeyAuth && credentials.privateKey;
-      
-      return hasCoreFields && (hasPasswordAuth || hasKeyAuth);
-    }
-    
-    if (destinationType === "Custom API") {
-      return credentials.baseUrl;
-    }
-    
-    return false;
-  };
-
   return {
+    // Basic state
     currentStep,
     setCurrentStep,
     destinationType,
@@ -206,13 +110,19 @@ export const useAddDestinationModal = (onClose: () => void, onAdd: (destination:
     schedule,
     setSchedule,
     credentials,
+    
+    // OAuth state
     oauthComplete,
     oauthError,
+    
+    // Actions
     handleClose,
     handleSubmit,
     updateCredential,
     handleOAuthLogin,
     processOAuthCallback,
+    
+    // Validation
     canProceedFromStep2
   };
 };
