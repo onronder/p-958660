@@ -72,6 +72,8 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
         destination_id: destinationId === "none" ? null : destinationId,
         frequency: jobFrequency,
         schedule: jobSchedule,
+        next_run: nextRun,
+        status: "active" // Ensure we're using lowercase status
       });
       
       const newJob = await createJob({
@@ -84,7 +86,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
         frequency: jobFrequency,
         schedule: jobSchedule,
         next_run: nextRun,
-        status: "active" as JobStatus // Use lowercase status to match database constraint
+        status: "active" // Using lowercase to match database constraint
       });
 
       if (newJob) {
