@@ -1,7 +1,7 @@
 
 import React from "react";
 import DestinationCard from "@/components/destinations/DestinationCard";
-import { Destination } from "@/hooks/useDestinations";
+import { Destination } from "@/hooks/destinations/types";
 
 interface DestinationsGridProps {
   destinations: Destination[];
@@ -37,7 +37,15 @@ const DestinationsGrid: React.FC<DestinationsGridProps> = ({
         destination && destination.id ? (
           <DestinationCard
             key={destination.id}
-            destination={destination}
+            destination={{
+              id: destination.id,
+              name: destination.name,
+              destination_type: destination.destination_type,
+              status: destination.status as "Active" | "Pending" | "Failed",
+              export_format: destination.export_format,
+              schedule: destination.schedule,
+              last_export: destination.last_export ? destination.last_export.toString() : null
+            }}
             onTestConnection={() => onTestConnection(destination)}
             onDelete={() => onDelete(destination.id)}
             onExport={() => onExport(destination.id)}

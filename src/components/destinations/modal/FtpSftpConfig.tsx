@@ -34,10 +34,15 @@ const FtpSftpConfig: React.FC<FtpSftpConfigProps> = ({ updateCredential, credent
   const handleTestConnection = () => {
     console.log("Testing connection with credentials:", credentials);
 
-    // Create a destination object for testing
+    // Create a destination object for testing with all required properties
     const testDestination = {
+      id: "test", // Add a temporary id for testing
+      name: "Test Connection", // Add a name for testing
       destination_type: "FTP/SFTP",
       storage_type: "ftp_sftp",
+      status: "Pending", // Add required status
+      export_format: "CSV", // Add required export_format
+      schedule: "Manual", // Add required schedule
       config: {
         ...credentials,
         port: Number(credentials.port)

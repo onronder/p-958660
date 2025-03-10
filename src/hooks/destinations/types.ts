@@ -1,13 +1,13 @@
 
 export interface Destination {
-  id?: string;
+  id: string; // Changed from optional to required
   name: string;
   destination_type: string;
   storage_type: string;
   status: string;
   export_format: string;
   schedule: string;
-  last_export?: Date | null;
+  last_export?: string | Date | null;
   config: Record<string, any>;
   created_at?: Date;
   updated_at?: Date;
