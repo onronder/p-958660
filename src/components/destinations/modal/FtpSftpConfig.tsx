@@ -8,6 +8,7 @@ import { Server, Key, Lock, Database, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useTestConnection } from "@/hooks/destinations/useTestConnection";
 
 interface FtpSftpConfigProps {
   updateCredential: (field: string, value: string | boolean | number) => void;
@@ -16,6 +17,7 @@ interface FtpSftpConfigProps {
 
 const FtpSftpConfig: React.FC<FtpSftpConfigProps> = ({ updateCredential, credentials }) => {
   const [protocolType, setProtocolType] = useState<string>(credentials.protocol || "ftp");
+  const { mutate: testConnection, isPending } = useTestConnection();
   
   const handleProtocolChange = (value: string) => {
     setProtocolType(value);
@@ -27,6 +29,23 @@ const FtpSftpConfig: React.FC<FtpSftpConfigProps> = ({ updateCredential, credent
     } else if (value === "sftp" && (!credentials.port || credentials.port === 21)) {
       updateCredential("port", 22);
     }
+  };
+
+  const handleTestConnection = () => {
+    console.log("Testing connection with credentials:", credentials);
+
+    // Create a destination object for testing
+    const testDestination = {
+      destination_type: "FTP/SFTP",
+      storage_type: "ftp_sftp",
+      config: {
+        ...credentials,
+        port: Number(credentials.port)
+      }
+    };
+
+    // Call the test connection API
+    testConnection(testDestination);
   };
 
   return (
@@ -158,12 +177,10 @@ const FtpSftpConfig: React.FC<FtpSftpConfigProps> = ({ updateCredential, credent
           type="button"
           variant="outline"
           className="w-full"
-          onClick={() => {
-            // This will be implemented when we address the test connection functionality
-            console.log("Test connection with credentials:", credentials);
-          }}
+          onClick={handleTestConnection}
+          disabled={isPending}
         >
-          Test Connection
+          {isPending ? "Testing Connection..." : "Test Connection"}
         </Button>
       </div>
     </div>
