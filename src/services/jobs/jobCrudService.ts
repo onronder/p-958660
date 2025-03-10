@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Job, JobStatus } from "@/types/job";
 import { toast } from "@/hooks/use-toast";
@@ -11,31 +10,13 @@ export const createJob = async (jobData: JobCreateData): Promise<Job | null> => 
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("User not authenticated");
     
-    // Map any incoming status to the exact values that the database expects
-    let validStatus: JobStatus;
-    
-    if (typeof jobData.status === 'string') {
-      const status = jobData.status.toLowerCase();
-      // Make sure we only use values that match the database constraint
-      if (status === "active" || status === "paused" || 
-          status === "completed" || status === "failed") {
-        validStatus = status as JobStatus;
-      } else {
-        validStatus = "active";
-      }
-    } else {
-      validStatus = "active";
-    }
-    
-    console.log("Using status value:", validStatus);
-    
     const jobToCreate = {
       ...jobData,
       description: jobData.description || null,
       transformation_id: jobData.transformation_id || null,
       destination_id: jobData.destination_id || null,
       user_id: userData.user.id,
-      status: validStatus,
+      status: "active" as JobStatus, // Ensure status is always "active" for new jobs
     };
     
     console.log("Creating job with data:", jobToCreate);

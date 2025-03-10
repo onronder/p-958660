@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { JobFrequency, JobStatus } from '@/types/job';
 import { Button } from '@/components/ui/button';
@@ -73,7 +72,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
         frequency: jobFrequency,
         schedule: jobSchedule,
         next_run: nextRun,
-        status: "active" // Ensure we're using lowercase status
+        status: "active" as JobStatus
       });
       
       const newJob = await createJob({
@@ -86,7 +85,7 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
         frequency: jobFrequency,
         schedule: jobSchedule,
         next_run: nextRun,
-        status: "active" // Using lowercase to match database constraint
+        status: "active" as JobStatus
       });
 
       if (newJob) {

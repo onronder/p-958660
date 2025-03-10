@@ -1,4 +1,3 @@
-
 export type JobFrequency = "Once" | "Hourly" | "Daily" | "Weekly" | "Monthly";
 export type JobStatus = "active" | "paused" | "completed" | "failed";
 
