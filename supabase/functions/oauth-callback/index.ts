@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
@@ -35,6 +34,7 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !user) {
+      console.error('User validation error:', userError);
       return new Response(
         JSON.stringify({ error: 'Invalid token or user not found' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -48,9 +48,18 @@ serve(async (req) => {
       );
     }
 
-    const { provider, code, redirectUri } = await req.json();
+    const requestBody = await req.json();
+    console.log("Received OAuth callback request:", {
+      method: req.method,
+      provider: requestBody.provider,
+      hasCode: !!requestBody.code,
+      redirectUri: requestBody.redirectUri
+    });
+    
+    const { provider, code, redirectUri } = requestBody;
     
     if (!provider || !code || !redirectUri) {
+      console.error('Missing required parameters:', { provider, hasCode: !!code, redirectUri });
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -71,6 +80,12 @@ serve(async (req) => {
     const clientSecret = provider === 'google_drive'
       ? Deno.env.get('GOOGLE_CLIENT_SECRET')
       : Deno.env.get('MICROSOFT_CLIENT_SECRET');
+    
+    console.log(`OAuth provider config:`, {
+      tokenUrl,
+      clientId: clientId ? "present" : "missing",
+      clientSecret: clientSecret ? "present" : "missing"
+    });
     
     if (!clientId || !clientSecret) {
       console.error(`Missing ${provider} credentials`);
@@ -104,7 +119,14 @@ serve(async (req) => {
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.text();
-      console.error('Token exchange failed:', errorData);
+      console.error('Token exchange failed - Response status:', tokenResponse.status);
+      console.error('Token exchange failed - Error:', errorData);
+      console.error('Token exchange failed - Request data:', {
+        code: code ? "present" : "missing",
+        client_id: clientId ? "present" : "missing", 
+        redirect_uri: redirectUri
+      });
+      
       return new Response(
         JSON.stringify({ error: 'Failed to exchange code for token', details: errorData }),
         { status: tokenResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -112,6 +134,11 @@ serve(async (req) => {
     }
 
     const tokenData = await tokenResponse.json();
+    console.log('Token exchange successful:', {
+      hasAccessToken: !!tokenData.access_token,
+      hasRefreshToken: !!tokenData.refresh_token,
+      expiresIn: tokenData.expires_in
+    });
     
     try {
       // Check if storage_tokens table exists, and create it if it doesn't

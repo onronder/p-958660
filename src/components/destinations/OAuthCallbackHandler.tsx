@@ -18,8 +18,18 @@ const OAuthCallbackHandler: React.FC = () => {
     const error = params.get('error');
     const errorDescription = params.get('error_description');
     
+    console.log("OAuth callback received with params:", { 
+      code: code ? "present" : "missing", 
+      state, 
+      error, 
+      errorDescription,
+      fullUrl: window.location.href,
+      search: location.search
+    });
+    
     if (error) {
       console.error("OAuth error:", error, errorDescription);
+      console.error("Full error URL:", window.location.href);
       
       // Special handling for access_denied error (unverified app)
       let errorMessage = errorDescription || "Authentication failed";
@@ -35,10 +45,22 @@ const OAuthCallbackHandler: React.FC = () => {
         errorMessage = "Redirect URI mismatch";
         detailedMessage = "The redirect URI in the request doesn't match the one registered in the OAuth provider. Please ensure that the URL " + 
                           window.location.origin + "/auth/callback is registered in your Google/Microsoft developer console.";
+        
+        console.error("Redirect URI mismatch details:", {
+          callbackUrl: window.location.origin + "/auth/callback",
+          currentUrl: window.location.href,
+          origin: window.location.origin
+        });
       }
       
       // Handle the error by showing a message or redirecting
       if (window.opener) {
+        console.log("Sending OAuth error to parent window:", { 
+          error, 
+          description: errorMessage, 
+          detailedMessage 
+        });
+        
         window.opener.postMessage({ 
           type: 'oauth_error', 
           error,
@@ -50,6 +72,7 @@ const OAuthCallbackHandler: React.FC = () => {
           window.close();
         }, 1000);
       } else {
+        console.log("No opener window found, redirecting to destinations with error");
         navigate('/destinations', { 
           state: { 
             oauthError: error, 
@@ -73,6 +96,7 @@ const OAuthCallbackHandler: React.FC = () => {
           origin = stateObj.origin || window.location.origin;
           console.log("Provider extracted from state:", provider);
           console.log("Origin extracted from state:", origin);
+          console.log("Full state object:", stateObj);
         } catch (e) {
           console.error("Failed to parse state parameter:", e);
           provider = state; // If state is not JSON, use it directly
@@ -85,12 +109,18 @@ const OAuthCallbackHandler: React.FC = () => {
         } else if (referrer.includes('microsoft') || referrer.includes('live')) {
           provider = 'onedrive';
         }
-        console.log("Provider determined from referrer:", provider);
+        console.log("Provider determined from referrer:", provider, "Full referrer:", referrer);
       }
       
       // Send the code back to the parent window
       if (window.opener) {
-        console.log("Sending OAuth callback to parent window:", { code, provider });
+        console.log("Sending OAuth callback to parent window:", { 
+          code: "present", 
+          provider,
+          targetOrigin: origin,
+          currentOrigin: window.location.origin
+        });
+        
         window.opener.postMessage({ type: 'oauth_callback', code, provider }, origin);
         
         // Close this window after a brief delay to ensure the message was sent
@@ -104,7 +134,7 @@ const OAuthCallbackHandler: React.FC = () => {
       }
     } else {
       // If there's no code, show an error
-      console.error('No code parameter found in OAuth callback URL');
+      console.error('No code parameter found in OAuth callback URL:', window.location.href);
     }
   }, [location, navigate]);
 

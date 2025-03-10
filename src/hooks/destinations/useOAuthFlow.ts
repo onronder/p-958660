@@ -9,6 +9,8 @@ export function useOAuthFlow() {
   // OAuth flow for Google Drive and OneDrive
   const initiateOAuth = async (provider: 'google_drive' | 'onedrive', redirectUri: string) => {
     try {
+      console.log(`Starting OAuth flow for ${provider} with redirectUri:`, redirectUri);
+      
       // Fetch client ID from Supabase Edge Function to get the actual value
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -17,6 +19,8 @@ export function useOAuthFlow() {
       }
       
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co';
+      console.log("Using Supabase URL:", supabaseUrl);
+      
       const response = await fetch(`${supabaseUrl}/functions/v1/get-oauth-config`, {
         method: "POST",
         headers: {
@@ -28,10 +32,12 @@ export function useOAuthFlow() {
       
       if (!response.ok) {
         const errorData = await response.json();
+        console.error(`Failed to get ${provider} configuration:`, errorData);
         throw new Error(errorData.error || `Failed to get ${provider} configuration`);
       }
       
       const { clientId } = await response.json();
+      console.log(`Received clientId for ${provider}:`, clientId ? "present" : "missing");
       
       if (!clientId) {
         throw new Error(`${provider} client ID not configured`);
@@ -45,6 +51,7 @@ export function useOAuthFlow() {
       
       // Get the current deployment URL for the state parameter
       const deploymentUrl = window.location.origin;
+      console.log("Current deployment URL:", deploymentUrl);
       
       // Configure OAuth URL based on provider
       let authUrl = '';
@@ -98,6 +105,8 @@ export function useOAuthFlow() {
   // Handle OAuth callback (called when the OAuth flow is complete)
   const handleOAuthCallback = async (provider: 'google_drive' | 'onedrive', code: string, redirectUri: string) => {
     try {
+      console.log(`Handling OAuth callback for ${provider} with code: present, redirectUri:`, redirectUri);
+      
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -111,6 +120,13 @@ export function useOAuthFlow() {
       console.log("Using callback URL for token exchange:", callbackUrl);
       
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co';
+      console.log("Using Supabase URL for token exchange:", supabaseUrl);
+      
+      console.log("Sending data to oauth-callback function:", {
+        provider,
+        redirectUri: callbackUrl
+      });
+      
       const response = await fetch(`${supabaseUrl}/functions/v1/oauth-callback`, {
         method: "POST",
         headers: {
@@ -121,11 +137,20 @@ export function useOAuthFlow() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText };
+        }
+        
+        console.error(`Failed to complete ${provider} authentication:`, errorData);
         throw new Error(errorData.error || `Failed to complete ${provider} authentication`);
       }
       
       const data = await response.json();
+      console.log(`Successfully completed ${provider} authentication:`, data);
       
       toast({
         title: "Authentication Successful",
