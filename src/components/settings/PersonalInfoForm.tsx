@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -11,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 
-// Define timezone and language options
 const timezones = [
   { value: "UTC", label: "UTC (Coordinated Universal Time)" },
   { value: "America/New_York", label: "Eastern Time (ET)" },
@@ -38,7 +36,6 @@ const languages = [
   { value: "ru-RU", label: "Russian" },
 ];
 
-// Define form schema
 const profileFormSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
@@ -77,6 +74,10 @@ const PersonalInfoForm = () => {
 
   const onSubmit = async (data: ProfileFormValues) => {
     await updateProfile(data);
+  };
+
+  const validateSelectValue = (value: string) => {
+    return value && value.trim() !== '';
   };
 
   return (
@@ -152,9 +153,11 @@ const PersonalInfoForm = () => {
                       </FormControl>
                       <SelectContent>
                         {timezones.map((tz) => (
-                          <SelectItem key={tz.value} value={tz.value}>
-                            {tz.label}
-                          </SelectItem>
+                          validateSelectValue(tz.value) && (
+                            <SelectItem key={tz.value} value={tz.value}>
+                              {tz.label}
+                            </SelectItem>
+                          )
                         ))}
                       </SelectContent>
                     </Select>
@@ -181,9 +184,11 @@ const PersonalInfoForm = () => {
                       </FormControl>
                       <SelectContent>
                         {languages.map((lang) => (
-                          <SelectItem key={lang.value} value={lang.value}>
-                            {lang.label}
-                          </SelectItem>
+                          validateSelectValue(lang.value) && (
+                            <SelectItem key={lang.value} value={lang.value}>
+                              {lang.label}
+                            </SelectItem>
+                          )
                         ))}
                       </SelectContent>
                     </Select>
