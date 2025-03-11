@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Source, SourceStatus } from "@/types/source";
 
@@ -25,9 +24,7 @@ export const fetchUserSources = async (userId: string) => {
 export const fetchDeletedSources = async (userId: string) => {
   // Call the edge function to get deleted sources
   const { data, error } = await supabase.functions.invoke('sources', {
-    body: { action: 'deleted' },
-    path: '/deleted',
-    method: 'GET'
+    body: { action: 'deleted' }
   });
   
   if (error) {
@@ -62,9 +59,7 @@ export const restoreSource = async (sourceId: string) => {
   try {
     // Call the edge function to restore the source
     const { data, error } = await supabase.functions.invoke('sources', {
-      body: { sourceId },
-      path: '/restore',
-      method: 'POST'
+      body: { sourceId, action: 'restore' }
     });
     
     if (error || !data?.success) {

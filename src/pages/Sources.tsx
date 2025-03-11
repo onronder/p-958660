@@ -10,7 +10,10 @@ import HelpFloatingButton from "@/components/help/HelpFloatingButton";
 import SourceTypeSelector from "@/components/sources/SourceTypeSelector";
 import ShopifyPrivateAppModal from "@/components/sources/ShopifyPrivateAppModal";
 import SourcesHeader from "@/components/sources/SourcesHeader";
-import SourcesStatusTabs from "@/components/sources/SourcesStatusTabs";
+import SourcesList from "@/components/sources/SourcesList";
+import DeletedSourcesList from "@/components/sources/DeletedSourcesList";
+import { Card } from "@/components/ui/card";
+import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 
 const Sources = () => {
@@ -103,23 +106,40 @@ const Sources = () => {
         onAddSource={() => setShowSourceSelector(true)}
       />
 
-      <SourcesStatusTabs
-        sources={displaySources}
-        deletedSources={deletedSources}
-        isLoading={isLoading}
-        isDeletingSource={isDeletingSource}
-        isRestoring={isRestoring}
-        shopifyCredentials={shopifyCredentials}
-        onTestConnection={handleTestConnection}
-        onDeleteSource={handleDeleteSource}
-        onRestoreSource={handleRestoreSource}
-        onEditCredential={(cred) => {
-          setSelectedCredential(cred);
-          setShowShopifyModal(true);
-        }}
-        onRefreshCredentials={loadCredentials}
-        onAddSource={() => setShowSourceSelector(true)}
-      />
+      <Card className="p-6">
+        <h3 className="text-xl font-semibold mb-4">Active Sources</h3>
+        <SourcesList
+          isLoading={isLoading}
+          shopifyCredentials={shopifyCredentials}
+          displaySources={displaySources}
+          onTestConnection={handleTestConnection}
+          onDeleteSource={handleDeleteSource}
+          onEditCredential={(cred) => {
+            setSelectedCredential(cred);
+            setShowShopifyModal(true);
+          }}
+          onRefreshCredentials={loadCredentials}
+          onAddSource={() => setShowSourceSelector(true)}
+        />
+      </Card>
+
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="text-xl font-semibold">Deleted Sources</h3>
+          <AlertTriangle className="h-5 w-5 text-amber-500" />
+        </div>
+        
+        <p className="text-muted-foreground mb-6">
+          Deleted sources remain inactive for 30 days after which they are permanently deleted.
+        </p>
+        
+        <DeletedSourcesList
+          deletedSources={deletedSources}
+          isLoading={isDeletedSourcesLoading}
+          isRestoring={isRestoring}
+          onRestoreSource={handleRestoreSource}
+        />
+      </Card>
 
       <SourceTypeSelector
         open={showSourceSelector}
