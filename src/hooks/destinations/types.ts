@@ -1,29 +1,19 @@
 
 export interface Destination {
-  id: string; // Changed from optional to required
+  id: string;
   name: string;
   destination_type: string;
   storage_type: string;
-  status: string;
+  status: "Active" | "Pending" | "Failed" | "Deleted";
   export_format: string;
   schedule: string;
-  last_export?: string | Date | null;
-  config: Record<string, any>;
-  created_at?: Date;
-  updated_at?: Date;
-}
-
-export interface DestinationLog {
-  id: string;
-  destination_id: string;
-  event_type: string; 
-  message: string;
-  details?: any;
-  created_at: Date;
-}
-
-export interface TestConnectionResult {
-  success: boolean;
-  message: string;
-  error?: string | null;
+  last_export: string | null;
+  config?: Record<string, any>;
+  credentials?: Record<string, any>;
+  is_deleted?: boolean;
+  deletion_marked_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  user_id?: string;
+  save_to_storage?: boolean;
 }

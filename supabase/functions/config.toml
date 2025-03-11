@@ -97,3 +97,7 @@ src = "./oauth-callback/index.ts"
 [[api.endpoints]]
 path = "/get-oauth-config"
 src = "./get-oauth-config/index.ts"
+
+[[api.endpoints]]
+path = "/cleanup-destinations"
+src = "./cleanup-destinations/index.ts"

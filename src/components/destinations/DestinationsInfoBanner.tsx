@@ -20,7 +20,7 @@ const DestinationsInfoBanner = () => {
           <span className="font-bold">⚡ Destinations</span> allow you to export your data to various third-party services and storage solutions. Connect to FTP servers, cloud storage, or custom APIs to automate your data flow.
         </AlertDescription>
       </div>
-      <DismissButton onDismiss={dismissMessage} />
+      <DismissButton onDismiss={() => dismissMessage("destinations-info")} />
     </Alert>
   );
 };
