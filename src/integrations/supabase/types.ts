@@ -865,6 +865,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_deleted_sources: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       delete_old_marked_sources: {
         Args: Record<PropertyKey, never>
         Returns: undefined

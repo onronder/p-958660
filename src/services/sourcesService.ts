@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Source, SourceStatus } from "@/types/source";
 
@@ -21,12 +22,33 @@ export const fetchUserSources = async (userId: string) => {
   }) || [];
 };
 
+export const fetchDeletedSources = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('sources')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('is_deleted', true);
+  
+  if (error) {
+    throw error;
+  }
+  
+  return data?.map(source => {
+    // All deleted sources should have a "Deleted" status for display
+    return {
+      ...source,
+      status: "Deleted" as SourceStatus
+    } as Source;
+  }) || [];
+};
+
 export const deleteSource = async (sourceId: string) => {
   const { error } = await supabase
     .from('sources')
     .update({ 
       is_deleted: true,
-      deletion_marked_at: new Date().toISOString()
+      deletion_marked_at: new Date().toISOString(),
+      status: 'Deleted'
     })
     .eq('id', sourceId);
     
@@ -35,8 +57,26 @@ export const deleteSource = async (sourceId: string) => {
   }
 };
 
+export const restoreSource = async (sourceId: string) => {
+  try {
+    // Call the edge function to restore the source
+    const { data, error } = await supabase.functions.invoke('restore-source', {
+      body: { sourceId }
+    });
+    
+    if (error || !data?.success) {
+      throw new Error(error?.message || 'Failed to restore source');
+    }
+    
+    return data.source;
+  } catch (error) {
+    console.error('Error restoring source:', error);
+    throw error;
+  }
+};
+
 export const validateSourceStatus = (status: string): SourceStatus => {
-  const validStatuses: SourceStatus[] = ["Active", "Inactive", "Pending", "Failed"];
+  const validStatuses: SourceStatus[] = ["Active", "Inactive", "Pending", "Failed", "Deleted"];
   return validStatuses.includes(status as SourceStatus) 
     ? (status as SourceStatus) 
     : "Inactive"; // Default fallback

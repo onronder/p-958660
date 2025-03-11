@@ -2,6 +2,7 @@
 import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useSources } from "@/hooks/useSources";
+import { useDeletedSources } from "@/hooks/useDeletedSources";
 import { useShopifyCredentials } from "@/hooks/useShopifyCredentials";
 import { useSourceSelection } from "@/hooks/useSourceSelection";
 import InfoBanner from "@/components/InfoBanner";
@@ -9,17 +10,26 @@ import HelpFloatingButton from "@/components/help/HelpFloatingButton";
 import SourceTypeSelector from "@/components/sources/SourceTypeSelector";
 import ShopifyPrivateAppModal from "@/components/sources/ShopifyPrivateAppModal";
 import SourcesHeader from "@/components/sources/SourcesHeader";
-import SourcesList from "@/components/sources/SourcesList";
+import SourcesStatusTabs from "@/components/sources/SourcesStatusTabs";
 import { useState } from "react";
 
 const Sources = () => {
   const { 
     sources, 
     isLoading: isSourcesLoading, 
+    isDeletingSource,
     loadSources, 
     handleTestConnection, 
     handleDeleteSource 
   } = useSources();
+  
+  const {
+    deletedSources,
+    isLoading: isDeletedSourcesLoading,
+    isRestoring,
+    loadDeletedSources,
+    handleRestoreSource
+  } = useDeletedSources();
   
   const {
     credentials: shopifyCredentials,
@@ -41,6 +51,7 @@ const Sources = () => {
   useEffect(() => {
     // Load sources when the component mounts
     loadSources();
+    loadDeletedSources();
     loadCredentials();
     
     // Check location state for modal flags
@@ -61,8 +72,7 @@ const Sources = () => {
     // and filter out soft-deleted sources
     const filteredSources = sources.filter(source => 
       !shopifyIds.includes(source.id) && 
-      source.source_type !== "Shopify" &&
-      !source.is_deleted
+      source.source_type !== "Shopify"
     );
     
     return filteredSources;
@@ -70,10 +80,11 @@ const Sources = () => {
 
   const handleRefresh = () => {
     loadSources();
+    loadDeletedSources();
     loadCredentials();
   };
 
-  const isLoading = isSourcesLoading || isCredentialsLoading;
+  const isLoading = isSourcesLoading || isCredentialsLoading || isDeletedSourcesLoading;
   const displaySources = getDisplaySources();
 
   return (
@@ -92,12 +103,16 @@ const Sources = () => {
         onAddSource={() => setShowSourceSelector(true)}
       />
 
-      <SourcesList 
+      <SourcesStatusTabs
+        sources={displaySources}
+        deletedSources={deletedSources}
         isLoading={isLoading}
+        isDeletingSource={isDeletingSource}
+        isRestoring={isRestoring}
         shopifyCredentials={shopifyCredentials}
-        displaySources={displaySources}
         onTestConnection={handleTestConnection}
         onDeleteSource={handleDeleteSource}
+        onRestoreSource={handleRestoreSource}
         onEditCredential={(cred) => {
           setSelectedCredential(cred);
           setShowShopifyModal(true);

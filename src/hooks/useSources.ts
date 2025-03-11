@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export const useSources = () => {
   const [sources, setSources] = useState<Source[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeletingSource, setIsDeletingSource] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -89,14 +90,16 @@ export const useSources = () => {
 
   const handleDeleteSource = async (sourceId: string) => {
     try {
+      setIsDeletingSource(true);
       await deleteSource(sourceId);
       
       toast({
-        title: "Source Deleted",
-        description: "The source has been deleted successfully.",
+        title: "Source Moved to Trash",
+        description: "The source has been moved to the trash. It will be permanently deleted after 30 days.",
       });
       
-      loadSources();
+      // Remove the deleted source from the current list
+      setSources(sources.filter(source => source.id !== sourceId));
     } catch (error) {
       console.error("Error deleting source:", error);
       toast({
@@ -104,12 +107,15 @@ export const useSources = () => {
         description: "Failed to delete source. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeletingSource(false);
     }
   };
 
   return {
     sources,
     isLoading,
+    isDeletingSource,
     loadSources,
     handleTestConnection,
     handleDeleteSource

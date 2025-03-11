@@ -1,5 +1,5 @@
 
-export type SourceStatus = "Active" | "Inactive" | "Pending" | "Failed";
+export type SourceStatus = "Active" | "Inactive" | "Pending" | "Failed" | "Deleted";
 
 export interface Source {
   id: string;

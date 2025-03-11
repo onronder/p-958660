@@ -31,6 +31,14 @@ path = "/get-sources"
 src = "./get-sources/index.ts"
 
 [[api.endpoints]]
+path = "/get-deleted-sources"
+src = "./get-deleted-sources/index.ts"
+
+[[api.endpoints]]
+path = "/restore-source"
+src = "./restore-source/index.ts"
+
+[[api.endpoints]]
 path = "/get-transformations"
 src = "./get-transformations/index.ts"
 
