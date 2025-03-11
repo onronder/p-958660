@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTestConnection } from "@/hooks/destinations/useTestConnection";
+import { Destination } from "@/hooks/destinations/types";
 
 interface FtpSftpConfigProps {
   updateCredential: (field: string, value: any) => void;
@@ -34,16 +35,31 @@ const FtpSftpConfig: React.FC<FtpSftpConfigProps> = ({
     setErrorMessage(null);
     
     try {
-      const result = await testConnection.mutateAsync({
+      // Create a destination object that matches the required Destination type
+      const testDestination: Destination = {
+        id: "temp-test-id", // Temporary ID for testing
         name: name || "Test Connection",
         destination_type: "FTP/SFTP",
+        storage_type: "ftp_sftp",
+        status: "Pending",
+        export_format: "CSV",
+        schedule: "Manual",
+        last_export: null,
         config: {
           host: credentials.host,
           port: Number(credentials.port),
           username: credentials.username,
           password: credentials.password || ""
+        },
+        credentials: {
+          host: credentials.host,
+          port: Number(credentials.port),
+          username: credentials.username,
+          password: credentials.password || ""
         }
-      });
+      };
+      
+      const result = await testConnection.mutateAsync(testDestination);
       
       if (result.success) {
         setConnectionStatus("success");
