@@ -27,16 +27,8 @@ path = "/get-source-fields"
 src = "./get-source-fields/index.ts"
 
 [[api.endpoints]]
-path = "/get-sources"
+path = "/sources"
 src = "./get-sources/index.ts"
-
-[[api.endpoints]]
-path = "/get-deleted-sources"
-src = "./get-deleted-sources/index.ts"
-
-[[api.endpoints]]
-path = "/restore-source"
-src = "./restore-source/index.ts"
 
 [[api.endpoints]]
 path = "/get-transformations"
@@ -55,11 +47,11 @@ path = "/update-transformation"
 src = "./update-transformation/index.ts"
 
 [[api.endpoints]]
-path = "/get-dashboard-metrics"
+path = "/dashboard-data"
 src = "./get-dashboard-metrics/index.ts"
 
 [[api.endpoints]]
-path = "/get-analytics-data"
+path = "/analytics"
 src = "./get-analytics-data/index.ts"
 
 [[api.endpoints]]
@@ -83,7 +75,7 @@ path = "/settings"
 src = "./settings/index.ts"
 
 [[api.endpoints]]
-path = "/help-articles"
+path = "/help"
 src = "./help-articles/index.ts"
 
 [[api.endpoints]]
@@ -109,3 +101,13 @@ src = "./get-oauth-config/index.ts"
 [[api.endpoints]]
 path = "/cleanup-destinations"
 src = "./cleanup-destinations/index.ts"
+
+# Combined endpoints for sources
+[[api.endpoints]]
+path = "/sources/deleted"
+src = "./get-deleted-sources/index.ts"
+
+[[api.endpoints]]
+path = "/sources/restore"
+src = "./restore-source/index.ts"
+
