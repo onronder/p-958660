@@ -11,11 +11,14 @@ const ShopifyCredentialHeader: React.FC<ShopifyCredentialHeaderProps> = ({
   storeName,
   lastConnectionStatus
 }) => {
+  // Remove myshopify.com domain suffix if present
+  const displayName = storeName.replace(/\.myshopify\.com$/, "");
+  
   return (
     <div className="flex items-center justify-between w-full">
       <div className="flex items-center gap-2">
         <ShoppingBag className="h-5 w-5 text-primary" />
-        <h3 className="text-lg font-semibold">{storeName}</h3>
+        <h3 className="text-lg font-semibold">{displayName}</h3>
       </div>
       
       {lastConnectionStatus !== null && (
