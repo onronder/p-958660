@@ -1,7 +1,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { testConnection } from "./destinationApi";
+import { testConnection } from "./api";
 import { Destination } from "./types";
 
 export const useTestConnection = () => {

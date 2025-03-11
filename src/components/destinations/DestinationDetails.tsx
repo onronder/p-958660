@@ -14,7 +14,7 @@ interface DestinationDetailsProps {
     export_format: string;
     schedule: string;
     last_export: string | null;
-    status: "Active" | "Pending" | "Failed";
+    status: "Active" | "Pending" | "Failed" | "Deleted";
   };
 }
 

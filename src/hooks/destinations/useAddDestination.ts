@@ -1,7 +1,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { addDestination } from "./destinationApi";
+import { addDestination } from "./api";
 
 export const useAddDestination = () => {
   const { toast } = useToast();

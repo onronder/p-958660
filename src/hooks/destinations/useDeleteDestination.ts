@@ -1,7 +1,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { deleteDestination, permanentlyDeleteDestination } from "./destinationApi";
+import { deleteDestination, permanentlyDeleteDestination } from "./api";
 
 export const useDeleteDestination = () => {
   const { toast } = useToast();

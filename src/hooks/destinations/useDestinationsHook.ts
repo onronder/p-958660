@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOAuthFlow } from "./useOAuthFlow";
-import { fetchDestinations, updateDestination } from "./destinationApi";
+import { fetchDestinations, updateDestination } from "./api";
 import { useDeleteDestination } from "./useDeleteDestination";
 import { useTestConnection } from "./useTestConnection";
 import { useExportDestination } from "./useExportDestination";

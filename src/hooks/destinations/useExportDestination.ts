@@ -1,7 +1,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { exportToDestination } from "./destinationApi";
+import { exportToDestination } from "./api";
 
 export const useExportDestination = () => {
   const { toast } = useToast();
