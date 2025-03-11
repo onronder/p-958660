@@ -1,24 +1,24 @@
 
 import React from "react";
 import InfoBanner from "@/components/InfoBanner";
-import { useDismissibleHelp } from "@/hooks/useDismissibleHelp";
+import { useInfoBanner } from "@/hooks/useInfoBanner";
 
-const DestinationsInfoBanner = () => {
-  const { isMessageDismissed, dismissMessage, resetAllDismissedMessages, isResetting } = useDismissibleHelp();
+const DestinationsInfoBanner: React.FC = () => {
+  const { isVisible: showBanner, dismissMessage } = useInfoBanner("destinations-info");
   
-  const infoContent = {
-    title: "Destinations Management",
-    description:
-      "Destinations allow you to export your data to various storage services and platforms. Connect to cloud storage, databases, or custom APIs to streamline your data workflow.",
-    learnMoreUrl: "/help/destinations",
-    messageId: "destinations_info"
-  };
-
+  if (!showBanner) return null;
+  
   return (
     <InfoBanner
-      {...infoContent}
-      isDismissed={isMessageDismissed(infoContent.messageId)}
-      onDismiss={() => dismissMessage(infoContent.messageId)}
+      messageId="destinations-info"
+      title="About Destinations"
+      description="Destinations allow you to automatically export your processed data to various storage services, APIs, or servers."
+      learnMoreUrl="/help/destinations"
+      isDismissed={!showBanner}
+      onDismiss={async () => {
+        dismissMessage();
+        return true;
+      }}
     />
   );
 };

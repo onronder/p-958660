@@ -25,6 +25,7 @@ export const deleteDestination = async (id: string): Promise<boolean> => {
     return result.success;
   } catch (error) {
     handleApiError(error, "Error deleting destination");
+    throw error; // Re-throw the error to be handled by the calling component
   }
 };
 
@@ -51,5 +52,6 @@ export const permanentlyDeleteDestination = async (id: string): Promise<boolean>
     return result.success;
   } catch (error) {
     handleApiError(error, "Error permanently deleting destination");
+    throw error; // Re-throw the error to be handled by the calling component
   }
 };
