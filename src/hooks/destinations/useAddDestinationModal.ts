@@ -96,7 +96,7 @@ export const useAddDestinationModal = (onClose: () => void, onAdd: (destination:
     }
     
     // Package the destination object
-    const destinationObject = {
+    const destinationObject: any = {
       name,
       type: destinationType,
       destination_type: destinationType, // For consistency with backend

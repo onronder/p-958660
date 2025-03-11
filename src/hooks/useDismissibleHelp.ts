@@ -1,53 +1,83 @@
 
-import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useState } from 'react';
+import { useToast } from './use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-export function useDismissibleHelp() {
+export const useDismissibleHelp = () => {
+  const [dismissedMessages, setDismissedMessages] = useState<string[]>([]);
   const [isResetting, setIsResetting] = useState(false);
-  const { user } = useAuth();
   const { toast } = useToast();
 
-  const resetAllDismissedMessages = async () => {
-    if (!user) {
-      toast({
-        title: "Not authenticated",
-        description: "You need to be logged in to reset help messages",
-        variant: "destructive",
-      });
-      return false;
-    }
+  /**
+   * Check if a specific help message is dismissed
+   */
+  const isMessageDismissed = (messageId: string) => {
+    return dismissedMessages.includes(messageId);
+  };
 
-    setIsResetting(true);
+  /**
+   * Dismiss a specific help message
+   */
+  const dismissMessage = async (messageId: string) => {
     try {
-      const { data, error } = await supabase.rpc(
-        "reset_dismissed_help_messages", 
-        { p_user_id: user.id }
-      );
-
-      if (error) {
-        console.error("Error resetting dismissed messages:", error);
-        toast({
-          title: "Error",
-          description: "Failed to reset help messages",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      toast({
-        title: "Success",
-        description: "All help messages have been restored",
+      // Update local state immediately for UI responsiveness
+      setDismissedMessages(prev => [...prev, messageId]);
+      
+      // Call Supabase function to persist the dismissal
+      const { data, error } = await supabase.rpc('dismiss_help_message', {
+        message_id: messageId,
+        p_user_id: (await supabase.auth.getUser()).data.user?.id
       });
+      
+      if (error) throw error;
+      
       return true;
     } catch (error) {
-      console.error("Error resetting dismissed messages:", error);
+      console.error('Error dismissing help message:', error);
+      // Revert local state on error
+      setDismissedMessages(prev => prev.filter(id => id !== messageId));
+      
       toast({
-        title: "Error",
-        description: "Failed to reset help messages",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to dismiss help message. Please try again.',
+        variant: 'destructive',
       });
+      
+      return false;
+    }
+  };
+
+  /**
+   * Reset all dismissed help messages
+   */
+  const resetAllDismissedMessages = async () => {
+    try {
+      setIsResetting(true);
+      
+      const { data, error } = await supabase.rpc('reset_dismissed_help_messages', {
+        p_user_id: (await supabase.auth.getUser()).data.user?.id
+      });
+      
+      if (error) throw error;
+      
+      // Clear local state
+      setDismissedMessages([]);
+      
+      toast({
+        title: 'Help messages reset',
+        description: 'All help messages will now be shown again.',
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error resetting help messages:', error);
+      
+      toast({
+        title: 'Error',
+        description: 'Failed to reset help messages. Please try again.',
+        variant: 'destructive',
+      });
+      
       return false;
     } finally {
       setIsResetting(false);
@@ -55,7 +85,10 @@ export function useDismissibleHelp() {
   };
 
   return {
+    dismissedMessages,
+    isMessageDismissed,
+    dismissMessage,
     resetAllDismissedMessages,
-    isResetting,
+    isResetting
   };
-}
+};
