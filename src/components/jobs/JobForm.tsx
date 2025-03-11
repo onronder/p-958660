@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { JobFrequency, JobStatus } from '@/types/job';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { createJob } from '@/services/jobs/jobCrudService';
+import { createJob } from '@/services/jobs'; // Updated import path
 import { calculateNextRun } from '@/services/jobs/jobSchedulerService';
 import { useTransformations } from '@/hooks/useTransformations';
 import { useDestinations } from '@/hooks/useDestinations';

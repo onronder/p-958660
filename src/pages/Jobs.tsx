@@ -7,7 +7,12 @@ import { Plus, FileText, AlertTriangle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Job } from "@/types/job";
-import { fetchJobs, fetchDeletedJobs, restoreJob, permanentlyDeleteJob } from "@/services/jobs/jobCrudService";
+import { 
+  fetchJobs, 
+  fetchDeletedJobs, 
+  restoreJob, 
+  permanentlyDeleteJob 
+} from "@/services/jobs"; // Updated import path
 import InfoBanner from "@/components/InfoBanner";
 import CreateJobDialog from "@/components/jobs/CreateJobDialog";
 import JobsList from "@/components/jobs/JobsList";

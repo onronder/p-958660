@@ -26,8 +26,8 @@ export const fetchJobs = async (includeDeleted: boolean = false): Promise<Job[]>
       return [];
     }
     
-    // Fix the type instantiation by using a simpler type assertion
-    return (data || []) as Job[];
+    // Use a more direct type assertion to avoid deep instantiation
+    return (data as Job[]) || [];
   } catch (error) {
     console.error("Error fetching jobs:", error);
     return [];
@@ -54,8 +54,8 @@ export const fetchDeletedJobs = async (): Promise<Job[]> => {
       return [];
     }
     
-    // Fix the type instantiation by using a simpler type assertion
-    return (data || []) as Job[];
+    // Use a more direct type assertion to avoid deep instantiation
+    return (data as Job[]) || [];
   } catch (error) {
     console.error("Error fetching deleted jobs:", error);
     return [];

@@ -7,6 +7,18 @@ import { toast } from "@/hooks/use-toast";
  */
 export const triggerJobExecution = async (jobId: string): Promise<boolean> => {
   try {
+    // Get the current user's ID
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      console.error("No authenticated user found");
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to run jobs.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     // Call the job execution endpoint or function
     const { data, error } = await supabase
       .from("job_runs")
@@ -14,6 +26,7 @@ export const triggerJobExecution = async (jobId: string): Promise<boolean> => {
         job_id: jobId, 
         status: "Running",
         started_at: new Date().toISOString(),
+        user_id: userData.user.id // Add the user_id field
       })
       .select("id")
       .single();

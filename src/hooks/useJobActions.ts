@@ -1,21 +1,7 @@
 
 import { Job } from "@/types/job";
 import { toast } from "@/hooks/use-toast";
-import { deleteJob } from "@/services/jobs";
-import { toggleJobStatus } from "@/services/jobs";
-
-// This function should be imported from wherever it's defined
-// Since there's an error with triggerJobExecution, we need to create or import it properly
-export const triggerJobExecution = async (jobId: string): Promise<boolean> => {
-  try {
-    // Here would be the actual implementation
-    // For now we're just returning true since we don't have the original implementation
-    return true;
-  } catch (error) {
-    console.error("Error executing job:", error);
-    return false;
-  }
-};
+import { deleteJob, toggleJobStatus, triggerJobExecution } from "@/services/jobs";
 
 export const useJobActions = (onJobsUpdated: () => void) => {
   const handleToggleJobStatus = async (job: Job) => {
