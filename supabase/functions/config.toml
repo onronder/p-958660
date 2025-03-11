@@ -7,18 +7,6 @@ port = 54321
 schemas = ["public", "storage"]
 
 [[api.endpoints]]
-path = "/transformations/*"
-src = "./transformations/index.ts"
-
-[[api.endpoints]]
-path = "/export/*"
-src = "./export/index.ts"
-
-[[api.endpoints]]
-path = "/sources/*"
-src = "./sources/index.ts"
-
-[[api.endpoints]]
 path = "/destinations/*"
 src = "./destinations/index.ts"
 
@@ -31,13 +19,14 @@ path = "/settings/*"
 src = "./settings/index.ts"
 
 [[api.endpoints]]
-path = "/oauth/*"
-src = "./oauth/index.ts"
+path = "/sources/*"
+src = "./sources/index.ts"
+
+[[api.endpoints]]
+path = "/get-analytics-data"
+src = "./get-analytics-data/index.ts"
 
 [[api.endpoints]]
 path = "/dashboard-data"
 src = "./get-dashboard-metrics/index.ts"
 
-[[api.endpoints]]
-path = "/analytics"
-src = "./get-analytics-data/index.ts"
