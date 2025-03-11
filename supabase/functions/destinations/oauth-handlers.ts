@@ -1,51 +1,19 @@
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import { corsHeaders } from "../_shared/cors.ts";
+import { createResponse, authenticateUser, logDestinationActivity } from './utils.ts';
 
 export async function handleOAuthConfig(req: Request) {
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const { user, supabase } = await authenticateUser(req);
     
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Get the authorization header from the request
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Get the JWT token from the authorization header
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Verify the JWT token and get the user
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid token or user not found' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     if (req.method !== 'POST') {
-      return new Response(
-        JSON.stringify({ error: 'Method not allowed' }),
-        { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return createResponse({ error: 'Method not allowed' }, 405);
     }
 
     // Parse the request body
     const { provider } = await req.json();
     
     if (!provider) {
-      return new Response(
-        JSON.stringify({ error: 'Provider is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return createResponse({ error: 'Provider is required' }, 400);
     }
 
     // Get the appropriate client ID based on the provider
@@ -55,33 +23,28 @@ export async function handleOAuthConfig(req: Request) {
     } else if (provider === 'onedrive') {
       clientId = Deno.env.get('MICROSOFT_CLIENT_ID') || '';
     } else {
-      return new Response(
-        JSON.stringify({ error: 'Invalid provider' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return createResponse({ error: 'Invalid provider' }, 400);
     }
 
     // Log the action
-    await supabase.from('destination_logs').insert({
-      user_id: user.id,
-      event_type: 'oauth_config_requested',
-      message: `OAuth configuration requested for ${provider}`,
-    });
-
-    return new Response(
-      JSON.stringify({ 
-        clientId,
-        provider
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    await logDestinationActivity(
+      supabase,
+      user.id,
+      null,
+      'oauth_config_requested',
+      `OAuth configuration requested for ${provider}`
     );
 
+    return createResponse({ 
+      clientId,
+      provider
+    });
   } catch (error) {
     console.error('Error getting OAuth configuration:', error);
     
-    return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    return createResponse(
+      { error: 'Internal server error', details: error.message },
+      error.status || 500
     );
   }
 }

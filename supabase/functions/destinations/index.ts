@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeaders } from "./utils.ts";
 import * as getHandlers from "./get-handlers.ts";
 import * as postHandlers from "./post-handlers.ts";
 import * as patchHandlers from "./patch-handlers.ts";
@@ -68,15 +68,15 @@ serve(async (req: Request) => {
         
       case "POST":
         if (destinationId && subResource === "restore") {
-          response = await postHandlers.restoreDestination(req, destinationId);
+          response = await postHandlers.handleRestoreDestination(req, destinationId);
         } else {
-          response = await postHandlers.createDestination(req);
+          response = await postHandlers.handleCreateDestination(req);
         }
         break;
         
       case "PATCH":
         if (destinationId) {
-          response = await patchHandlers.updateDestination(req, destinationId);
+          response = await patchHandlers.handleUpdateDestination(req, destinationId);
         } else {
           throw new Error("Destination ID is required for PATCH");
         }
@@ -84,7 +84,7 @@ serve(async (req: Request) => {
         
       case "DELETE":
         if (destinationId) {
-          response = await deleteHandlers.deleteDestination(req, destinationId, url);
+          response = await deleteHandlers.handleDeleteDestination(req, destinationId, url);
         } else {
           throw new Error("Destination ID is required for DELETE");
         }
@@ -122,4 +122,3 @@ serve(async (req: Request) => {
     );
   }
 });
-

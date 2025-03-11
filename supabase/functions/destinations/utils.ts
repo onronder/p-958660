@@ -10,39 +10,8 @@ export const corsHeaders = {
   "Access-Control-Max-Age": "86400",
 };
 
-// Create a Supabase client for the edge function
-export function getSupabaseClient(req: Request) {
-  const authHeader = req.headers.get("Authorization");
-  
-  if (!authHeader) {
-    throw new Error("Missing Authorization header");
-  }
-  
-  // Get Supabase URL and Key from environment variables
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error("Missing Supabase URL or service key");
-  }
-  
-  // Create a client with the service role key
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: false,
-    },
-    global: {
-      headers: {
-        Authorization: authHeader,
-      },
-    },
-  });
-}
-
-// Helper to create consistent responses
-export function createJsonResponse(data: any, status = 200) {
+// Create a standard response with correct CORS headers
+export function createResponse(data: any, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: new Headers({
@@ -52,40 +21,69 @@ export function createJsonResponse(data: any, status = 200) {
   });
 }
 
-// Helper function to verify user authentication
-export async function getUserFromAuth(req: Request) {
+// Helper function to authenticate user and return both user and supabase client
+export async function authenticateUser(req: Request) {
   const authHeader = req.headers.get("Authorization");
   
   if (!authHeader) {
     throw { status: 401, message: "Missing Authorization header" };
   }
   
+  const token = authHeader.replace("Bearer ", "");
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw { status: 500, message: "Missing Supabase configuration" };
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  
+  if (error || !user) {
+    throw { status: 401, message: "Invalid authorization token" };
+  }
+  
+  return { user, supabase };
+}
+
+// Convert destination_type to storage_type
+export function convertDestinationToStorageType(destinationType: string): string {
+  const mapping: Record<string, string> = {
+    'GoogleDrive': 'cloud_storage',
+    'OneDrive': 'cloud_storage',
+    'Dropbox': 'cloud_storage',
+    'S3': 'object_storage',
+    'Azure': 'object_storage',
+    'FTP': 'file_transfer',
+    'SFTP': 'file_transfer',
+    'Email': 'email',
+    'Webhook': 'api'
+  };
+  
+  return mapping[destinationType] || 'file_storage';
+}
+
+// Log destination activity
+export async function logDestinationActivity(
+  supabase: any,
+  userId: string,
+  destinationId: string | null,
+  eventType: string,
+  message: string,
+  details: any = null
+) {
   try {
-    const token = authHeader.replace("Bearer ", "");
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") || "",
-      Deno.env.get("SUPABASE_ANON_KEY") || "",
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      }
-    );
-    
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      throw { status: 401, message: "Invalid authorization token" };
-    }
-    
-    return user;
+    await supabase.from('destination_logs').insert({
+      user_id: userId,
+      destination_id: destinationId,
+      event_type: eventType,
+      message: message,
+      details: details
+    });
   } catch (error) {
-    console.error("Auth error:", error);
-    throw { 
-      status: error.status || 401, 
-      message: error.message || "Authentication failed" 
-    };
+    console.error('Error logging destination activity:', error);
+    // Non-critical error, continue execution
   }
 }

@@ -2,10 +2,9 @@
 import { createResponse, authenticateUser, logDestinationActivity } from './utils.ts';
 
 // Handler for deleting a destination
-export const handleDeleteDestination = async (req: Request, id: string) => {
+export const handleDeleteDestination = async (req: Request, id: string, url: URL) => {
   try {
     const { user, supabase } = await authenticateUser(req);
-    const url = new URL(req.url);
     const softDelete = url.searchParams.get('soft_delete') !== 'false'; // Default to soft delete
     
     if (!id) {
