@@ -23,7 +23,7 @@ export const createJob = async (jobData: JobCreateData): Promise<Job | null> => 
       destination_id: jobData.destination_id || null,
       user_id: userData.user.id,
       status: validStatus,
-      is_deleted: false
+      is_deleted: jobData.is_deleted !== undefined ? jobData.is_deleted : false
     };
     
     console.log("Creating job with data:", JSON.stringify(jobToCreate, null, 2));

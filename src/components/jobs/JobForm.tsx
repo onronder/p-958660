@@ -75,7 +75,8 @@ const JobForm = ({ sources, onJobCreated, onCancel }: JobFormProps) => {
         frequency: jobFrequency,
         schedule: jobSchedule,
         next_run: nextRun,
-        status: jobStatus
+        status: jobStatus,
+        is_deleted: false // Add this field to match the required type
       });
 
       if (newJob) {
