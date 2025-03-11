@@ -72,7 +72,8 @@ const StepTwo: React.FC<StepTwoProps> = ({
       {destinationType === "FTP/SFTP" && (
         <FtpSftpConfig 
           updateCredential={updateCredential} 
-          credentials={credentials} 
+          credentials={credentials}
+          name={name}
         />
       )}
       
