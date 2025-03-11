@@ -23,17 +23,18 @@ export const fetchUserSources = async (userId: string) => {
 };
 
 export const fetchDeletedSources = async (userId: string) => {
-  const { data, error } = await supabase
-    .from('sources')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('is_deleted', true);
+  // Call the edge function to get deleted sources
+  const { data, error } = await supabase.functions.invoke('sources', {
+    body: { action: 'deleted' },
+    path: '/deleted',
+    method: 'GET'
+  });
   
   if (error) {
     throw error;
   }
   
-  return data?.map(source => {
+  return data?.deletedSources?.map(source => {
     // All deleted sources should have a "Deleted" status for display
     return {
       ...source,
@@ -60,8 +61,10 @@ export const deleteSource = async (sourceId: string) => {
 export const restoreSource = async (sourceId: string) => {
   try {
     // Call the edge function to restore the source
-    const { data, error } = await supabase.functions.invoke('restore-source', {
-      body: { sourceId }
+    const { data, error } = await supabase.functions.invoke('sources', {
+      body: { sourceId },
+      path: '/restore',
+      method: 'POST'
     });
     
     if (error || !data?.success) {
