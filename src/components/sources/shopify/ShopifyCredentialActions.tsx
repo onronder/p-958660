@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Edit, Loader2, Trash2 } from "lucide-react";
 
@@ -35,11 +35,11 @@ const ShopifyCredentialActions: React.FC<ShopifyCredentialActionsProps> = ({
           "Test Connection"
         )}
       </Button>
-      <div className="flex gap-2">
+      <div className="flex gap-3">
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-8 w-8"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={onEdit}
         >
           <Edit className="h-4 w-4" />

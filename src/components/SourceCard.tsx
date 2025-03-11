@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import SourceStatusBadge from "@/components/SourceStatusBadge";
 import { Source } from "@/types/source";
-import { formatDate, testShopifyConnection } from "@/services/sourcesService";
+import { formatDate } from "@/services/sourcesService";
 
 interface SourceCardProps {
   source: Source;
@@ -18,16 +18,8 @@ const SourceCard: React.FC<SourceCardProps> = ({
   onTestConnection, 
   onDelete 
 }) => {
-  const handleTestConnection = () => {
-    // Use the new test function for Shopify sources
-    if (source.source_type === "Shopify" && source.credentials?.access_token) {
-      // The onTestConnection function will handle the OAuth testing
-    }
-    onTestConnection(source.id);
-  };
-
   return (
-    <Card className="p-6">
+    <Card className="p-6 hover:shadow-md transition-shadow duration-200">
       <div className="flex items-start justify-between">
         <div className="space-y-3">
           <div className="space-y-1">
@@ -38,7 +30,7 @@ const SourceCard: React.FC<SourceCardProps> = ({
             <p className="text-sm text-muted-foreground">{source.url}</p>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-2.5 mt-4">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Type:</span>
               <span className="font-medium">{source.source_type}</span>
@@ -55,12 +47,12 @@ const SourceCard: React.FC<SourceCardProps> = ({
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={handleTestConnection}
+          onClick={() => onTestConnection(source.id)}
         >
           Test Connection
         </Button>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+        <div className="flex gap-3">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
             <Edit className="h-4 w-4" />
           </Button>
           <Button 

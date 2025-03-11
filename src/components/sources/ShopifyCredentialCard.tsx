@@ -145,19 +145,17 @@ const ShopifyCredentialCard: React.FC<ShopifyCredentialCardProps> = ({
 
   return (
     <>
-      <Card className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-3">
-            <ShopifyCredentialHeader 
-              storeName={credential.store_name}
-              lastConnectionStatus={credential.last_connection_status}
-            />
-            
-            <ShopifyCredentialDetails
-              lastConnectionTime={credential.last_connection_time}
-              createdAt={credential.created_at}
-            />
-          </div>
+      <Card className="p-6 hover:shadow-md transition-shadow duration-200">
+        <div className="space-y-4">
+          <ShopifyCredentialHeader 
+            storeName={credential.store_name}
+            lastConnectionStatus={credential.last_connection_status}
+          />
+          
+          <ShopifyCredentialDetails
+            lastConnectionTime={credential.last_connection_time}
+            createdAt={credential.created_at}
+          />
         </div>
         
         <ShopifyCredentialActions

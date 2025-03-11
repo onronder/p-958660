@@ -12,7 +12,7 @@ const ShopifyCredentialDetails: React.FC<ShopifyCredentialDetailsProps> = ({
   createdAt
 }) => {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5 mt-4">
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">Type:</span>
         <span className="font-medium">Shopify Private App</span>

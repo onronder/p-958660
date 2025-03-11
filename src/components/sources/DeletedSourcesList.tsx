@@ -70,7 +70,7 @@ const DeletedSourcesList: React.FC<DeletedSourcesListProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {deletedSources.map((source) => (
-        <Card key={source.id} className="p-6">
+        <Card key={source.id} className="p-6 hover:shadow-md transition-shadow duration-200">
           <div className="space-y-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -82,7 +82,7 @@ const DeletedSourcesList: React.FC<DeletedSourcesListProps> = ({
               <p className="text-sm text-muted-foreground">{source.url}</p>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2.5 mt-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Type:</span>
                 <span className="font-medium">{source.source_type}</span>
