@@ -1,3 +1,3 @@
 
-// Re-export everything from the job services for backward compatibility
+// Re-export everything from the jobs directory for backward compatibility
 export * from "./jobs";

@@ -4,7 +4,9 @@ import { Job, JobFrequency, JobStatus, JobRun } from "@/types/job";
 // Export types that might be specific to the job service
 export type JobCreateData = Omit<Job, "id" | "created_at" | "updated_at" | "user_id" | "last_run">;
 
-// Add a helper function to validate job status
+/**
+ * Validates and normalizes a job status to ensure it's a valid value accepted by the database
+ */
 export const validateJobStatus = (status: any): JobStatus => {
   // Define valid statuses based on the database constraint
   const validStatuses: JobStatus[] = ["active", "paused", "completed", "failed", "pending"];
