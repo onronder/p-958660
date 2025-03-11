@@ -20,5 +20,12 @@ export function getSupabaseUrl() {
 // Helper to handle API errors
 export function handleApiError(error: any, defaultMessage: string): never {
   console.error(`API Error: ${defaultMessage}`, error);
-  throw new Error(error instanceof Error ? error.message : defaultMessage);
+  
+  // Check if this is a CORS error (they often appear as "Failed to fetch" or "Network Error")
+  const errorMessage = error instanceof Error ? error.message : defaultMessage;
+  if (errorMessage === "Failed to fetch" || errorMessage.includes("Network Error")) {
+    throw new Error(`${defaultMessage} - CORS issue detected. Please check server configuration.`);
+  }
+  
+  throw new Error(errorMessage);
 }
