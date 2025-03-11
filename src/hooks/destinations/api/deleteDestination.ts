@@ -15,7 +15,7 @@ export const deleteDestination = async (id: string): Promise<boolean> => {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
       throw new Error(
         errorData.error || "Failed to delete destination"
       );
@@ -24,6 +24,7 @@ export const deleteDestination = async (id: string): Promise<boolean> => {
     const result = await response.json();
     return result.success;
   } catch (error) {
+    console.error("Delete destination error:", error);
     handleApiError(error, "Error deleting destination");
     throw error; // Re-throw the error to be handled by the calling component
   }
@@ -42,7 +43,7 @@ export const permanentlyDeleteDestination = async (id: string): Promise<boolean>
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
       throw new Error(
         errorData.error || "Failed to permanently delete destination"
       );
@@ -51,6 +52,7 @@ export const permanentlyDeleteDestination = async (id: string): Promise<boolean>
     const result = await response.json();
     return result.success;
   } catch (error) {
+    console.error("Permanently delete destination error:", error);
     handleApiError(error, "Error permanently deleting destination");
     throw error; // Re-throw the error to be handled by the calling component
   }

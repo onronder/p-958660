@@ -10,7 +10,7 @@ import { useTestConnection } from "@/hooks/destinations/useTestConnection";
 interface FtpSftpConfigProps {
   updateCredential: (field: string, value: any) => void;
   credentials: Record<string, any>;
-  name: string; // Added required name property
+  name: string; // Required name property
 }
 
 const FtpSftpConfig: React.FC<FtpSftpConfigProps> = ({ 
@@ -21,7 +21,7 @@ const FtpSftpConfig: React.FC<FtpSftpConfigProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<"idle" | "testing" | "success" | "failed">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  const { testConnectionMutation } = useTestConnection();
+  const testConnection = useTestConnection();
   
   const handleTestConnection = async () => {
     if (!credentials.host || !credentials.port || !credentials.username) {
@@ -34,7 +34,7 @@ const FtpSftpConfig: React.FC<FtpSftpConfigProps> = ({
     setErrorMessage(null);
     
     try {
-      const result = await testConnectionMutation.mutateAsync({
+      const result = await testConnection.mutateAsync({
         name: name || "Test Connection",
         destination_type: "FTP/SFTP",
         config: {
