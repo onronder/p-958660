@@ -7,44 +7,32 @@ port = 54321
 schemas = ["public", "storage"]
 
 [[api.endpoints]]
-path = "/apply-transformation"
-src = "./apply-transformation/index.ts"
+path = "/transformations/*"
+src = "./transformations/index.ts"
 
 [[api.endpoints]]
-path = "/create-transformation"
-src = "./create-transformation/index.ts"
+path = "/export/*"
+src = "./export/index.ts"
 
 [[api.endpoints]]
-path = "/delete-transformation"
-src = "./delete-transformation/index.ts"
+path = "/sources/*"
+src = "./sources/index.ts"
 
 [[api.endpoints]]
-path = "/export-data"
-src = "./export-data/index.ts"
+path = "/destinations/*"
+src = "./destinations/index.ts"
 
 [[api.endpoints]]
-path = "/get-source-fields"
-src = "./get-source-fields/index.ts"
+path = "/help/*"
+src = "./help/index.ts"
 
 [[api.endpoints]]
-path = "/sources"
-src = "./get-sources/index.ts"
+path = "/settings/*"
+src = "./settings/index.ts"
 
 [[api.endpoints]]
-path = "/get-transformations"
-src = "./get-transformations/index.ts"
-
-[[api.endpoints]]
-path = "/shopify-oauth"
-src = "./shopify-oauth/index.ts"
-
-[[api.endpoints]]
-path = "/shopify-private"
-src = "./shopify-private/index.ts"
-
-[[api.endpoints]]
-path = "/update-transformation"
-src = "./update-transformation/index.ts"
+path = "/oauth/*"
+src = "./oauth/index.ts"
 
 [[api.endpoints]]
 path = "/dashboard-data"
@@ -53,61 +41,3 @@ src = "./get-dashboard-metrics/index.ts"
 [[api.endpoints]]
 path = "/analytics"
 src = "./get-analytics-data/index.ts"
-
-[[api.endpoints]]
-path = "/destinations"
-src = "./destinations/index.ts"
-
-[[api.endpoints]]
-path = "/test-destination-connection"
-src = "./test-destination-connection/index.ts"
-
-[[api.endpoints]]
-path = "/export-to-destination"
-src = "./export-to-destination/index.ts"
-
-[[api.endpoints]]
-path = "/destination-webhook"
-src = "./destination-webhook/index.ts"
-
-[[api.endpoints]]
-path = "/settings"
-src = "./settings/index.ts"
-
-[[api.endpoints]]
-path = "/help"
-src = "./help-articles/index.ts"
-
-[[api.endpoints]]
-path = "/onboarding-steps"
-src = "./onboarding-steps/index.ts"
-
-[[api.endpoints]]
-path = "/upload-documentation"
-src = "./upload-documentation/index.ts"
-
-[[api.endpoints]]
-path = "/upload-image"
-src = "./upload-image/index.ts"
-
-[[api.endpoints]]
-path = "/oauth-callback"
-src = "./oauth-callback/index.ts"
-
-[[api.endpoints]]
-path = "/get-oauth-config"
-src = "./get-oauth-config/index.ts"
-
-[[api.endpoints]]
-path = "/cleanup-destinations"
-src = "./cleanup-destinations/index.ts"
-
-# Combined endpoints for sources
-[[api.endpoints]]
-path = "/sources/deleted"
-src = "./get-deleted-sources/index.ts"
-
-[[api.endpoints]]
-path = "/sources/restore"
-src = "./restore-source/index.ts"
-
