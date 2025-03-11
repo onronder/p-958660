@@ -4,11 +4,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Source } from "@/types/source";
 import { fetchUserSources, deleteSource, testShopifyConnection } from "@/services/sourcesService";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useSources = () => {
   const [sources, setSources] = useState<Source[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingSource, setIsDeletingSource] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -21,15 +23,37 @@ export const useSources = () => {
   const loadSources = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       
       if (!user) {
         return;
       }
       
-      const sourcesData = await fetchUserSources(user.id);
-      setSources(sourcesData);
+      try {
+        // First try using the sources edge function
+        const sourcesData = await fetchUserSources(user.id);
+        setSources(sourcesData);
+      } catch (edgeFunctionError) {
+        console.error("Error fetching sources from edge function:", edgeFunctionError);
+        
+        // Fallback to direct Supabase query
+        console.log("Falling back to direct Supabase query for sources");
+        
+        const { data, error } = await supabase
+          .from('sources')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_deleted', false);
+          
+        if (error) {
+          throw error;
+        }
+        
+        setSources(data || []);
+      }
     } catch (error) {
       console.error("Error fetching sources:", error);
+      setError(error instanceof Error ? error : new Error("Failed to load sources"));
       toast({
         title: "Error",
         description: "Failed to load sources. Please try again.",
@@ -91,7 +115,29 @@ export const useSources = () => {
   const handleDeleteSource = async (sourceId: string) => {
     try {
       setIsDeletingSource(true);
-      await deleteSource(sourceId);
+      
+      try {
+        // First try using the edge function
+        await deleteSource(sourceId);
+      } catch (edgeFunctionError) {
+        console.error("Error deleting source with edge function:", edgeFunctionError);
+        
+        // Fallback to direct Supabase update
+        console.log("Falling back to direct Supabase update for source deletion");
+        
+        const { error } = await supabase
+          .from('sources')
+          .update({ 
+            is_deleted: true,
+            deletion_marked_at: new Date().toISOString(),
+            status: 'Deleted'
+          })
+          .eq('id', sourceId);
+          
+        if (error) {
+          throw error;
+        }
+      }
       
       toast({
         title: "Source Moved to Trash",
@@ -116,6 +162,7 @@ export const useSources = () => {
     sources,
     isLoading,
     isDeletingSource,
+    error,
     loadSources,
     handleTestConnection,
     handleDeleteSource

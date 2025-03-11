@@ -6,7 +6,10 @@ import { corsHeaders } from "../_shared/cors.ts";
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 204,
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -85,7 +88,11 @@ serve(async (req) => {
         .single();
 
       if (updateError) {
-        throw new Error("Failed to restore source");
+        console.error("Error restoring source:", updateError);
+        return new Response(
+          JSON.stringify({ error: "Failed to restore source" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
 
       return new Response(
@@ -94,6 +101,7 @@ serve(async (req) => {
       );
     } 
     else if (path === 'deleted' || body.action === 'deleted') {
+      console.log("Fetching deleted sources for user:", user.id);
       // Get deleted sources for the authenticated user
       const { data: deletedSources, error: sourcesError } = await supabase
         .from('sources')
@@ -103,7 +111,10 @@ serve(async (req) => {
 
       if (sourcesError) {
         console.error("Error fetching deleted sources:", sourcesError);
-        throw new Error("Error fetching deleted sources");
+        return new Response(
+          JSON.stringify({ error: "Error fetching deleted sources" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
 
       return new Response(
@@ -121,7 +132,10 @@ serve(async (req) => {
 
     if (listError) {
       console.error("Error fetching sources:", listError);
-      throw new Error("Error fetching sources");
+      return new Response(
+        JSON.stringify({ error: "Error fetching sources" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     return new Response(

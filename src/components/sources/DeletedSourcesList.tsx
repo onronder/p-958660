@@ -2,26 +2,55 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArchiveRestore, AlertCircle } from "lucide-react";
+import { ArchiveRestore, AlertCircle, RefreshCw } from "lucide-react";
 import { Source } from "@/types/source";
 import { formatDate } from "@/services/sourcesService";
 import SourcesLoadingSkeleton from "@/components/SourcesLoadingSkeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface DeletedSourcesListProps {
   deletedSources: Source[];
   isLoading: boolean;
   isRestoring: boolean;
   onRestoreSource: (sourceId: string) => void;
+  error?: Error | null;
+  onRetry?: () => void;
 }
 
 const DeletedSourcesList: React.FC<DeletedSourcesListProps> = ({
   deletedSources,
   isLoading,
   isRestoring,
-  onRestoreSource
+  onRestoreSource,
+  error,
+  onRetry
 }) => {
   if (isLoading) {
     return <SourcesLoadingSkeleton />;
+  }
+  
+  if (error) {
+    return (
+      <Alert variant="destructive" className="mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error Loading Deleted Sources</AlertTitle>
+        <div className="flex flex-col space-y-2">
+          <AlertDescription>
+            {error.message || "Failed to load deleted sources"}
+          </AlertDescription>
+          {onRetry && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onRetry}
+              className="self-start mt-2"
+            >
+              <RefreshCw className="h-3 w-3 mr-2" /> Retry
+            </Button>
+          )}
+        </div>
+      </Alert>
+    );
   }
 
   if (deletedSources.length === 0) {

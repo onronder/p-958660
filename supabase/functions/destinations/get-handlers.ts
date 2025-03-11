@@ -1,5 +1,6 @@
 
 import { createResponse, authenticateUser } from './utils.ts';
+import { corsHeaders } from "../_shared/cors.ts";
 
 // Handler for fetching all destinations
 export async function getDestinations(req: Request) {

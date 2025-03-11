@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSources } from "@/hooks/useSources";
 import { useDeletedSources } from "@/hooks/useDeletedSources";
@@ -14,7 +14,7 @@ import SourcesList from "@/components/sources/SourcesList";
 import DeletedSourcesList from "@/components/sources/DeletedSourcesList";
 import { Card } from "@/components/ui/card";
 import { AlertTriangle } from "lucide-react";
-import { useState } from "react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const Sources = () => {
   const { 
@@ -23,7 +23,8 @@ const Sources = () => {
     isDeletingSource,
     loadSources, 
     handleTestConnection, 
-    handleDeleteSource 
+    handleDeleteSource,
+    error: sourcesError
   } = useSources();
   
   const {
@@ -50,12 +51,18 @@ const Sources = () => {
   } = useSourceSelection(() => setShowShopifyModal(true));
   
   const location = useLocation();
+  const [loadError, setLoadError] = useState<Error | null>(null);
 
   useEffect(() => {
     // Load sources when the component mounts
-    loadSources();
-    loadDeletedSources();
-    loadCredentials();
+    try {
+      loadSources();
+      loadDeletedSources();
+      loadCredentials();
+    } catch (error) {
+      console.error("Error loading data:", error);
+      setLoadError(error instanceof Error ? error : new Error("Failed to load sources"));
+    }
     
     // Check location state for modal flags
     if (location.state?.openShopifyModal) {
@@ -82,9 +89,15 @@ const Sources = () => {
   };
 
   const handleRefresh = () => {
-    loadSources();
-    loadDeletedSources();
-    loadCredentials();
+    try {
+      setLoadError(null);
+      loadSources();
+      loadDeletedSources();
+      loadCredentials();
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      setLoadError(error instanceof Error ? error : new Error("Failed to refresh sources"));
+    }
   };
 
   const isLoading = isSourcesLoading || isCredentialsLoading || isDeletedSourcesLoading;
@@ -105,6 +118,16 @@ const Sources = () => {
         onRefresh={handleRefresh}
         onAddSource={() => setShowSourceSelector(true)}
       />
+
+      {loadError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {loadError.message || "Failed to load sources. Please try refreshing the page."}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card className="p-6">
         <h3 className="text-xl font-semibold mb-4">Active Sources</h3>
@@ -138,6 +161,8 @@ const Sources = () => {
           isLoading={isDeletedSourcesLoading}
           isRestoring={isRestoring}
           onRestoreSource={handleRestoreSource}
+          error={loadError}
+          onRetry={handleRefresh}
         />
       </Card>
 
