@@ -27,28 +27,98 @@ export async function fetchDestinations() {
 }
 
 // Function to delete a destination
-export async function deleteDestination(id: string) {
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  if (!session) {
-    throw new Error("Authentication required");
-  }
-  
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co';
-  const response = await fetch(`${supabaseUrl}/functions/v1/destinations/${id}`, {
-    method: "DELETE",
-    headers: {
-      "Authorization": `Bearer ${session.access_token}`
+export const deleteDestination = async (id: string): Promise<boolean> => {
+  try {
+    const { data: authData, error: authError } = await supabase.auth.getSession();
+    if (authError) throw new Error(authError.message);
+
+    const token = authData.session?.access_token;
+    if (!token) throw new Error("No access token available");
+
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/destinations/${id}?soft_delete=true`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || "Failed to delete destination"
+      );
     }
-  });
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to delete destination");
+
+    const result = await response.json();
+    return result.success;
+  } catch (error) {
+    console.error("Error deleting destination:", error);
+    throw error;
   }
-  
-  return true;
-}
+};
+
+export const permanentlyDeleteDestination = async (id: string): Promise<boolean> => {
+  try {
+    const { data: authData, error: authError } = await supabase.auth.getSession();
+    if (authError) throw new Error(authError.message);
+
+    const token = authData.session?.access_token;
+    if (!token) throw new Error("No access token available");
+
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/destinations/${id}?soft_delete=false`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || "Failed to permanently delete destination"
+      );
+    }
+
+    const result = await response.json();
+    return result.success;
+  } catch (error) {
+    console.error("Error permanently deleting destination:", error);
+    throw error;
+  }
+};
+
+export const restoreDestination = async (id: string): Promise<any> => {
+  try {
+    const { data: authData, error: authError } = await supabase.auth.getSession();
+    if (authError) throw new Error(authError.message);
+
+    const token = authData.session?.access_token;
+    if (!token) throw new Error("No access token available");
+
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/destinations/${id}/restore`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || "Failed to restore destination"
+      );
+    }
+
+    const result = await response.json();
+    return result.destination;
+  } catch (error) {
+    console.error("Error restoring destination:", error);
+    throw error;
+  }
+};
 
 // Function to test a destination connection
 export async function testConnection(destination: Destination) {

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAddDestination } from "@/hooks/destinations/useAddDestination";
 import { useToast } from "@/hooks/use-toast";
 import { useOAuthModal } from "./modal/useOAuthModal";
@@ -18,6 +18,8 @@ export const useAddDestinationModal = (onClose: () => void, onAdd: (destination:
   const [exportFormat, setExportFormat] = useState<string>("CSV");
   const [saveToStorage, setSaveToStorage] = useState<boolean>(isPro); // Default to true for Pro users
   const [credentials, setCredentials] = useState<Record<string, any>>({});
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [editId, setEditId] = useState<string | null>(null);
 
   // Import sub-hooks
   const { toast } = useToast();
@@ -37,6 +39,19 @@ export const useAddDestinationModal = (onClose: () => void, onAdd: (destination:
     oauthComplete
   );
 
+  // Initialize edit mode
+  const initializeEditMode = useCallback((destination: any) => {
+    setIsEditMode(true);
+    setEditId(destination.id);
+    setDestinationType(destination.destination_type);
+    setName(destination.name);
+    setExportFormat(destination.export_format);
+    setSaveToStorage(destination.save_to_storage || false);
+    setCredentials(destination.credentials || {});
+    setCurrentStep(destination.credentials ? 3 : 2); // Skip to step 2 or 3 based on whether credentials are present
+    setOauthComplete(!!destination.credentials);
+  }, [setOauthComplete]);
+
   // Reset form to initial state
   const resetForm = () => {
     setCurrentStep(1);
@@ -47,6 +62,8 @@ export const useAddDestinationModal = (onClose: () => void, onAdd: (destination:
     setCredentials({});
     setOauthComplete(false);
     setOauthError(null);
+    setIsEditMode(false);
+    setEditId(null);
   };
 
   // Close modal and reset form
@@ -82,14 +99,20 @@ export const useAddDestinationModal = (onClose: () => void, onAdd: (destination:
     const destinationObject = {
       name,
       type: destinationType,
+      destination_type: destinationType, // For consistency with backend
       storageType: actualStorageType,
-      status: "Pending",
-      exportFormat,
-      saveToStorage, // Add saveToStorage property
+      status: isEditMode ? undefined : "Pending", // Don't update status on edit
+      export_format: exportFormat,
+      save_to_storage: saveToStorage, // Add saveToStorage property
       schedule: "Manual", // Keep a default value for backend compatibility
       lastExport: null,
       credentials: processedCredentials
     };
+    
+    // If in edit mode, include the ID
+    if (isEditMode && editId) {
+      destinationObject.id = editId;
+    }
     
     console.log("Submitting destination:", destinationObject);
     
@@ -115,6 +138,7 @@ export const useAddDestinationModal = (onClose: () => void, onAdd: (destination:
     saveToStorage,
     setSaveToStorage,
     credentials,
+    isEditMode,
     
     // OAuth state
     oauthComplete,
@@ -126,6 +150,7 @@ export const useAddDestinationModal = (onClose: () => void, onAdd: (destination:
     updateCredential,
     handleOAuthLogin,
     processOAuthCallback,
+    initializeEditMode,
     
     // Validation
     canProceedFromStep2

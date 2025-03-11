@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDestinations } from "@/hooks/useDestinations";
 import AddDestinationModal from "@/components/destinations/AddDestinationModal";
@@ -13,8 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 
 const Destinations = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingDestination, setEditingDestination] = useState<any>(null);
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
   
   const {
@@ -27,6 +29,8 @@ const Destinations = () => {
     testConnectionMutation,
     exportMutation,
     handleAddDestination,
+    handleUpdateDestination,
+    handleRestoreDestination,
     handleRetryExport,
     handleOAuthCallback
   } = useDestinations();
@@ -60,17 +64,46 @@ const Destinations = () => {
     }
   }, [location.state, handleOAuthCallback, toast]);
 
-  // Handle adding a new destination
-  const onAddDestination = async (newDestination: any) => {
-    console.log("Adding new destination:", newDestination);
-    const success = await handleAddDestination(newDestination);
-    if (success) {
-      setIsAddModalOpen(false);
-      toast({
-        title: "Destination Added",
-        description: `${newDestination.name} has been added to your destinations.`,
+  // Handle edit destination
+  const handleEditDestination = (destination: any) => {
+    setEditingDestination(destination);
+    setIsAddModalOpen(true);
+  };
+
+  // Handle adding or updating a destination
+  const onAddOrUpdateDestination = async (newDestination: any) => {
+    if (editingDestination) {
+      // Update existing destination
+      const success = await handleUpdateDestination({
+        ...newDestination,
+        id: editingDestination.id
       });
+      
+      if (success) {
+        setIsAddModalOpen(false);
+        setEditingDestination(null);
+        toast({
+          title: "Destination Updated",
+          description: `${newDestination.name} has been updated.`,
+        });
+      }
+    } else {
+      // Add new destination
+      const success = await handleAddDestination(newDestination);
+      if (success) {
+        setIsAddModalOpen(false);
+        toast({
+          title: "Destination Added",
+          description: `${newDestination.name} has been added to your destinations.`,
+        });
+      }
     }
+  };
+
+  // Handle modal close
+  const handleModalClose = () => {
+    setIsAddModalOpen(false);
+    setEditingDestination(null);
   };
 
   // Check if a destination is currently being tested
@@ -90,7 +123,10 @@ const Destinations = () => {
       <DestinationsInfoBanner />
 
       <DestinationsHeader 
-        onAddClick={() => setIsAddModalOpen(true)} 
+        onAddClick={() => {
+          setEditingDestination(null);
+          setIsAddModalOpen(true);
+        }} 
         isUserLoggedIn={!!user}
       />
 
@@ -108,18 +144,33 @@ const Destinations = () => {
         destinations={filteredDestinations}
         isLoading={isLoading}
         onTestConnection={(destination) => testConnectionMutation.mutate(destination)}
-        onDelete={(id) => deleteMutation.mutate(id)}
+        onDelete={(id) => {
+          const destination = filteredDestinations?.find(d => d.id === id);
+          if (destination?.status === "Deleted") {
+            // Permanently delete
+            deleteMutation.mutate({id, permanent: true});
+          } else {
+            // Temporary delete
+            deleteMutation.mutate({id, permanent: false});
+          }
+        }}
+        onEdit={(destination) => handleEditDestination(destination)}
         onExport={(id) => exportMutation.mutate(id)}
         onRetry={handleRetryExport}
+        onRestore={(id) => handleRestoreDestination(id)}
         isTesting={isTesting}
         isExporting={isExporting}
-        onAddClick={() => setIsAddModalOpen(true)}
+        onAddClick={() => {
+          setEditingDestination(null);
+          setIsAddModalOpen(true);
+        }}
       />
 
       <AddDestinationModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAdd={onAddDestination}
+        onClose={handleModalClose}
+        onAdd={onAddOrUpdateDestination}
+        editDestination={editingDestination}
       />
     </div>
   );

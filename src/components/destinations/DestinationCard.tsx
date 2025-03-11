@@ -10,13 +10,14 @@ interface DestinationProps {
     id: string;
     name: string;
     destination_type: string;
-    status: "Active" | "Pending" | "Failed";
+    status: "Active" | "Pending" | "Failed" | "Deleted";
     export_format: string;
     schedule: string;
     last_export: string | null;
   };
   onTestConnection: () => void;
   onDelete: () => void;
+  onEdit: () => void;
   onExport: () => void;
   onRetry: () => void;
   isExporting?: boolean;
@@ -27,6 +28,7 @@ const DestinationCard: React.FC<DestinationProps> = ({
   destination, 
   onTestConnection, 
   onDelete,
+  onEdit,
   onExport,
   onRetry,
   isExporting = false,
@@ -45,9 +47,12 @@ const DestinationCard: React.FC<DestinationProps> = ({
       </div>
       
       <DestinationActions 
+        id={destination.id}
+        name={destination.name}
         status={destination.status}
         onTestConnection={onTestConnection}
         onDelete={onDelete}
+        onEdit={onEdit}
         onExport={onExport}
         onRetry={onRetry}
         isExporting={isExporting}

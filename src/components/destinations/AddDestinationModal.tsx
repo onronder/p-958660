@@ -1,7 +1,6 @@
 
 import React, { useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ProgressBar from "./modal/ProgressBar";
 import StepOne from "./modal/StepOne";
 import StepTwo from "./modal/StepTwo";
@@ -13,12 +12,14 @@ interface AddDestinationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (destination: any) => void;
+  editDestination?: any;
 }
 
 const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
   isOpen,
   onClose,
   onAdd,
+  editDestination
 }) => {
   const {
     currentStep,
@@ -38,8 +39,16 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
     handleClose,
     handleSubmit,
     processOAuthCallback,
-    canProceedFromStep2
+    canProceedFromStep2,
+    initializeEditMode
   } = useAddDestinationModal(onClose, onAdd);
+
+  // Initialize with edit destination data if provided
+  useEffect(() => {
+    if (isOpen && editDestination) {
+      initializeEditMode(editDestination);
+    }
+  }, [isOpen, editDestination, initializeEditMode]);
 
   useEffect(() => {
     const handleOAuthRedirect = async (event: MessageEvent) => {
@@ -74,9 +83,13 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {currentStep === 1 && "Select Destination Type"}
-            {currentStep === 2 && `Configure ${destinationType}`}
-            {currentStep === 3 && "Export Settings"}
+            {editDestination ? "Edit Destination" : (
+              <>
+                {currentStep === 1 && "Select Destination Type"}
+                {currentStep === 2 && `Configure ${destinationType}`}
+                {currentStep === 3 && "Export Settings"}
+              </>
+            )}
           </DialogTitle>
         </DialogHeader>
         
@@ -86,7 +99,8 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
           {currentStep === 1 && (
             <StepOne 
               destinationType={destinationType} 
-              setDestinationType={setDestinationType} 
+              setDestinationType={setDestinationType}
+              isEditMode={!!editDestination}
             />
           )}
           
@@ -119,6 +133,7 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
           handleSubmit={handleSubmit}
           canProceedFromStep2={canProceedFromStep2}
           destinationType={destinationType}
+          isEditMode={!!editDestination}
         />
       </DialogContent>
     </Dialog>

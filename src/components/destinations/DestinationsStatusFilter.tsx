@@ -41,6 +41,13 @@ const DestinationsStatusFilter: React.FC<DestinationsStatusFilterProps> = ({
       >
         Failed
       </Button>
+      <Button
+        variant={selectedStatus === "Deleted" ? "secondary" : "outline"}
+        size="sm"
+        onClick={() => onStatusChange("Deleted")}
+      >
+        Deleted
+      </Button>
     </div>
   );
 };

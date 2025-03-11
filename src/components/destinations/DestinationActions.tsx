@@ -23,11 +23,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useNavigate } from "react-router-dom";
 
 interface DestinationActionsProps {
-  status: "Active" | "Pending" | "Failed";
+  id: string;
+  name: string;
+  status: "Active" | "Pending" | "Failed" | "Deleted";
   onTestConnection: () => void;
   onDelete: () => void;
+  onEdit: () => void;
   onExport: () => void;
   onRetry: () => void;
   isExporting?: boolean;
@@ -35,15 +39,32 @@ interface DestinationActionsProps {
 }
 
 const DestinationActions: React.FC<DestinationActionsProps> = ({
+  id,
+  name,
   status,
   onTestConnection,
   onDelete,
+  onEdit,
   onExport,
   onRetry,
   isExporting = false,
   isTesting = false
 }) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  
+  const handleExportNow = () => {
+    // Navigate to Jobs page with state that indicates which destination to pre-select
+    navigate("/jobs", { 
+      state: { 
+        openCreateJob: true,
+        preSelectedDestination: {
+          id,
+          name
+        }
+      } 
+    });
+  };
   
   return (
     <>
@@ -73,7 +94,7 @@ const DestinationActions: React.FC<DestinationActionsProps> = ({
             variant="outline" 
             size="sm" 
             onClick={onTestConnection}
-            disabled={isTesting}
+            disabled={isTesting || status === "Deleted"}
           >
             {isTesting ? (
               <>
@@ -94,8 +115,8 @@ const DestinationActions: React.FC<DestinationActionsProps> = ({
                   variant="ghost" 
                   size="icon" 
                   className="h-8 w-8"
-                  disabled={isExporting}
-                  onClick={onExport}
+                  disabled={isExporting || status === "Deleted"}
+                  onClick={handleExportNow}
                 >
                   {isExporting ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
@@ -105,7 +126,7 @@ const DestinationActions: React.FC<DestinationActionsProps> = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{isExporting ? "Exporting..." : "Export Now"}</p>
+                <p>{isExporting ? "Exporting..." : "Create Export Job"}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -117,6 +138,8 @@ const DestinationActions: React.FC<DestinationActionsProps> = ({
                   variant="ghost" 
                   size="icon" 
                   className="h-8 w-8"
+                  onClick={onEdit}
+                  disabled={status === "Deleted"}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -140,7 +163,7 @@ const DestinationActions: React.FC<DestinationActionsProps> = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Delete</p>
+                <p>{status === "Deleted" ? "Permanently Delete" : "Delete"}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -150,9 +173,13 @@ const DestinationActions: React.FC<DestinationActionsProps> = ({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Destination</AlertDialogTitle>
+            <AlertDialogTitle>
+              {status === "Deleted" ? "Permanently Delete Destination" : "Delete Destination"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this destination? This action cannot be undone.
+              {status === "Deleted" 
+                ? "Are you sure you want to permanently delete this destination? This action cannot be undone."
+                : "Are you sure you want to delete this destination? It will be moved to the Deleted filter for 30 days before being permanently removed."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -164,7 +191,7 @@ const DestinationActions: React.FC<DestinationActionsProps> = ({
                 setDeleteDialogOpen(false);
               }}
             >
-              Delete
+              {status === "Deleted" ? "Permanently Delete" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

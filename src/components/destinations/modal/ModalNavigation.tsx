@@ -10,6 +10,7 @@ interface ModalNavigationProps {
   handleSubmit: () => void;
   canProceedFromStep2: () => boolean;
   destinationType: string;
+  isEditMode?: boolean;
 }
 
 const ModalNavigation: React.FC<ModalNavigationProps> = ({
@@ -18,7 +19,8 @@ const ModalNavigation: React.FC<ModalNavigationProps> = ({
   handleClose,
   handleSubmit,
   canProceedFromStep2,
-  destinationType
+  destinationType,
+  isEditMode = false
 }) => {
   // Handle going to previous step
   const goToPreviousStep = () => {
@@ -50,7 +52,7 @@ const ModalNavigation: React.FC<ModalNavigationProps> = ({
           </Button>
         ) : (
           <Button onClick={handleSubmit}>
-            Add Destination
+            {isEditMode ? "Save Changes" : "Add Destination"}
           </Button>
         )}
       </div>

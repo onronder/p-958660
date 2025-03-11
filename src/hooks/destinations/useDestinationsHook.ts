@@ -3,11 +3,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOAuthFlow } from "./useOAuthFlow";
-import { fetchDestinations } from "./destinationApi";
+import { fetchDestinations, updateDestination } from "./destinationApi";
 import { useDeleteDestination } from "./useDeleteDestination";
 import { useTestConnection } from "./useTestConnection";
 import { useExportDestination } from "./useExportDestination";
 import { useAddDestination } from "./useAddDestination";
+import { useRestoreDestination } from "./useRestoreDestination";
 import { Destination } from "./types";
 
 export const useDestinationsHook = () => {
@@ -19,6 +20,7 @@ export const useDestinationsHook = () => {
   const deleteMutation = useDeleteDestination();
   const testConnectionMutation = useTestConnection();
   const exportMutation = useExportDestination();
+  const restoreMutation = useRestoreDestination();
   const { handleAddDestination } = useAddDestination();
 
   // Fetch destinations
@@ -39,6 +41,29 @@ export const useDestinationsHook = () => {
     exportMutation.mutate(id);
   };
 
+  // Update destination
+  const handleUpdateDestination = async (destination: any) => {
+    try {
+      const updatedDestination = await updateDestination(destination);
+      await refetch();
+      return true;
+    } catch (error) {
+      console.error("Error updating destination:", error);
+      return false;
+    }
+  };
+
+  // Restore destination
+  const handleRestoreDestination = async (id: string) => {
+    try {
+      await restoreMutation.mutateAsync(id);
+      return true;
+    } catch (error) {
+      console.error("Error restoring destination:", error);
+      return false;
+    }
+  };
+
   return {
     destinations: data,
     filteredDestinations,
@@ -49,7 +74,10 @@ export const useDestinationsHook = () => {
     deleteMutation,
     testConnectionMutation,
     exportMutation,
+    restoreMutation,
     handleAddDestination,
+    handleUpdateDestination,
+    handleRestoreDestination,
     handleRetryExport,
     initiateOAuth,
     handleOAuthCallback

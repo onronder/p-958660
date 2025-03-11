@@ -10,8 +10,10 @@ interface DestinationsListProps {
   isLoading: boolean;
   onTestConnection: (destination: Destination) => void;
   onDelete: (id: string) => void;
+  onEdit: (destination: Destination) => void;
   onExport: (id: string) => void;
   onRetry: (id: string) => void;
+  onRestore?: (id: string) => void;
   isTesting: (id: string) => boolean;
   isExporting: (id: string) => boolean;
   onAddClick: () => void;
@@ -22,8 +24,10 @@ const DestinationsList: React.FC<DestinationsListProps> = ({
   isLoading,
   onTestConnection,
   onDelete,
+  onEdit,
   onExport,
   onRetry,
+  onRestore,
   isTesting,
   isExporting,
   onAddClick,
@@ -51,6 +55,7 @@ const DestinationsList: React.FC<DestinationsListProps> = ({
   if (
     typeof onTestConnection !== 'function' ||
     typeof onDelete !== 'function' ||
+    typeof onEdit !== 'function' ||
     typeof onExport !== 'function' ||
     typeof onRetry !== 'function' ||
     typeof isTesting !== 'function' ||
@@ -70,8 +75,10 @@ const DestinationsList: React.FC<DestinationsListProps> = ({
       destinations={destinations}
       onTestConnection={onTestConnection}
       onDelete={onDelete}
+      onEdit={onEdit}
       onExport={onExport}
       onRetry={onRetry}
+      onRestore={onRestore}
       isTesting={isTesting}
       isExporting={isExporting}
     />
