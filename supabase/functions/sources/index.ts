@@ -35,37 +35,19 @@ serve(async (req) => {
       );
     }
 
-    // Get request body
+    const url = new URL(req.url);
+    const path = url.pathname.split('/').pop();
+
+    // Get request body for non-GET requests
     let body = {};
     if (req.method !== 'GET') {
       body = await req.json();
     }
     
-    // Handle different actions based on the request
-    const { action } = body;
-
-    if (action === 'deleted') {
-      // Get deleted sources for the authenticated user
-      const { data: deletedSources, error: sourcesError } = await supabase
-        .from('sources')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_deleted', true);
-
-      if (sourcesError) {
-        console.error("Error fetching deleted sources:", sourcesError);
-        throw new Error("Error fetching deleted sources");
-      }
-
-      return new Response(
-        JSON.stringify({ deletedSources: deletedSources || [] }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (action === 'restore') {
-      // Get source ID from request body
-      const { sourceId } = body;
+    // Handle different actions based on the request path and body
+    if (path === 'restore' || body.action === 'restore') {
+      // Get source ID from request body or URL params
+      let sourceId = body.sourceId;
       
       if (!sourceId) {
         return new Response(
@@ -108,6 +90,24 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ success: true, source: updatedSource }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } 
+    else if (path === 'deleted' || body.action === 'deleted') {
+      // Get deleted sources for the authenticated user
+      const { data: deletedSources, error: sourcesError } = await supabase
+        .from('sources')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_deleted', true);
+
+      if (sourcesError) {
+        console.error("Error fetching deleted sources:", sourcesError);
+        throw new Error("Error fetching deleted sources");
+      }
+
+      return new Response(
+        JSON.stringify({ deletedSources: deletedSources || [] }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
