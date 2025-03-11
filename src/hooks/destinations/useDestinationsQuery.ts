@@ -20,16 +20,16 @@ export const useDestinationsQuery = () => {
     refetchInterval: 30000, // Polling every 30 seconds to refresh statuses
     retry: 3, // Retry failed requests up to 3 times
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
-    onError: (error) => {
-      toast({
-        title: "Error Loading Destinations",
-        description: error instanceof Error 
-          ? error.message 
-          : "Could not load destinations. Please try again later.",
-        variant: "destructive",
-      });
-    },
     staleTime: 10000, // Consider data fresh for 10 seconds
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          title: "Error Loading Destinations",
+          description: error.message || "Could not load destinations. Please try again later.",
+          variant: "destructive",
+        });
+      }
+    }
   });
 };
 

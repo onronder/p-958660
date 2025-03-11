@@ -40,7 +40,7 @@ export function handleApiError(error: any, defaultMessage: string): never {
     
     // Check if this is a CORS error
     if (errorMessage === "Failed to fetch" || errorMessage.includes("Network Error")) {
-      errorMessage = `${defaultMessage} - CORS issue detected. Please check server configuration.`;
+      errorMessage = `${defaultMessage} - Network connectivity issue detected. Please check your internet connection.`;
     }
     
     // Check if this is an authentication error
@@ -54,7 +54,7 @@ export function handleApiError(error: any, defaultMessage: string): never {
   throw new Error(errorMessage);
 }
 
-// Helper to perform a fetch request with proper error handling
+// Helper to perform a fetch request with proper error handling and CORS support
 export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   try {
     const token = await getAuthToken();
@@ -66,21 +66,31 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
       ...options.headers
     };
     
-    // Perform the fetch request
-    const response = await fetch(url, {
+    // CORS preflight handling
+    const fetchOptions = {
       ...options,
-      headers
-    });
+      headers,
+      mode: 'cors' as RequestMode, // Explicitly request CORS
+      credentials: 'same-origin' as RequestCredentials
+    };
+    
+    console.log(`Making ${options.method || 'GET'} request to: ${url}`);
+    
+    // Perform the fetch request
+    const response = await fetch(url, fetchOptions);
     
     // Check for non-OK responses
     if (!response.ok) {
-      const errorText = await response.text();
       let errorData;
-      
       try {
-        errorData = JSON.parse(errorText);
+        errorData = await response.json();
       } catch {
-        errorData = { error: `HTTP error ${response.status}` };
+        try {
+          const errorText = await response.text();
+          errorData = { error: errorText || `HTTP error ${response.status}` };
+        } catch {
+          errorData = { error: `HTTP error ${response.status}` };
+        }
       }
       
       throw new Error(errorData.error || `Request failed with status: ${response.status}`);
@@ -91,6 +101,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
     return data;
   } catch (error) {
     // Let the caller handle the error
+    console.error("Fetch error:", error);
     throw error;
   }
 }

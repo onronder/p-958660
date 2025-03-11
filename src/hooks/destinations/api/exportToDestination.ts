@@ -15,9 +15,15 @@ export async function exportToDestination(destinationId: string) {
       })
     });
     
+    if (!data) {
+      console.warn("No data returned from export API");
+      throw new Error("Export failed: No response data");
+    }
+    
     return data;
   } catch (error) {
     console.error("Export to destination error:", error);
     handleApiError(error, "Failed to start export");
+    throw error; // Re-throw to be handled by the calling component
   }
 }

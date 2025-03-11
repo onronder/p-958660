@@ -9,10 +9,15 @@ export async function testConnection(destination: Destination) {
     
     console.log("Testing connection for destination:", destination.name);
     
+    // Ensure all required properties are present
+    if (!destination.destination_type || !destination.storage_type) {
+      throw new Error("Missing required properties for connection test");
+    }
+    
     const payload = {
       destination_type: destination.destination_type,
       storage_type: destination.storage_type,
-      connection_details: destination.config
+      connection_details: destination.config || {}
     };
     
     console.log("Test connection payload:", payload);
@@ -26,5 +31,6 @@ export async function testConnection(destination: Destination) {
   } catch (error) {
     console.error("Connection test error:", error);
     handleApiError(error, "Connection test failed");
+    throw error; // Re-throw to be handled by the calling component
   }
 }

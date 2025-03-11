@@ -1,106 +1,91 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.5.0';
+// Improved utils for destinations edge function with better CORS handling
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.20.0";
 
+// Define CORS headers allowing requests from all origins
 export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-  'Access-Control-Max-Age': '86400', // 24 hours cache for preflight requests
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Max-Age": "86400",
 };
 
-export function createResponse(data: any, status: number = 200) {
-  return new Response(
-    JSON.stringify(data),
-    { 
-      status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    }
-  );
-}
-
-export function parsePathForId(path: string): string | null {
-  const parts = path.split('/').filter(Boolean);
-  return parts.length > 1 ? parts[1] : null;
-}
-
-// Function to authenticate user from request
-export async function authenticateUser(req: Request) {
-  const authHeader = req.headers.get('Authorization');
+// Create a Supabase client for the edge function
+export function getSupabaseClient(req: Request) {
+  const authHeader = req.headers.get("Authorization");
   
   if (!authHeader) {
-    throw new Error('Missing Authorization header');
+    throw new Error("Missing Authorization header");
   }
   
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+  // Get Supabase URL and Key from environment variables
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase configuration');
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error("Missing Supabase URL or service key");
   }
   
-  // Create Supabase client
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  // Create a client with the service role key
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+    global: {
+      headers: {
+        Authorization: authHeader,
+      },
+    },
+  });
+}
+
+// Helper to create consistent responses
+export function createJsonResponse(data: any, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: new Headers({
+      ...corsHeaders,
+      "Content-Type": "application/json",
+    }),
+  });
+}
+
+// Helper function to verify user authentication
+export async function getUserFromAuth(req: Request) {
+  const authHeader = req.headers.get("Authorization");
+  
+  if (!authHeader) {
+    throw { status: 401, message: "Missing Authorization header" };
+  }
   
   try {
-    // Get the token from the Authorization header
-    const token = authHeader.replace('Bearer ', '');
+    const token = authHeader.replace("Bearer ", "");
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") || "",
+      Deno.env.get("SUPABASE_ANON_KEY") || "",
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      }
+    );
     
-    // Verify the JWT token
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
     if (error || !user) {
-      console.error('Authentication error:', error);
-      throw new Error('Invalid or expired token');
+      throw { status: 401, message: "Invalid authorization token" };
     }
     
-    return { user, supabase };
+    return user;
   } catch (error) {
-    console.error('Error in authenticateUser:', error);
-    throw new Error('Authentication failed');
+    console.error("Auth error:", error);
+    throw { 
+      status: error.status || 401, 
+      message: error.message || "Authentication failed" 
+    };
   }
-}
-
-// Function to log destination activity
-export async function logDestinationActivity(
-  supabase: any,
-  userId: string,
-  destinationId: string | null,
-  activityType: string,
-  message: string,
-  metaData: any = {}
-) {
-  try {
-    const { data, error } = await supabase
-      .from('destination_activity_logs')
-      .insert([{
-        user_id: userId,
-        destination_id: destinationId,
-        activity_type: activityType,
-        message,
-        meta_data: metaData
-      }]);
-      
-    if (error) {
-      console.error('Error logging destination activity:', error);
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Failed to log destination activity:', error);
-    // Don't throw here, just log the error to not disrupt the main flow
-  }
-}
-
-// Function to convert destination type to storage type
-export function convertDestinationToStorageType(destinationType: string): string {
-  const lowerCaseType = (destinationType || '').toLowerCase();
-  
-  const mappings: { [key: string]: string } = {
-    'google drive': 'google_drive',
-    'microsoft onedrive': 'onedrive',
-    'aws s3': 'aws_s3',
-    'ftp/sftp': 'ftp_sftp',
-  };
-  
-  return mappings[lowerCaseType] || 'custom_api';
 }
