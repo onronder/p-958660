@@ -40,7 +40,7 @@ const FtpSftpConfig: React.FC<FtpSftpConfigProps> = ({
         id: "temp-test-id", // Temporary ID for testing
         name: name || "Test Connection",
         destination_type: "FTP/SFTP",
-        storage_type: "ftp_sftp",
+        storage_type: credentials.protocol || "ftp_sftp",
         status: "Pending",
         export_format: "CSV",
         schedule: "Manual",
@@ -49,13 +49,8 @@ const FtpSftpConfig: React.FC<FtpSftpConfigProps> = ({
           host: credentials.host,
           port: Number(credentials.port),
           username: credentials.username,
-          password: credentials.password || ""
-        },
-        credentials: {
-          host: credentials.host,
-          port: Number(credentials.port),
-          username: credentials.username,
-          password: credentials.password || ""
+          password: credentials.password || "",
+          protocol: credentials.protocol || "ftp"
         }
       };
       
@@ -69,7 +64,7 @@ const FtpSftpConfig: React.FC<FtpSftpConfigProps> = ({
       }
     } catch (error) {
       setConnectionStatus("failed");
-      setErrorMessage(error.message || "An unexpected error occurred");
+      setErrorMessage(error instanceof Error ? error.message : "An unexpected error occurred");
     }
   };
   
@@ -94,6 +89,19 @@ const FtpSftpConfig: React.FC<FtpSftpConfigProps> = ({
       )}
       
       <div className="space-y-2">
+        <Label htmlFor="protocol">Protocol <span className="text-red-500">*</span></Label>
+        <select
+          id="protocol"
+          className="w-full p-2 border border-gray-300 rounded"
+          value={credentials.protocol || "ftp"}
+          onChange={(e) => updateCredential("protocol", e.target.value)}
+        >
+          <option value="ftp">FTP</option>
+          <option value="sftp">SFTP</option>
+        </select>
+      </div>
+      
+      <div className="space-y-2">
         <Label htmlFor="host">Host <span className="text-red-500">*</span></Label>
         <Input 
           id="host" 
@@ -107,11 +115,14 @@ const FtpSftpConfig: React.FC<FtpSftpConfigProps> = ({
         <Label htmlFor="port">Port <span className="text-red-500">*</span></Label>
         <Input 
           id="port" 
-          placeholder="e.g., 21 for FTP, 22 for SFTP" 
-          value={credentials.port || ""}
+          placeholder={credentials.protocol === "sftp" ? "22" : "21"}
+          value={credentials.port || (credentials.protocol === "sftp" ? "22" : "21")}
           onChange={(e) => updateCredential("port", e.target.value)}
           type="number"
         />
+        <p className="text-xs text-gray-500">
+          Default: {credentials.protocol === "sftp" ? "22 for SFTP" : "21 for FTP"}
+        </p>
       </div>
       
       <div className="space-y-2">

@@ -1,31 +1,23 @@
 
-import { getAuthToken, getSupabaseUrl, handleApiError } from "./apiUtils";
+import { getSupabaseUrl, handleApiError, fetchWithAuth } from "./apiUtils";
 
 // Function to export data to a destination
 export async function exportToDestination(destinationId: string) {
   try {
-    const token = await getAuthToken();
-    const supabaseUrl = getSupabaseUrl();
+    const url = `${getSupabaseUrl()}/functions/v1/export-to-destination`;
     
-    const response = await fetch(`${supabaseUrl}/functions/v1/export-to-destination`, {
+    console.log("Exporting to destination:", destinationId);
+    
+    const data = await fetchWithAuth(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
       body: JSON.stringify({
         destination_id: destinationId
       })
     });
     
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to start export");
-    }
-    
     return data;
   } catch (error) {
+    console.error("Export to destination error:", error);
     handleApiError(error, "Failed to start export");
   }
 }

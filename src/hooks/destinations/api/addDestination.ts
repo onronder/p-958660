@@ -1,12 +1,10 @@
 
-import { getAuthToken, getSupabaseUrl, handleApiError } from "./apiUtils";
+import { getSupabaseUrl, handleApiError, fetchWithAuth } from "./apiUtils";
 
 // Function to add a new destination
 export async function addDestination(newDestination: any) {
   try {
     console.log("API: Adding destination:", newDestination);
-    
-    const token = await getAuthToken();
     
     // Get storage type from destination type
     let storageType = newDestination.storageType;
@@ -39,26 +37,17 @@ export async function addDestination(newDestination: any) {
     
     console.log("API: Transformed destination:", transformedDestination);
     
-    const supabaseUrl = getSupabaseUrl();
-    const response = await fetch(`${supabaseUrl}/functions/v1/destinations`, {
+    const url = `${getSupabaseUrl()}/functions/v1/destinations`;
+    const responseData = await fetchWithAuth(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
       body: JSON.stringify(transformedDestination)
     });
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to add destination");
-    }
-    
-    const responseData = await response.json();
     console.log("API: Response after adding destination:", responseData);
     
     return responseData;
   } catch (error) {
+    console.error("Add destination error:", error);
     handleApiError(error, "Failed to add destination");
   }
 }

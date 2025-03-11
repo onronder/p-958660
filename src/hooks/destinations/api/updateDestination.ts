@@ -1,12 +1,10 @@
 
-import { getAuthToken, getSupabaseUrl, handleApiError } from "./apiUtils";
+import { getSupabaseUrl, handleApiError, fetchWithAuth } from "./apiUtils";
 
 // Function to update an existing destination
 export async function updateDestination(destination: any) {
   try {
     console.log("API: Updating destination:", destination);
-    
-    const token = await getAuthToken();
     
     // Extract ID and remove it from the payload
     const id = destination.id;
@@ -44,26 +42,17 @@ export async function updateDestination(destination: any) {
     
     console.log("API: Transformed destination for update:", transformedDestination);
     
-    const supabaseUrl = getSupabaseUrl();
-    const response = await fetch(`${supabaseUrl}/functions/v1/destinations/${id}`, {
+    const url = `${getSupabaseUrl()}/functions/v1/destinations/${id}`;
+    const responseData = await fetchWithAuth(url, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
       body: JSON.stringify(transformedDestination)
     });
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to update destination");
-    }
-    
-    const responseData = await response.json();
     console.log("API: Response after updating destination:", responseData);
     
     return responseData.destination;
   } catch (error) {
+    console.error("Update destination error:", error);
     handleApiError(error, "Failed to update destination");
   }
 }

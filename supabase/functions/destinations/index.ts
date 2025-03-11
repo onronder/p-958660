@@ -10,10 +10,8 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-      } 
+      headers: corsHeaders,
+      status: 204 // Explicitly setting a 204 status code for OPTIONS requests
     });
   }
 
@@ -23,6 +21,8 @@ serve(async (req) => {
     const path = url.pathname;
     const pathParts = path.split('/').filter(Boolean);
     const id = pathParts.length > 1 ? pathParts[1] : null;
+
+    console.log(`Processing ${req.method} request for path: ${path}`);
 
     // Check if this is a restore operation
     if (pathParts.length > 2 && pathParts[2] === 'restore') {

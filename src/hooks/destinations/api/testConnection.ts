@@ -1,34 +1,30 @@
 
 import { Destination } from "@/hooks/destinations/types";
-import { getAuthToken, getSupabaseUrl, handleApiError } from "./apiUtils";
+import { getSupabaseUrl, handleApiError, fetchWithAuth } from "./apiUtils";
 
 // Function to test a destination connection
 export async function testConnection(destination: Destination) {
   try {
-    const token = await getAuthToken();
-    const supabaseUrl = getSupabaseUrl();
+    const url = `${getSupabaseUrl()}/functions/v1/test-destination-connection`;
     
-    const response = await fetch(`${supabaseUrl}/functions/v1/test-destination-connection`, {
+    console.log("Testing connection for destination:", destination.name);
+    
+    const payload = {
+      destination_type: destination.destination_type,
+      storage_type: destination.storage_type,
+      connection_details: destination.config
+    };
+    
+    console.log("Test connection payload:", payload);
+    
+    const data = await fetchWithAuth(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        destination_type: destination.destination_type,
-        storage_type: destination.storage_type,
-        connection_details: destination.config
-      })
+      body: JSON.stringify(payload)
     });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || data.message || "Connection test failed");
-    }
     
     return data;
   } catch (error) {
+    console.error("Connection test error:", error);
     handleApiError(error, "Connection test failed");
   }
 }

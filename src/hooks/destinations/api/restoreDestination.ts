@@ -1,28 +1,19 @@
 
-import { getAuthToken, getSupabaseUrl, handleApiError } from "./apiUtils";
+import { getSupabaseUrl, handleApiError, fetchWithAuth } from "./apiUtils";
 
 export const restoreDestination = async (id: string): Promise<any> => {
   try {
-    const token = await getAuthToken();
+    const url = `${getSupabaseUrl()}/functions/v1/destinations/${id}/restore`;
     
-    const response = await fetch(`${getSupabaseUrl()}/functions/v1/destinations/${id}/restore`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+    console.log("Restoring destination:", url);
+    
+    const result = await fetchWithAuth(url, {
+      method: "POST"
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(
-        errorData.error || "Failed to restore destination"
-      );
-    }
-
-    const result = await response.json();
+    
     return result.destination;
   } catch (error) {
+    console.error("Restore destination error:", error);
     handleApiError(error, "Error restoring destination");
   }
 };
