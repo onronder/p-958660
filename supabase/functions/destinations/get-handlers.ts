@@ -71,9 +71,9 @@ export async function getDestinations(req: Request) {
       return createResponse({ error: error.message }, 500);
     }
     
-    // Update the status to "Deleted" for any soft-deleted destinations
+    // Update the status for any destinations that have status 'Deleted'
     const processedData = data.map(dest => {
-      if (dest.is_deleted) {
+      if (dest.status === 'Deleted') {
         return { ...dest, status: 'Deleted' };
       }
       return dest;
@@ -110,7 +110,7 @@ export async function getDestinationById(req: Request, id: string) {
     }
     
     // Update status if it's deleted
-    if (data.is_deleted) {
+    if (data.status === 'Deleted') {
       data.status = 'Deleted';
     }
     

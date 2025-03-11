@@ -11,4 +11,5 @@ export interface Destination {
   config?: Record<string, any>;
   credentials?: Record<string, any>;
   save_to_storage?: boolean;
+  // Note: We're not including 'is_deleted' property as it doesn't exist in the database schema
 }

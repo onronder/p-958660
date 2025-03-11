@@ -15,9 +15,11 @@ export async function fetchDestinations() {
         
       if (!error && data) {
         console.log("Successfully fetched destinations using Supabase client:", data);
-        // Process data for soft-deleted items
+        
+        // Process data for status
         const processedData = data.map(dest => {
-          if (dest.is_deleted) {
+          // Since 'is_deleted' doesn't exist, we need to rely on the status field
+          if (dest.status === 'Deleted') {
             return { ...dest, status: 'Deleted' };
           }
           return dest;
