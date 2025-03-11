@@ -29,8 +29,8 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
     setName,
     exportFormat,
     setExportFormat,
-    schedule,
-    setSchedule,
+    saveToStorage,
+    setSaveToStorage,
     credentials,
     updateCredential,
     handleOAuthLogin,
@@ -106,8 +106,8 @@ const AddDestinationModal: React.FC<AddDestinationModalProps> = ({
             <StepThree 
               exportFormat={exportFormat}
               setExportFormat={setExportFormat}
-              schedule={schedule}
-              setSchedule={setSchedule}
+              saveToStorage={saveToStorage}
+              setSaveToStorage={setSaveToStorage}
             />
           )}
         </div>

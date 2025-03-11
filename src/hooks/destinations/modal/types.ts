@@ -11,6 +11,7 @@ export interface DestinationModalState {
   name: string;
   exportFormat: string;
   schedule: string;
+  saveToStorage: boolean;
   credentials: Record<string, any>;
   oauthComplete: boolean;
   oauthError: OAuthError | null;

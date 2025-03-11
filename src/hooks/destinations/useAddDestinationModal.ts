@@ -5,14 +5,18 @@ import { useToast } from "@/hooks/use-toast";
 import { useOAuthModal } from "./modal/useOAuthModal";
 import { useValidation } from "./modal/useValidation";
 import { DestinationModalState } from "./modal/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useAddDestinationModal = (onClose: () => void, onAdd: (destination: any) => void) => {
+  const { profile } = useAuth();
+  const isPro = profile?.subscription_tier === 'pro';
+  
   // Basic state
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [destinationType, setDestinationType] = useState<string>("");
   const [name, setName] = useState<string>("");
   const [exportFormat, setExportFormat] = useState<string>("CSV");
-  const [schedule, setSchedule] = useState<string>("Manual");
+  const [saveToStorage, setSaveToStorage] = useState<boolean>(isPro); // Default to true for Pro users
   const [credentials, setCredentials] = useState<Record<string, any>>({});
 
   // Import sub-hooks
@@ -39,7 +43,7 @@ export const useAddDestinationModal = (onClose: () => void, onAdd: (destination:
     setDestinationType("");
     setName("");
     setExportFormat("CSV");
-    setSchedule("Manual");
+    setSaveToStorage(isPro);
     setCredentials({});
     setOauthComplete(false);
     setOauthError(null);
@@ -81,7 +85,8 @@ export const useAddDestinationModal = (onClose: () => void, onAdd: (destination:
       storageType: actualStorageType,
       status: "Pending",
       exportFormat,
-      schedule,
+      saveToStorage, // Add saveToStorage property
+      schedule: "Manual", // Keep a default value for backend compatibility
       lastExport: null,
       credentials: processedCredentials
     };
@@ -107,8 +112,8 @@ export const useAddDestinationModal = (onClose: () => void, onAdd: (destination:
     setName,
     exportFormat,
     setExportFormat,
-    schedule,
-    setSchedule,
+    saveToStorage,
+    setSaveToStorage,
     credentials,
     
     // OAuth state
