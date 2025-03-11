@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Destination } from "@/hooks/useDestinations";
+import { Destination } from "@/hooks/destinations/types";
 import DestinationsListSkeleton from "./DestinationsListSkeleton";
 import EmptyDestinations from "./EmptyDestinations";
 import DestinationsGrid from "./DestinationsGrid";

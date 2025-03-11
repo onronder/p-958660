@@ -4,17 +4,10 @@ import { Card } from "@/components/ui/card";
 import DestinationHeader from "./DestinationHeader";
 import DestinationDetails from "./DestinationDetails";
 import DestinationActions from "./DestinationActions";
+import { Destination } from "@/hooks/destinations/types";
 
-interface DestinationProps {
-  destination: {
-    id: string;
-    name: string;
-    destination_type: string;
-    status: "Active" | "Pending" | "Failed" | "Deleted";
-    export_format: string;
-    schedule: string;
-    last_export: string | null;
-  };
+interface DestinationCardProps {
+  destination: Destination;
   onTestConnection: () => void;
   onDelete: () => void;
   onEdit: () => void;
@@ -24,7 +17,7 @@ interface DestinationProps {
   isTesting?: boolean;
 }
 
-const DestinationCard: React.FC<DestinationProps> = ({ 
+const DestinationCard: React.FC<DestinationCardProps> = ({ 
   destination, 
   onTestConnection, 
   onDelete,

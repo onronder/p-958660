@@ -56,15 +56,7 @@ const DestinationsGrid: React.FC<DestinationsGridProps> = ({
               </div>
             )}
             <DestinationCard
-              destination={{
-                id: destination.id,
-                name: destination.name,
-                destination_type: destination.destination_type,
-                status: destination.status as "Active" | "Pending" | "Failed" | "Deleted",
-                export_format: destination.export_format,
-                schedule: destination.schedule,
-                last_export: destination.last_export ? destination.last_export.toString() : null
-              }}
+              destination={destination}
               onTestConnection={() => onTestConnection(destination)}
               onDelete={() => onDelete(destination.id)}
               onEdit={() => onEdit(destination)}
