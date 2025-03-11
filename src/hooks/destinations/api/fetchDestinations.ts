@@ -1,9 +1,35 @@
 
 import { getSupabaseUrl, handleApiError, fetchWithAuth } from "./apiUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 // Function to fetch destinations from the API
 export async function fetchDestinations() {
   try {
+    // First try using Supabase directly (more reliable, but might not work in some environments)
+    try {
+      console.log("Trying to fetch destinations using Supabase client...");
+      const { data, error } = await supabase
+        .from('destinations')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (!error && data) {
+        console.log("Successfully fetched destinations using Supabase client:", data);
+        // Process data for soft-deleted items
+        const processedData = data.map(dest => {
+          if (dest.is_deleted) {
+            return { ...dest, status: 'Deleted' };
+          }
+          return dest;
+        });
+        
+        return processedData;
+      }
+    } catch (directError) {
+      console.warn("Failed to fetch using Supabase client, falling back to edge function:", directError);
+    }
+
+    // Fallback to edge function
     const supabaseUrl = getSupabaseUrl();
     const url = `${supabaseUrl}/functions/v1/destinations`;
     

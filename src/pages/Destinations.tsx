@@ -10,6 +10,7 @@ import DestinationsStatusFilter from "@/components/destinations/DestinationsStat
 import DestinationsErrorDisplay from "@/components/destinations/DestinationsErrorDisplay";
 import DestinationsList from "@/components/destinations/DestinationsList";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Destinations = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -18,6 +19,7 @@ const Destinations = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const {
     filteredDestinations,
@@ -32,7 +34,8 @@ const Destinations = () => {
     handleUpdateDestination,
     handleRestoreDestination,
     handleRetryExport,
-    handleOAuthCallback
+    handleOAuthCallback,
+    refetch
   } = useDestinations();
 
   // Handle OAuth callback data if it exists in the URL state
@@ -118,6 +121,15 @@ const Destinations = () => {
            exportMutation.variables === destinationId;
   };
 
+  // Handle retry loading destinations
+  const handleRetry = () => {
+    toast({
+      title: "Retrying",
+      description: "Attempting to reload destinations...",
+    });
+    refetch();
+  };
+
   return (
     <div className="space-y-8">
       <DestinationsInfoBanner />
@@ -133,6 +145,7 @@ const Destinations = () => {
       <DestinationsErrorDisplay 
         error={error instanceof Error ? error : null} 
         isUserLoggedIn={!!user}
+        onRetry={handleRetry}
       />
 
       <DestinationsStatusFilter

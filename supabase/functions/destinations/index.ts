@@ -1,7 +1,7 @@
 
 // Improved Edge Function for destinations to handle CORS properly
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "./utils.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 import * as getHandlers from "./get-handlers.ts";
 import * as postHandlers from "./post-handlers.ts";
 import * as patchHandlers from "./patch-handlers.ts";
@@ -50,36 +50,55 @@ serve(async (req: Request) => {
     });
     
     // Handle different HTTP methods
+    let response: Response;
+    
     switch (req.method) {
       case "GET":
         if (destinationId) {
-          return await getHandlers.getDestinationById(req, destinationId);
+          response = await getHandlers.getDestinationById(req, destinationId);
         } else {
-          return await getHandlers.getDestinations(req);
+          response = await getHandlers.getDestinations(req);
         }
+        break;
         
       case "POST":
         if (destinationId && subResource === "restore") {
-          return await postHandlers.restoreDestination(req, destinationId);
+          response = await postHandlers.restoreDestination(req, destinationId);
         } else {
-          return await postHandlers.createDestination(req);
+          response = await postHandlers.createDestination(req);
         }
+        break;
         
       case "PATCH":
         if (destinationId) {
-          return await patchHandlers.updateDestination(req, destinationId);
+          response = await patchHandlers.updateDestination(req, destinationId);
+        } else {
+          throw new Error("Destination ID is required for PATCH");
         }
         break;
         
       case "DELETE":
         if (destinationId) {
-          return await deleteHandlers.deleteDestination(req, destinationId, url);
+          response = await deleteHandlers.deleteDestination(req, destinationId, url);
+        } else {
+          throw new Error("Destination ID is required for DELETE");
         }
         break;
+        
+      default:
+        throw new Error(`Method ${req.method} not implemented for this route`);
     }
     
-    // If we reach here, the route is not implemented
-    throw new Error("Method not implemented for this route");
+    // Add CORS headers to the response
+    const responseHeaders = new Headers(response.headers);
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      responseHeaders.set(key, value);
+    });
+    
+    return new Response(response.body, {
+      status: response.status,
+      headers: responseHeaders
+    });
     
   } catch (error) {
     console.error("Error processing request:", error);

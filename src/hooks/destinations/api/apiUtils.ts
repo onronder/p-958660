@@ -70,7 +70,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
     const fetchOptions = {
       ...options,
       headers,
-      mode: 'cors' as RequestMode, // Explicitly request CORS
+      mode: 'cors' as RequestMode,
       credentials: 'same-origin' as RequestCredentials
     };
     
