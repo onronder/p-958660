@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Source } from "@/types/source";
+import { Source, SourceStatus } from "@/types/source";
 import { fetchUserSources, deleteSource, testShopifyConnection } from "@/services/sourcesService";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,7 +49,14 @@ export const useSources = () => {
           throw error;
         }
         
-        setSources(data || []);
+        // Convert the data to match the expected Source type
+        const formattedSources: Source[] = data?.map(source => ({
+          ...source,
+          status: (source.status as string) as SourceStatus,
+          credentials: source.credentials as Record<string, any> || {}
+        })) || [];
+        
+        setSources(formattedSources);
       }
     } catch (error) {
       console.error("Error fetching sources:", error);

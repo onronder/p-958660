@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Source } from "@/types/source";
+import { Source, SourceStatus } from "@/types/source";
 import { fetchDeletedSources, restoreSource } from "@/services/sourcesService";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,10 +41,11 @@ export const useDeletedSources = () => {
           throw error;
         }
         
-        // Convert the data to match the expected format
-        const formattedSources = data?.map(source => ({
+        // Convert the data to match the expected Source type format
+        const formattedSources: Source[] = data?.map(source => ({
           ...source,
-          status: "Deleted" as any
+          status: "Deleted" as SourceStatus,
+          credentials: source.credentials as Record<string, any> || {}
         })) || [];
         
         setDeletedSources(formattedSources);
