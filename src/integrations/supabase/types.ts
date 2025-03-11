@@ -366,11 +366,13 @@ export type Database = {
       jobs: {
         Row: {
           created_at: string | null
+          deletion_marked_at: string | null
           description: string | null
           destination_id: string | null
           duration: unknown | null
           frequency: string | null
           id: string
+          is_deleted: boolean | null
           job_type: string | null
           last_run: string | null
           name: string | null
@@ -387,11 +389,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          deletion_marked_at?: string | null
           description?: string | null
           destination_id?: string | null
           duration?: unknown | null
           frequency?: string | null
           id?: string
+          is_deleted?: boolean | null
           job_type?: string | null
           last_run?: string | null
           name?: string | null
@@ -408,11 +412,13 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          deletion_marked_at?: string | null
           description?: string | null
           destination_id?: string | null
           duration?: unknown | null
           frequency?: string | null
           id?: string
+          is_deleted?: boolean | null
           job_type?: string | null
           last_run?: string | null
           name?: string | null
