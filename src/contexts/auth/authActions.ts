@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
+import { sendWelcomeEmail } from "@/services/notifications/emailService";
 
 export async function signIn(email: string, password: string) {
   try {
@@ -43,6 +44,20 @@ export async function signUp(email: string, password: string, firstName: string,
     }
 
     console.log("AuthContext: Sign up successful. Email confirmation required:", data.user?.email);
+    
+    // Send welcome email
+    if (data.user) {
+      const fullName = `${firstName} ${lastName}`.trim();
+      sendWelcomeEmail({
+        recipientEmail: email,
+        recipientName: fullName || "FlowTechs User" // Fallback if name is empty
+      }).then(result => {
+        if (!result.success) {
+          console.error("Failed to send welcome email:", result.error);
+        }
+      });
+    }
+    
     return { error: null };
   } catch (error: any) {
     console.error("AuthContext: Sign up exception:", error);

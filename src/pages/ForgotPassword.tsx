@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
+import { sendPasswordResetEmail } from "@/services/notifications/emailService";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -20,8 +20,10 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
+      const resetLink = `${window.location.origin}/reset-password`;
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: resetLink,
       });
 
       if (error) {
@@ -30,7 +32,19 @@ const ForgotPassword = () => {
           description: error.message,
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
+      }
+
+      // Send custom password reset email
+      const { success, error: emailError } = await sendPasswordResetEmail({
+        recipientEmail: email,
+        resetLink: resetLink,
+      });
+
+      if (emailError) {
+        console.error("Error sending password reset email:", emailError);
+        // Still continue as the Supabase email was sent
       }
 
       setIsSubmitted(true);
