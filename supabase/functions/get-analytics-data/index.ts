@@ -1,11 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
   // Handle CORS preflight request
@@ -78,6 +74,74 @@ serve(async (req) => {
 
     console.log("Fetching analytics data for user:", user.id);
 
+    // Check if analytics data exists for this user
+    const { data: analyticsCheck, error: analyticsCheckError } = await supabaseClient
+      .from("analytics_data")
+      .select("count(*)")
+      .eq("user_id", user.id)
+      .single();
+
+    // If no analytics data exists, create synthetic data
+    if (!analyticsCheck || analyticsCheck.count === 0 || analyticsCheckError) {
+      console.log("No analytics data found, creating synthetic data for user:", user.id);
+      
+      // Create synthetic data with realistic patterns
+      const syntheticData = {
+        user_id: user.id,
+        etl_extraction: 35.8,
+        etl_transformation: 28.6,
+        etl_loading: 35.6,
+        data_pull_frequency: [
+          { time: '08:00', value: 3245 },
+          { time: '10:00', value: 5621 },
+          { time: '12:00', value: 8954 },
+          { time: '14:00', value: 7632 },
+          { time: '16:00', value: 9874 },
+          { time: '18:00', value: 6584 }
+        ],
+        upload_success_rate: [
+          { time: '08:00', value: 98 },
+          { time: '10:00', value: 95 },
+          { time: '12:00', value: 92 },
+          { time: '14:00', value: 97 },
+          { time: '16:00', value: 99 },
+          { time: '18:00', value: 94 }
+        ],
+        data_size: [
+          { month: 'Jan', value: 1240 },
+          { month: 'Feb', value: 2150 },
+          { month: 'Mar', value: 3620 },
+          { month: 'Apr', value: 5840 },
+          { month: 'May', value: 6950 },
+          { month: 'Jun', value: 9720 }
+        ],
+        last_updated: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      };
+      
+      const { data: newAnalytics, error: insertError } = await supabaseClient
+        .from("analytics_data")
+        .upsert([syntheticData])
+        .select("*")
+        .single();
+
+      if (insertError) {
+        console.error("Error creating analytics data:", insertError);
+        return new Response(
+          JSON.stringify({ 
+            error: "Failed to initialize analytics data",
+            ...syntheticData
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify(newAnalytics),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Fetch analytics data for this user with more efficient query
     const { data: analyticsData, error: analyticsError } = await supabaseClient
       .from("analytics_data")
@@ -103,46 +167,6 @@ serve(async (req) => {
           created_at: ""
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // If no analytics data found, create default entry
-    if (!analyticsData) {
-      console.log("No analytics data found, creating default entry");
-      
-      // Create default analytics data
-      const defaultData = {
-        user_id: user.id,
-        etl_extraction: 33,
-        etl_transformation: 33,
-        etl_loading: 34,
-        data_pull_frequency: [],
-        upload_success_rate: [],
-        data_size: [],
-        last_updated: new Date().toISOString(),
-        created_at: new Date().toISOString()
-      };
-      
-      const { data: newAnalytics, error: insertError } = await supabaseClient
-        .from("analytics_data")
-        .insert([defaultData])
-        .select("*")
-        .single();
-
-      if (insertError) {
-        console.error("Error creating analytics data:", insertError);
-        return new Response(
-          JSON.stringify({ 
-            error: "Failed to initialize analytics data",
-            ...defaultData
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify(newAnalytics),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
