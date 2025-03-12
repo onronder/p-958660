@@ -90,14 +90,14 @@ serve(async (req) => {
     console.log("Fetching dashboard data for user:", user.id);
 
     // Check if we have metrics data for this user
-    const { data: metricsData, error: metricsCheckError } = await supabaseClient
+    const { data: metricsCheck, error: metricsCheckError } = await supabaseClient
       .from("dashboard_metrics")
       .select("count(*)")
       .eq("user_id", user.id)
       .single();
 
     // If no metrics data exists, create synthetic data
-    if (!metricsData || metricsData.count === 0 || metricsCheckError) {
+    if (!metricsCheck || metricsCheck.count === 0 || metricsCheckError) {
       console.log("No metrics found, creating synthetic data for user:", user.id);
       
       // Insert synthetic metrics for development/testing
@@ -186,7 +186,7 @@ serve(async (req) => {
 
     // Now fetch the real data
     // Fetch metrics from the dashboard_metrics table
-    const { data: metricsData, error: metricsError } = await supabaseClient
+    const { data: metrics, error: metricsError } = await supabaseClient
       .from("dashboard_metrics")
       .select("*")
       .eq("user_id", user.id);
@@ -247,8 +247,8 @@ serve(async (req) => {
       lastUpdated: null,
     };
 
-    if (metricsData) {
-      metricsData.forEach((metric) => {
+    if (metrics) {
+      metrics.forEach((metric) => {
         switch (metric.metric_name) {
           case "total_data_processed":
             processedMetrics.totalDataProcessed = metric.metric_value;
