@@ -5,11 +5,15 @@ import { corsHeaders, handleCorsPreflightRequest } from "./corsHelpers.ts";
 import { defaultData } from "./defaultData.ts";
 import { ensureUserDataExists } from "./dataInitialization.ts";
 import { fetchDashboardData } from "./dataService.ts";
+import { getCorsHeadersForRequest } from "./corsHelpers.ts";
 
 serve(async (req) => {
   // Handle CORS preflight request
   const corsResponse = handleCorsPreflightRequest(req);
   if (corsResponse) return corsResponse;
+
+  // Get appropriate CORS headers based on request origin
+  const responseCorsHeaders = getCorsHeadersForRequest(req);
 
   try {
     // Get auth token from the Authorization header
@@ -22,7 +26,7 @@ serve(async (req) => {
         JSON.stringify(defaultData),
         { 
           status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...responseCorsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
@@ -46,7 +50,7 @@ serve(async (req) => {
       console.error('User authentication error:', userError);
       return new Response(
         JSON.stringify(defaultData),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...responseCorsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -61,7 +65,7 @@ serve(async (req) => {
     // Return the response
     return new Response(
       JSON.stringify(responseData),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...responseCorsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Server error:', error);
@@ -72,7 +76,7 @@ serve(async (req) => {
       }),
       { 
         status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...responseCorsHeaders, 'Content-Type': 'application/json' } 
       }
     );
   }
