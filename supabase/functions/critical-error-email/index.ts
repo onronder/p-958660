@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeaders, getProductionCorsHeaders } from "../_shared/cors.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { getCriticalErrorEmailTemplate } from "../_shared/email-templates.ts";
 
@@ -8,9 +8,13 @@ import { getCriticalErrorEmailTemplate } from "../_shared/email-templates.ts";
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 serve(async (req: Request) => {
+  // Get appropriate CORS headers based on request origin
+  const requestOrigin = req.headers.get("origin");
+  const responseCorsHeaders = getProductionCorsHeaders(requestOrigin);
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: responseCorsHeaders });
   }
 
   try {
@@ -23,7 +27,7 @@ serve(async (req: Request) => {
         JSON.stringify({ error: "Missing required fields: recipientEmail or errorMessage" }),
         {
           status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
+          headers: { "Content-Type": "application/json", ...responseCorsHeaders },
         }
       );
     }
@@ -47,7 +51,7 @@ serve(async (req: Request) => {
         JSON.stringify({ error: error.message }),
         {
           status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
+          headers: { "Content-Type": "application/json", ...responseCorsHeaders },
         }
       );
     }
@@ -58,7 +62,7 @@ serve(async (req: Request) => {
       JSON.stringify({ success: true, data }),
       {
         status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "application/json", ...responseCorsHeaders },
       }
     );
   } catch (error) {
@@ -67,7 +71,7 @@ serve(async (req: Request) => {
       JSON.stringify({ error: error.message }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "application/json", ...responseCorsHeaders },
       }
     );
   }

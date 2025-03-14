@@ -9,7 +9,9 @@ export const getProductionCorsHeaders = (requestOrigin: string | null) => {
   // List of allowed origins (add more as needed)
   const allowedOrigins = [
     "https://app.flow-techs.com",
-    "https://www.flow-techs.com",
+    "https://p-958660.vercel.app",
+    "http://app.flow-techs.com",
+    "http://p-958660.vercel.app",
     // Include your local development URLs if needed
     "http://localhost:3000",
     "http://localhost:5173"

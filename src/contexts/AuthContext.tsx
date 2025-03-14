@@ -67,8 +67,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setProfile(null);
         
-        // Force a page reload to clear any cached state
-        window.location.href = "/login";
+        // Navigate to login page instead of using window.location
+        // This preserves the React app context
+        navigate("/login");
       }
     } catch (error: any) {
       toast({
