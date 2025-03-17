@@ -54,12 +54,14 @@ const StepContent: React.FC<StepContentProps> = ({
       return (
         <SourceSelectionStep 
           sources={sources} 
+          selectedSourceId={sourceId}
           onSelectSource={onSelectSource} 
         />
       );
     case "type":
       return (
         <DatasetTypeStep 
+          selectedType={selectedType}
           onSelectType={onSelectType} 
         />
       );
@@ -67,25 +69,23 @@ const StepContent: React.FC<StepContentProps> = ({
       if (selectedTab === "predefined") {
         return (
           <PredefinedDatasetStep 
-            sourceId={sourceId}
-            templateName={templateName} 
-            setTemplateName={setTemplateName} 
+            selectedTemplate={templateName} 
+            onSelectTemplate={setTemplateName} 
           />
         );
       } else if (selectedTab === "dependent") {
         return (
           <DependentDatasetStep 
-            sourceId={sourceId}
-            templateName={templateName} 
-            setTemplateName={setTemplateName} 
+            selectedTemplate={templateName} 
+            onSelectTemplate={setTemplateName} 
           />
         );
       } else {
         return (
           <CustomDatasetStep 
             sourceId={sourceId}
-            customQuery={customQuery} 
-            setCustomQuery={setCustomQuery} 
+            query={customQuery} 
+            onQueryChange={setCustomQuery} 
           />
         );
       }
@@ -102,9 +102,7 @@ const StepContent: React.FC<StepContentProps> = ({
       return (
         <ConfigurationStep 
           name={name} 
-          setName={setName} 
-          selectedType={selectedType}
-          templateName={templateName}
+          onNameChange={setName} 
         />
       );
     default:
