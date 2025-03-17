@@ -69,20 +69,23 @@ const StepContent: React.FC<StepContentProps> = ({
       )}
       
       {activeStep === "type" && (
-        <DatasetTypeStep onSelectType={onSelectType} />
+        <DatasetTypeStep 
+          selectedType={selectedType}
+          onSelectType={onSelectType} 
+        />
       )}
       
       {activeStep === "details" && (
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
           <TabsContent value="predefined" className="mt-0">
             <PredefinedDatasetStep 
-              templateName={templateName} 
+              selectedTemplate={templateName} 
               onSelectTemplate={setTemplateName}
             />
           </TabsContent>
           <TabsContent value="dependent" className="mt-0">
             <DependentDatasetStep 
-              templateName={templateName} 
+              selectedTemplate={templateName} 
               onSelectTemplate={setTemplateName}
             />
           </TabsContent>

@@ -6,11 +6,17 @@ import { Label } from "@/components/ui/label";
 interface ConfigurationStepProps {
   name: string;
   onNameChange: (name: string) => void;
+  sourceId: string;
+  datasetType: "predefined" | "dependent" | "custom";
+  templateName: string;
 }
 
 const ConfigurationStep: React.FC<ConfigurationStepProps> = ({
   name,
-  onNameChange
+  onNameChange,
+  sourceId,
+  datasetType,
+  templateName
 }) => {
   return (
     <div className="space-y-4">
