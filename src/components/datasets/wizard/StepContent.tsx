@@ -1,12 +1,13 @@
 
 import React from "react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import SourceSelectionStep from "./SourceSelectionStep";
 import DatasetTypeStep from "./DatasetTypeStep";
 import PredefinedDatasetStep from "./PredefinedDatasetStep";
 import DependentDatasetStep from "./DependentDatasetStep";
 import CustomDatasetStep from "./CustomDatasetStep";
-import DataPreviewStep from "./DataPreviewStep";
 import ConfigurationStep from "./ConfigurationStep";
+import DataPreviewStep from "./DataPreviewStep";
 
 interface StepContentProps {
   activeStep: string;
@@ -19,7 +20,7 @@ interface StepContentProps {
   name: string;
   previewData: any[];
   isLoading: boolean;
-  error?: string | null;
+  error: string | null;
   onSelectSource: (id: string, name: string) => void;
   onSelectType: (type: "predefined" | "dependent" | "custom") => void;
   setTemplateName: (name: string) => void;
@@ -27,8 +28,11 @@ interface StepContentProps {
   setName: (name: string) => void;
   onRegeneratePreview: () => void;
   selectedType: "predefined" | "dependent" | "custom";
-  connectionTestResult?: { success: boolean; message: string };
   onTestConnection?: () => void;
+  connectionTestResult?: {
+    success: boolean;
+    message: string;
+  };
 }
 
 const StepContent: React.FC<StepContentProps> = ({
@@ -50,87 +54,70 @@ const StepContent: React.FC<StepContentProps> = ({
   setName,
   onRegeneratePreview,
   selectedType,
-  connectionTestResult,
-  onTestConnection
+  onTestConnection,
+  connectionTestResult
 }) => {
-  // Check if we need to show source selection due to missing sourceId
-  const needsSourceSelection = !sourceId && activeStep !== "source";
-  
-  // If we need source selection and we're not on the source step, show source selection
-  if (needsSourceSelection) {
-    return (
-      <SourceSelectionStep 
-        sources={sources} 
-        selectedSourceId={sourceId}
-        onSelectSource={onSelectSource} 
-        onTestConnection={onTestConnection}
-      />
-    );
-  }
-  
-  // Regular step content based on activeStep
-  switch (activeStep) {
-    case "source":
-      return (
+  return (
+    <div className="py-4">
+      {activeStep === "source" && (
         <SourceSelectionStep 
-          sources={sources} 
+          sources={sources}
           selectedSourceId={sourceId}
-          onSelectSource={onSelectSource} 
+          onSelectSource={onSelectSource}
           onTestConnection={onTestConnection}
         />
-      );
-    case "type":
-      return (
-        <DatasetTypeStep 
-          selectedType={selectedType}
-          onSelectType={onSelectType} 
-        />
-      );
-    case "details":
-      if (selectedTab === "predefined") {
-        return (
-          <PredefinedDatasetStep 
-            selectedTemplate={templateName} 
-            onSelectTemplate={setTemplateName} 
-          />
-        );
-      } else if (selectedTab === "dependent") {
-        return (
-          <DependentDatasetStep 
-            selectedTemplate={templateName} 
-            onSelectTemplate={setTemplateName} 
-          />
-        );
-      } else {
-        return (
-          <CustomDatasetStep 
-            sourceId={sourceId}
-            query={customQuery} 
-            onQueryChange={setCustomQuery} 
-          />
-        );
-      }
-    case "preview":
-      return (
+      )}
+      
+      {activeStep === "type" && (
+        <DatasetTypeStep onSelectType={onSelectType} />
+      )}
+      
+      {activeStep === "details" && (
+        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+          <TabsContent value="predefined" className="mt-0">
+            <PredefinedDatasetStep 
+              templateName={templateName} 
+              onSelectTemplate={setTemplateName}
+            />
+          </TabsContent>
+          <TabsContent value="dependent" className="mt-0">
+            <DependentDatasetStep 
+              templateName={templateName} 
+              onSelectTemplate={setTemplateName}
+            />
+          </TabsContent>
+          <TabsContent value="custom" className="mt-0">
+            <CustomDatasetStep 
+              sourceId={sourceId}
+              query={customQuery} 
+              onQueryChange={setCustomQuery}
+            />
+          </TabsContent>
+        </Tabs>
+      )}
+      
+      {activeStep === "preview" && (
         <DataPreviewStep 
-          isLoading={isLoading} 
-          previewData={previewData} 
+          isLoading={isLoading}
+          previewData={previewData}
           error={error}
           onRegeneratePreview={onRegeneratePreview}
           sourceId={sourceId}
           connectionTestResult={connectionTestResult}
         />
-      );
-    case "configuration":
-      return (
+      )}
+      
+      {activeStep === "configuration" && (
         <ConfigurationStep 
-          name={name} 
-          onNameChange={setName} 
+          name={name}
+          onNameChange={setName}
+          sourceId={sourceId}
+          datasetType={selectedType}
+          templateName={templateName}
         />
-      );
-    default:
-      return null;
-  }
+      )}
+    </div>
+  );
 };
 
 export default StepContent;
