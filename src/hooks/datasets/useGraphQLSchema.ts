@@ -6,12 +6,37 @@ import { toast } from "@/hooks/use-toast";
 export const useGraphQLSchema = (sourceId: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const [schema, setSchema] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   
   const loadSchema = useCallback(async () => {
-    if (!sourceId) return;
+    if (!sourceId) {
+      setError("No source selected");
+      return;
+    }
     
     try {
       setIsLoading(true);
+      setError(null);
+      
+      // Check for cached schema first
+      const { data: cachedSchema, error: cacheError } = await supabase
+        .from("schema_cache")
+        .select("schema, cached_at")
+        .eq("source_id", sourceId)
+        .order("cached_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      // If we have a recent cache (less than 4 hours old), use it
+      if (cachedSchema && !cacheError) {
+        const cacheAge = Date.now() - new Date(cachedSchema.cached_at).getTime();
+        const cacheAgeHours = cacheAge / (1000 * 60 * 60);
+        
+        if (cacheAgeHours < 4) {
+          setSchema(cachedSchema.schema);
+          return;
+        }
+      }
       
       // Get session for authentication
       const { data: { session } } = await supabase.auth.getSession();
@@ -39,9 +64,26 @@ export const useGraphQLSchema = (sourceId: string) => {
       }
       
       const data = await response.json();
+      
+      if (!data.schema) {
+        throw new Error("No schema returned from the server");
+      }
+      
       setSchema(data.schema);
+      
+      // Cache the schema for future use
+      await supabase
+        .from("schema_cache")
+        .upsert({
+          source_id: sourceId,
+          schema: data.schema,
+          api_version: "2023-10",
+          cached_at: new Date().toISOString()
+        });
+      
     } catch (error) {
       console.error("Error loading schema:", error);
+      setError(error.message);
       toast({
         title: "Error",
         description: "Failed to load GraphQL schema: " + error.message,
@@ -53,12 +95,15 @@ export const useGraphQLSchema = (sourceId: string) => {
   }, [sourceId]);
   
   useEffect(() => {
-    loadSchema();
-  }, [loadSchema]);
+    if (sourceId) {
+      loadSchema();
+    }
+  }, [sourceId, loadSchema]);
   
   return {
     isLoading,
     schema,
+    error,
     loadSchema
   };
 };

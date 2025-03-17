@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { corsHeaders, getProductionCorsHeaders } from "../_shared/cors.ts";
@@ -23,8 +22,10 @@ serve(async (req: Request) => {
     // Parse request body
     const { 
       extraction_id, 
+      source_id,
+      custom_query,
       preview_only = false, 
-      limit = preview_only ? 3 : 250
+      limit = preview_only ? 5 : 250
     } = await req.json();
     
     if (!extraction_id) {
@@ -35,6 +36,18 @@ serve(async (req: Request) => {
           headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
         }
       );
+    }
+    
+    // For preview requests, we'll handle them differently (direct query execution)
+    if (preview_only && custom_query && source_id) {
+      return handlePreviewRequest({
+        user,
+        supabase,
+        source_id,
+        custom_query,
+        limit,
+        responseCorsHeaders
+      });
     }
     
     // Get extraction details
@@ -273,6 +286,134 @@ serve(async (req: Request) => {
     );
   }
 });
+
+// Add new function for handling preview requests
+async function handlePreviewRequest({
+  user,
+  supabase,
+  source_id,
+  custom_query,
+  limit,
+  responseCorsHeaders
+}) {
+  try {
+    // Get source details
+    const { data: source, error: sourceError } = await supabase
+      .from("sources")
+      .select("*")
+      .eq("id", source_id)
+      .eq("user_id", user.id)
+      .single();
+    
+    if (sourceError || !source) {
+      return new Response(
+        JSON.stringify({ error: "Source not found or not authorized" }),
+        { 
+          status: 404, 
+          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+        }
+      );
+    }
+    
+    // For Shopify sources, get the credentials
+    if (source.source_type !== "Shopify") {
+      return new Response(
+        JSON.stringify({ error: "Only Shopify sources are supported currently" }),
+        { 
+          status: 400, 
+          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+        }
+      );
+    }
+    
+    // Get Shopify credentials
+    const credentialId = source.credentials.credential_id;
+    const { data: shopifyCredentials, error: credentialsError } = await supabase
+      .from("shopify_credentials")
+      .select("*")
+      .eq("id", credentialId)
+      .eq("user_id", user.id)
+      .single();
+    
+    if (credentialsError || !shopifyCredentials) {
+      return new Response(
+        JSON.stringify({ error: "Shopify credentials not found" }),
+        { 
+          status: 404, 
+          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+        }
+      );
+    }
+    
+    // Execute the query directly
+    const variables = { first: limit };
+    const apiVersion = "2023-10"; // Could be made configurable
+    const endpoint = `https://${shopifyCredentials.store_name}.myshopify.com/admin/api/${apiVersion}/graphql.json`;
+    
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": shopifyCredentials.api_token
+      },
+      body: JSON.stringify({ query: custom_query, variables })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      return new Response(
+        JSON.stringify({ 
+          error: `Shopify API error: ${response.status} ${response.statusText}`,
+          details: errorText
+        }),
+        { 
+          status: response.status, 
+          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+        }
+      );
+    }
+    
+    const data = await response.json();
+    
+    // Handle GraphQL errors
+    if (data.errors && data.errors.length > 0) {
+      return new Response(
+        JSON.stringify({ 
+          error: "GraphQL error", 
+          details: data.errors 
+        }),
+        { 
+          status: 400, 
+          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+        }
+      );
+    }
+    
+    // Extract results
+    const results = extractResults(data.data);
+    
+    return new Response(
+      JSON.stringify({ 
+        results,
+        count: results.length,
+        preview: true
+      }),
+      { 
+        status: 200, 
+        headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+      }
+    );
+  } catch (error) {
+    console.error("Preview error:", error);
+    return new Response(
+      JSON.stringify({ error: error.message || "An unknown error occurred during preview" }),
+      { 
+        status: 500, 
+        headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+      }
+    );
+  }
+}
 
 // Helper function to get predefined query
 function getPredefinedQuery(templateName: string): string {

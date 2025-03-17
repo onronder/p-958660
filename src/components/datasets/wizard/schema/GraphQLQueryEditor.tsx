@@ -2,7 +2,7 @@
 import React from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { PlayCircle } from "lucide-react";
+import { PlayCircle, Loader2 } from "lucide-react";
 
 interface GraphQLQueryEditorProps {
   query: string;
@@ -28,8 +28,12 @@ const GraphQLQueryEditor: React.FC<GraphQLQueryEditorProps> = ({
             onClick={onRun}
             disabled={isRunning}
           >
-            <PlayCircle className="h-4 w-4 mr-2" />
-            Run Query
+            {isRunning ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <PlayCircle className="h-4 w-4 mr-2" />
+            )}
+            {isRunning ? "Running..." : "Run Query"}
           </Button>
         )}
       </div>
