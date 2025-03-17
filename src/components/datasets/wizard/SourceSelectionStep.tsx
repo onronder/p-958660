@@ -4,18 +4,21 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Source } from "@/types/source";
 import { Card } from "@/components/ui/card";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SourceSelectionStepProps {
   sources: Source[];
   selectedSourceId: string;
   onSelectSource: (id: string, name: string) => void;
+  onTestConnection?: () => void;
 }
 
 const SourceSelectionStep: React.FC<SourceSelectionStepProps> = ({
   sources,
   selectedSourceId,
-  onSelectSource
+  onSelectSource,
+  onTestConnection
 }) => {
   if (sources.length === 0) {
     return (
@@ -65,7 +68,7 @@ const SourceSelectionStep: React.FC<SourceSelectionStepProps> = ({
               htmlFor={source.id}
               className="peer-data-[state=checked]:border-primary flex flex-col items-start cursor-pointer rounded-lg border p-4 hover:bg-muted/50 peer-data-[state=checked]:bg-muted"
             >
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 w-full">
                 <div className="flex items-center">
                   <ShoppingBag className="h-4 w-4 mr-2 text-muted-foreground" />
                   <span className="font-medium">{source.name}</span>
@@ -78,6 +81,20 @@ const SourceSelectionStep: React.FC<SourceSelectionStepProps> = ({
           </div>
         ))}
       </RadioGroup>
+      
+      {selectedSourceId && onTestConnection && (
+        <div className="flex justify-end mt-4">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onTestConnection}
+            className="flex items-center gap-2"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Test Connection
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
