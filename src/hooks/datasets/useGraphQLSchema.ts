@@ -34,6 +34,7 @@ export const useGraphQLSchema = (sourceId: string) => {
         
         if (cacheAgeHours < 4) {
           setSchema(cachedSchema.schema);
+          setIsLoading(false);
           return;
         }
       }
