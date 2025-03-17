@@ -18,6 +18,8 @@ export const useGraphQLSchema = (sourceId: string) => {
       setIsLoading(true);
       setError(null);
       
+      console.log("Loading schema for source ID:", sourceId);
+      
       // Check for cached schema first
       const { data: cachedSchema, error: cacheError } = await supabase
         .from("schema_cache")
@@ -33,6 +35,7 @@ export const useGraphQLSchema = (sourceId: string) => {
         const cacheAgeHours = cacheAge / (1000 * 60 * 60);
         
         if (cacheAgeHours < 4) {
+          console.log("Using cached schema, age:", cacheAgeHours.toFixed(2), "hours");
           setSchema(cachedSchema.schema);
           setIsLoading(false);
           return;
@@ -45,6 +48,8 @@ export const useGraphQLSchema = (sourceId: string) => {
       if (!session) {
         throw new Error("No authenticated session");
       }
+      
+      console.log("Fetching fresh schema from Shopify API");
       
       // Call the Shopify schema edge function
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/shopify-schema`, {
@@ -70,6 +75,7 @@ export const useGraphQLSchema = (sourceId: string) => {
         throw new Error("No schema returned from the server");
       }
       
+      console.log("Schema loaded successfully");
       setSchema(data.schema);
       
       // Cache the schema for future use

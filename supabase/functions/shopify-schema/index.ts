@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { corsHeaders, getProductionCorsHeaders } from "../_shared/cors.ts";
+import { validateUser, createSupabaseClient } from "../oauth-callback/helpers.ts";
 
 serve(async (req: Request) => {
   // Handle CORS preflight requests
@@ -13,73 +14,28 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { source_id, api_version } = await req.json();
+    const supabase = createSupabaseClient();
     
-    if (!source_id || !api_version) {
+    // Get user from authorization header
+    const authHeader = req.headers.get("authorization");
+    const user = await validateUser(supabase, authHeader?.replace("Bearer ", ""));
+    
+    // Parse request body
+    const { source_id, api_version = "2023-10" } = await req.json();
+    
+    if (!source_id) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: source_id or api_version" }),
+        JSON.stringify({ error: "Missing required field: source_id" }),
         { 
           status: 400, 
           headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
         }
       );
     }
-
-    // Create a Supabase client with the Supabase URL and service role key
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Get user ID from JWT
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        { 
-          status: 401, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-        }
-      );
-    }
+    console.log("Fetching schema for source ID:", source_id);
     
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Invalid authentication" }),
-        { 
-          status: 401, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-        }
-      );
-    }
-
-    // Check if we already have a cached schema for this source and API version
-    const { data: existingSchema, error: schemaError } = await supabase
-      .from("schema_cache")
-      .select("*")
-      .eq("source_id", source_id)
-      .eq("api_version", api_version)
-      .single();
-    
-    // If we have a recent cache (less than 24 hours old), return it
-    if (existingSchema && !schemaError) {
-      const cacheAge = new Date().getTime() - new Date(existingSchema.cached_at).getTime();
-      const oneDayMs = 24 * 60 * 60 * 1000;
-      
-      if (cacheAge < oneDayMs) {
-        return new Response(
-          JSON.stringify({ schema: existingSchema.schema, cached_at: existingSchema.cached_at, from_cache: true }),
-          { 
-            status: 200, 
-            headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-          }
-        );
-      }
-    }
-    
-    // Get the source details to retrieve Shopify credentials
+    // Get source details
     const { data: source, error: sourceError } = await supabase
       .from("sources")
       .select("*")
@@ -88,6 +44,7 @@ serve(async (req: Request) => {
       .single();
     
     if (sourceError || !source) {
+      console.error("Source error:", sourceError);
       return new Response(
         JSON.stringify({ error: "Source not found or not authorized" }),
         { 
@@ -97,26 +54,30 @@ serve(async (req: Request) => {
       );
     }
     
-    // For Shopify sources, get the credentials
+    // Only handle Shopify sources for now
     if (source.source_type !== "Shopify") {
       return new Response(
-        JSON.stringify({ error: "Only Shopify sources are supported for schema retrieval" }),
+        JSON.stringify({ error: "Only Shopify sources are supported currently" }),
         { 
           status: 400, 
           headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
         }
       );
     }
-
+    
     // Get Shopify credentials
+    const credentialId = source.credentials.credential_id;
+    console.log("Fetching credentials with ID:", credentialId);
+    
     const { data: shopifyCredentials, error: credentialsError } = await supabase
       .from("shopify_credentials")
       .select("*")
-      .eq("id", source.credentials.credential_id)
+      .eq("id", credentialId)
       .eq("user_id", user.id)
       .single();
     
     if (credentialsError || !shopifyCredentials) {
+      console.error("Credentials error:", credentialsError);
       return new Response(
         JSON.stringify({ error: "Shopify credentials not found" }),
         { 
@@ -125,39 +86,95 @@ serve(async (req: Request) => {
         }
       );
     }
-
-    // Create introspection query
+    
+    console.log("Executing introspection query to Shopify store:", shopifyCredentials.store_name);
+    
+    // Execute GraphQL introspection query
     const introspectionQuery = `
       query IntrospectionQuery {
         __schema {
+          queryType { name }
+          mutationType { name }
+          subscriptionType { name }
           types {
+            ...FullType
+          }
+          directives {
             name
             description
+            locations
+            args {
+              ...InputValue
+            }
+          }
+        }
+      }
+      
+      fragment FullType on __Type {
+        kind
+        name
+        description
+        fields(includeDeprecated: true) {
+          name
+          description
+          args {
+            ...InputValue
+          }
+          type {
+            ...TypeRef
+          }
+          isDeprecated
+          deprecationReason
+        }
+        inputFields {
+          ...InputValue
+        }
+        interfaces {
+          ...TypeRef
+        }
+        enumValues(includeDeprecated: true) {
+          name
+          description
+          isDeprecated
+          deprecationReason
+        }
+        possibleTypes {
+          ...TypeRef
+        }
+      }
+      
+      fragment InputValue on __InputValue {
+        name
+        description
+        type { ...TypeRef }
+        defaultValue
+      }
+      
+      fragment TypeRef on __Type {
+        kind
+        name
+        ofType {
+          kind
+          name
+          ofType {
             kind
-            fields {
+            name
+            ofType {
+              kind
               name
-              description
-              type {
-                name
+              ofType {
                 kind
-                ofType {
-                  name
-                  kind
-                  ofType {
-                    name
-                    kind
-                  }
-                }
-              }
-              args {
                 name
-                description
-                type {
-                  name
+                ofType {
                   kind
+                  name
                   ofType {
-                    name
                     kind
+                    name
+                    ofType {
+                      kind
+                      name
+                    }
                   }
                 }
               }
@@ -167,8 +184,8 @@ serve(async (req: Request) => {
       }
     `;
     
-    // Execute GraphQL introspection query against Shopify
     const endpoint = `https://${shopifyCredentials.store_name}.myshopify.com/admin/api/${api_version}/graphql.json`;
+    
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
@@ -179,8 +196,13 @@ serve(async (req: Request) => {
     });
     
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Shopify API error:", response.status, errorText);
       return new Response(
-        JSON.stringify({ error: `Shopify API error: ${response.status} ${response.statusText}` }),
+        JSON.stringify({ 
+          error: `Shopify API error: ${response.status} ${response.statusText}`,
+          details: errorText
+        }),
         { 
           status: response.status, 
           headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
@@ -188,32 +210,29 @@ serve(async (req: Request) => {
       );
     }
     
-    const schemaData = await response.json();
+    const data = await response.json();
     
-    // Process schema for better UX
-    const processedSchema = processSchema(schemaData);
-    
-    // Cache the schema
-    const { data: cachedSchema, error: cacheError } = await supabase
-      .from("schema_cache")
-      .upsert({
-        source_id,
-        api_version,
-        schema: processedSchema,
-        cached_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-    
-    if (cacheError) {
-      console.error("Error caching schema:", cacheError);
+    // Handle GraphQL errors
+    if (data.errors && data.errors.length > 0) {
+      console.error("GraphQL errors:", data.errors);
+      return new Response(
+        JSON.stringify({ 
+          error: "GraphQL error", 
+          details: data.errors 
+        }),
+        { 
+          status: 400, 
+          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+        }
+      );
     }
+    
+    console.log("Schema loaded successfully");
     
     return new Response(
       JSON.stringify({ 
-        schema: processedSchema, 
-        cached_at: new Date().toISOString(),
-        from_cache: false 
+        schema: data.data.__schema,
+        api_version
       }),
       { 
         status: 200, 
@@ -221,7 +240,7 @@ serve(async (req: Request) => {
       }
     );
   } catch (error) {
-    console.error("Schema caching error:", error);
+    console.error("Schema loading error:", error);
     
     return new Response(
       JSON.stringify({ error: error.message || "An unknown error occurred" }),
@@ -232,55 +251,3 @@ serve(async (req: Request) => {
     );
   }
 });
-
-// Helper function to organize schema into categories
-function processSchema(schemaData: any) {
-  if (!schemaData.data || !schemaData.data.__schema) {
-    throw new Error("Invalid schema data");
-  }
-  
-  const types = schemaData.data.__schema.types;
-  
-  // Filter out internal GraphQL types
-  const filteredTypes = types.filter((type: any) => {
-    return (
-      type.name && 
-      !type.name.startsWith("__") && 
-      type.fields &&
-      (type.kind === "OBJECT" || type.kind === "INTERFACE")
-    );
-  });
-  
-  // Create categories
-  const categories: Record<string, any[]> = {
-    Products: [],
-    Customers: [],
-    Orders: [],
-    Collections: [],
-    Inventory: [],
-    Other: []
-  };
-  
-  // Sort types into categories based on name
-  filteredTypes.forEach((type: any) => {
-    if (type.name.includes("Product")) {
-      categories.Products.push(type);
-    } else if (type.name.includes("Customer")) {
-      categories.Customers.push(type);
-    } else if (type.name.includes("Order")) {
-      categories.Orders.push(type);
-    } else if (type.name.includes("Collection")) {
-      categories.Collections.push(type);
-    } else if (type.name.includes("Inventory")) {
-      categories.Inventory.push(type);
-    } else {
-      categories.Other.push(type);
-    }
-  });
-  
-  return {
-    categories,
-    allTypes: filteredTypes,
-    rawSchema: schemaData
-  };
-}

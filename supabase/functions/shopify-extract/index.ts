@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { corsHeaders, getProductionCorsHeaders } from "../_shared/cors.ts";
@@ -27,6 +28,28 @@ serve(async (req: Request) => {
       preview_only = false, 
       limit = preview_only ? 5 : 250
     } = await req.json();
+    
+    if (extraction_id === "preview") {
+      // For direct preview requests, we'll handle them differently
+      if (!custom_query || !source_id) {
+        return new Response(
+          JSON.stringify({ error: "Missing required fields for preview: custom_query and source_id" }),
+          { 
+            status: 400, 
+            headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          }
+        );
+      }
+      
+      return handlePreviewRequest({
+        user,
+        supabase,
+        source_id,
+        custom_query,
+        limit,
+        responseCorsHeaders
+      });
+    }
     
     if (!extraction_id) {
       return new Response(
@@ -287,7 +310,7 @@ serve(async (req: Request) => {
   }
 });
 
-// Add new function for handling preview requests
+// Update the handlePreviewRequest function with better error handling
 async function handlePreviewRequest({
   user,
   supabase,
@@ -297,6 +320,8 @@ async function handlePreviewRequest({
   responseCorsHeaders
 }) {
   try {
+    console.log("Processing preview request for source:", source_id);
+    
     // Get source details
     const { data: source, error: sourceError } = await supabase
       .from("sources")
@@ -306,6 +331,7 @@ async function handlePreviewRequest({
       .single();
     
     if (sourceError || !source) {
+      console.error("Source error:", sourceError);
       return new Response(
         JSON.stringify({ error: "Source not found or not authorized" }),
         { 
@@ -328,6 +354,8 @@ async function handlePreviewRequest({
     
     // Get Shopify credentials
     const credentialId = source.credentials.credential_id;
+    console.log("Fetching credentials with ID:", credentialId);
+    
     const { data: shopifyCredentials, error: credentialsError } = await supabase
       .from("shopify_credentials")
       .select("*")
@@ -336,6 +364,7 @@ async function handlePreviewRequest({
       .single();
     
     if (credentialsError || !shopifyCredentials) {
+      console.error("Credentials error:", credentialsError);
       return new Response(
         JSON.stringify({ error: "Shopify credentials not found" }),
         { 
@@ -345,10 +374,15 @@ async function handlePreviewRequest({
       );
     }
     
+    console.log("Executing GraphQL query to Shopify store:", shopifyCredentials.store_name);
+    
     // Execute the query directly
     const variables = { first: limit };
     const apiVersion = "2023-10"; // Could be made configurable
     const endpoint = `https://${shopifyCredentials.store_name}.myshopify.com/admin/api/${apiVersion}/graphql.json`;
+    
+    // Log query for debugging
+    console.log("GraphQL query:", custom_query);
     
     const response = await fetch(endpoint, {
       method: "POST",
@@ -361,6 +395,7 @@ async function handlePreviewRequest({
     
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("Shopify API error:", response.status, errorText);
       return new Response(
         JSON.stringify({ 
           error: `Shopify API error: ${response.status} ${response.statusText}`,
@@ -377,6 +412,7 @@ async function handlePreviewRequest({
     
     // Handle GraphQL errors
     if (data.errors && data.errors.length > 0) {
+      console.error("GraphQL errors:", data.errors);
       return new Response(
         JSON.stringify({ 
           error: "GraphQL error", 
@@ -391,6 +427,7 @@ async function handlePreviewRequest({
     
     // Extract results
     const results = extractResults(data.data);
+    console.log("Successfully extracted results:", results.length);
     
     return new Response(
       JSON.stringify({ 
