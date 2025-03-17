@@ -15,7 +15,7 @@ const DatasetDetails = () => {
     setTemplateName,
     customQuery,
     setCustomQuery
-  } = useCreateDataset();
+  } = useCreateDataset(() => {});
   
   const [activeTab, setActiveTab] = useState(datasetType);
   

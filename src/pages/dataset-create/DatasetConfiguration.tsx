@@ -10,7 +10,9 @@ import { SaveAll, ArrowLeft, Tags, Calendar, Bell } from "lucide-react";
 
 const DatasetConfiguration = () => {
   const navigate = useNavigate();
-  const { name, setName, createDataset, isSubmitting } = useCreateDataset();
+  const { name, setName, createDataset, isSubmitting } = useCreateDataset(() => {
+    navigate("/my-datasets");
+  });
   const [submitted, setSubmitted] = useState(false);
   
   const handleBack = () => {
@@ -29,11 +31,8 @@ const DatasetConfiguration = () => {
       return;
     }
     
-    const success = await createDataset();
-    
-    if (success) {
-      navigate("/my-datasets");
-    }
+    await createDataset();
+    // Navigation is handled in the callback to useCreateDataset
   };
   
   return (

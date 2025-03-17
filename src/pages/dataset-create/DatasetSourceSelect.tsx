@@ -8,7 +8,7 @@ import { ShoppingBag, Database, Server } from "lucide-react";
 
 const DatasetSourceSelect = () => {
   const navigate = useNavigate();
-  const { sources, sourceId, setSourceId, setSourceName } = useCreateDataset();
+  const { sources, sourceId, setSourceId, setSourceName } = useCreateDataset(() => {});
   
   const handleSourceSelect = (id: string, name: string) => {
     setSourceId(id);
@@ -31,9 +31,9 @@ const DatasetSourceSelect = () => {
   
   // Function to get an icon based on source type
   const getSourceIcon = (source: Source) => {
-    if (source.type === "shopify") {
+    if (source.source_type === "shopify") {
       return <ShoppingBag className="h-8 w-8" />;
-    } else if (source.type === "database") {
+    } else if (source.source_type === "database") {
       return <Database className="h-8 w-8" />;
     }
     return <Server className="h-8 w-8" />;
@@ -82,7 +82,7 @@ const DatasetSourceSelect = () => {
                   <h3 className="font-medium text-lg">{source.name}</h3>
                   <p className="text-sm text-muted-foreground">{source.url}</p>
                   <div className="text-xs mt-2 inline-block bg-muted px-2 py-1 rounded">
-                    {source.type}
+                    {source.source_type}
                   </div>
                 </div>
               </div>

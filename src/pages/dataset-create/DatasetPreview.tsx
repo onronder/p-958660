@@ -7,7 +7,7 @@ import { Loader2, RefreshCw, CheckCircle2, ArrowLeft, ArrowRight } from "lucide-
 
 const DatasetPreview = () => {
   const navigate = useNavigate();
-  const { previewData, isLoading, generatePreview } = useCreateDataset();
+  const { previewData, isLoading, generatePreview } = useCreateDataset(() => {});
   
   useEffect(() => {
     generatePreview();

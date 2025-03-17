@@ -8,7 +8,7 @@ import { useCreateDataset } from "@/hooks/useCreateDataset";
 const CreateDatasetPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { resetState } = useCreateDataset();
+  const { resetState } = useCreateDataset(() => {});
   
   // Get the current step from the URL
   const getCurrentStep = () => {

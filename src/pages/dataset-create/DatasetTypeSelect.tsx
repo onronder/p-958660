@@ -7,7 +7,7 @@ import { FileIcon, FileLineChart, FileEdit } from "lucide-react";
 
 const DatasetTypeSelect = () => {
   const navigate = useNavigate();
-  const { datasetType, setDatasetType, sourceId } = useCreateDataset();
+  const { datasetType, setDatasetType, sourceId } = useCreateDataset(() => {});
   
   const handleTypeSelect = (type: "predefined" | "dependent" | "custom") => {
     setDatasetType(type);
