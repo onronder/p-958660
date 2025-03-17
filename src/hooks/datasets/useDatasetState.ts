@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Source } from "@/types/source";
 
 /**
@@ -8,12 +8,21 @@ import { Source } from "@/types/source";
 export const useDatasetState = () => {
   // Use sessionStorage to persist state between page navigations
   const getStoredState = <T>(key: string, defaultValue: T): T => {
-    const stored = sessionStorage.getItem(`dataset_${key}`);
-    return stored ? JSON.parse(stored) : defaultValue;
+    try {
+      const stored = sessionStorage.getItem(`dataset_${key}`);
+      return stored ? JSON.parse(stored) : defaultValue;
+    } catch (error) {
+      console.error(`Error retrieving stored state for ${key}:`, error);
+      return defaultValue;
+    }
   };
 
   const setStoredState = <T>(key: string, value: T) => {
-    sessionStorage.setItem(`dataset_${key}`, JSON.stringify(value));
+    try {
+      sessionStorage.setItem(`dataset_${key}`, JSON.stringify(value));
+    } catch (error) {
+      console.error(`Error storing state for ${key}:`, error);
+    }
     return value;
   };
 
@@ -27,34 +36,51 @@ export const useDatasetState = () => {
   const [name, setNameState] = useState(() => getStoredState('name', ''));
   const [previewData, setPreviewDataState] = useState<any[]>(() => getStoredState('previewData', []));
   
+  // Sync state with session storage on component mount
+  useEffect(() => {
+    console.log("useDatasetState: Initial state loaded", {
+      sourceId,
+      sourceName,
+      datasetType,
+      templateName
+    });
+  }, []);
+  
   // Wrapper setters that also update sessionStorage
   const setSourceId = (id: string) => {
     console.log("Setting sourceId in storage:", id);
-    setSourceIdState(setStoredState('sourceId', id));
+    setStoredState('sourceId', id);
+    setSourceIdState(id);
   };
   
   const setSourceName = (name: string) => {
-    setSourceNameState(setStoredState('sourceName', name));
+    setStoredState('sourceName', name);
+    setSourceNameState(name);
   };
   
   const setDatasetType = (type: "predefined" | "dependent" | "custom") => {
-    setDatasetTypeState(setStoredState('datasetType', type));
+    setStoredState('datasetType', type);
+    setDatasetTypeState(type);
   };
   
   const setTemplateName = (name: string) => {
-    setTemplateNameState(setStoredState('templateName', name));
+    setStoredState('templateName', name);
+    setTemplateNameState(name);
   };
   
   const setCustomQuery = (query: string) => {
-    setCustomQueryState(setStoredState('customQuery', query));
+    setStoredState('customQuery', query);
+    setCustomQueryState(query);
   };
   
   const setName = (name: string) => {
-    setNameState(setStoredState('name', name));
+    setStoredState('name', name);
+    setNameState(name);
   };
   
   const setPreviewData = (data: any[]) => {
-    setPreviewDataState(setStoredState('previewData', data));
+    setStoredState('previewData', data);
+    setPreviewDataState(data);
   };
   
   const resetState = () => {

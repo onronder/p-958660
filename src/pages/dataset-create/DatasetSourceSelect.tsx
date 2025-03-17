@@ -16,19 +16,22 @@ const DatasetSourceSelect = () => {
     connectionTestResult
   } = useCreateDataset(() => {});
   
-  const handleNext = () => {
-    if (sourceId) {
-      console.log("Navigating to dataset type selection with sourceId:", sourceId);
-      navigate("/create-dataset/type");
-    } else {
-      toast.error("Please select a data source first");
-    }
-  };
-
   // Log when component mounts to help with debugging
   useEffect(() => {
     console.log("DatasetSourceSelect mounted with sourceId:", sourceId);
   }, [sourceId]);
+  
+  const handleNext = () => {
+    if (sourceId) {
+      console.log("Navigating to dataset type selection with sourceId:", sourceId);
+      // Force a direct navigation rather than relying on state updates
+      setTimeout(() => {
+        navigate("/create-dataset/type");
+      }, 10);
+    } else {
+      toast.error("Please select a data source first");
+    }
+  };
   
   return (
     <div className="space-y-6">

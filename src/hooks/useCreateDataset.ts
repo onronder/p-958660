@@ -58,14 +58,32 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
   // Handle source selection
   const handleSourceSelect = (id: string, name: string) => {
     console.log("useCreateDataset: Setting source", id, name);
+    // Ensure we update both state variables
     setSourceId(id);
     setSourceName(name);
+    
+    // Log the state after setting
+    setTimeout(() => {
+      console.log("useCreateDataset: Source state after update:", { 
+        sourceId: id, 
+        sourceName: name,
+        storedSourceId: sessionStorage.getItem('dataset_sourceId')
+      });
+    }, 0);
   };
   
   // Handle dataset type selection
   const handleTypeSelect = (type: "predefined" | "dependent" | "custom") => {
     console.log("useCreateDataset: Setting dataset type", type);
     setDatasetType(type);
+    
+    // Log the state after setting
+    setTimeout(() => {
+      console.log("useCreateDataset: Dataset type after update:", { 
+        datasetType: type,
+        storedDatasetType: sessionStorage.getItem('dataset_datasetType')
+      });
+    }, 0);
   };
   
   return {

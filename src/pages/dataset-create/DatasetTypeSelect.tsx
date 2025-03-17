@@ -13,12 +13,22 @@ const DatasetTypeSelect = () => {
   // Log component mount for debugging
   useEffect(() => {
     console.log("DatasetTypeSelect mounted with sourceId:", sourceId, "datasetType:", datasetType);
-  }, [sourceId, datasetType]);
+    
+    // If no source is selected, redirect to source selection
+    if (!sourceId) {
+      console.log("No source ID found, redirecting to source selection");
+      toast.error("Please select a data source first");
+      navigate("/create-dataset/source");
+    }
+  }, [sourceId, datasetType, navigate]);
   
   const handleNext = () => {
     if (datasetType) {
       console.log("Navigating to details with datasetType:", datasetType);
-      navigate("/create-dataset/details");
+      // Force a direct navigation rather than relying on state updates
+      setTimeout(() => {
+        navigate("/create-dataset/details");
+      }, 10);
     } else {
       toast.error("Please select a dataset type");
     }
@@ -51,14 +61,6 @@ const DatasetTypeSelect = () => {
       color: "bg-blue-100 text-blue-600"
     }
   ];
-  
-  // If no source is selected, redirect to source selection
-  useEffect(() => {
-    if (!sourceId) {
-      console.log("No source ID found, redirecting to source selection");
-      navigate("/create-dataset/source");
-    }
-  }, [sourceId, navigate]);
   
   if (!sourceId) {
     return (
