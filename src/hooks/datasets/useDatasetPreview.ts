@@ -1,166 +1,224 @@
 
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 
+/**
+ * Hook to handle dataset preview generation
+ */
 export const useDatasetPreview = (
   sourceId: string,
-  datasetType: "predefined" | "dependent" | "custom",
+  datasetType: "predefined" | "dependent" | "custom" | undefined,
   templateName: string,
   customQuery: string,
   setPreviewData: (data: any[]) => void
 ) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [connectionTestResult, setConnectionTestResult] = useState<{ success: boolean; message: string } | undefined>(undefined);
+  const [connectionTestResult, setConnectionTestResult] = useState<{
+    success: boolean;
+    message: string;
+  } | undefined>(undefined);
 
+  /**
+   * Test connection to the source
+   */
   const testConnection = useCallback(async () => {
     if (!sourceId) {
-      toast({
-        title: "No source selected",
-        description: "Please select a data source first",
-        variant: "destructive",
-      });
+      setError("Please select a source first");
       return;
     }
 
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      const { data, error: testError } = await supabase.functions.invoke("shopify-schema", {
-        body: { 
+      const { data, error: functionError } = await supabase.functions.invoke("shopify-extract", {
+        body: {
+          extraction_id: "preview",
           source_id: sourceId,
-          test_only: true
+          custom_query: `
+            query {
+              shop {
+                name
+                myshopifyDomain
+              }
+            }
+          `,
+          preview_only: true,
+          limit: 1
         }
       });
-      
-      if (testError || (data && data.error)) {
-        const errorMessage = testError?.message || data?.error || "Failed to connect to GraphQL API";
+
+      if (functionError) {
+        console.error("Connection test error:", functionError);
         setConnectionTestResult({
           success: false,
-          message: errorMessage
-        });
-        
-        toast({
-          title: "Connection Test Failed",
-          description: errorMessage,
-          variant: "destructive",
+          message: functionError.message || "Connection failed. Please check your credentials and try again."
         });
         return;
       }
-      
+
+      if (data.error) {
+        console.error("Connection test API error:", data.error);
+        setConnectionTestResult({
+          success: false,
+          message: data.error || "Connection failed. Please check your credentials and try again."
+        });
+        return;
+      }
+
+      console.log("Connection test successful:", data);
       setConnectionTestResult({
         success: true,
-        message: "Successfully connected to the Shopify GraphQL API"
+        message: "Successfully connected to Shopify store."
       });
       
-      toast({
-        title: "Connection Test Successful",
-        description: "Successfully connected to the Shopify GraphQL API",
-      });
-    } catch (err) {
-      console.error("Error testing connection:", err);
-      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
-      
+    } catch (err: any) {
+      console.error("Connection test exception:", err);
       setConnectionTestResult({
         success: false,
-        message: errorMessage
-      });
-      
-      toast({
-        title: "Connection Test Failed",
-        description: errorMessage,
-        variant: "destructive",
+        message: err.message || "Connection failed. Please check your credentials and try again."
       });
     } finally {
       setIsLoading(false);
     }
   }, [sourceId]);
 
+  /**
+   * Generate a preview based on the dataset type and settings
+   */
   const generatePreview = useCallback(async () => {
+    // Get effective values, trying backup values from session storage if needed
+    const effectiveSourceId = sourceId || JSON.parse(sessionStorage.getItem('dataset_sourceId_backup') || 'null');
+    const effectiveDatasetType = datasetType || JSON.parse(sessionStorage.getItem('dataset_datasetType_backup') || 'null');
+    const effectiveTemplateName = templateName || JSON.parse(sessionStorage.getItem('dataset_templateName_backup') || 'null');
+    const effectiveCustomQuery = customQuery || JSON.parse(sessionStorage.getItem('dataset_customQuery_backup') || 'null');
+    
+    console.log("GeneratePreview called with:", {
+      effectiveSourceId,
+      effectiveDatasetType,
+      effectiveTemplateName,
+      effectiveCustomQuery
+    });
+    
+    if (!effectiveSourceId) {
+      setError("Please select a source first");
+      return;
+    }
+
+    // Check if we have the necessary data based on dataset type
+    if (effectiveDatasetType === "predefined" || effectiveDatasetType === "dependent") {
+      if (!effectiveTemplateName) {
+        setError("Please select a template");
+        return;
+      }
+    } else if (effectiveDatasetType === "custom") {
+      if (!effectiveCustomQuery) {
+        setError("Please enter a custom query");
+        return;
+      }
+    } else {
+      setError("Please select a dataset type");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setPreviewData([]);
+    
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Validate that we have a source ID
-      if (!sourceId) {
-        setError("No source selected. Please select a data source first.");
-        return;
-      }
-      
-      // Check that we have the necessary parameters based on dataset type
-      if ((datasetType === "predefined" || datasetType === "dependent") && !templateName) {
-        setError("No template selected. Please select a template first.");
-        return;
-      }
-      
-      if (datasetType === "custom" && !customQuery) {
-        setError("No query provided. Please enter a custom query.");
-        return;
-      }
-      
-      // Prepare the request payload based on the dataset type
-      let endpoint, payload;
-      
-      if (datasetType === "predefined") {
-        endpoint = "shopify-extract";
-        payload = {
-          source_id: sourceId,
-          template_name: templateName,
-          preview_only: true
-        };
-      } else if (datasetType === "dependent") {
-        endpoint = "shopify-dependent";
-        payload = {
-          source_id: sourceId,
-          extraction_id: templateName, // In dependent queries, templateName is used as extraction_id
-          preview_only: true
-        };
-      } else {
-        endpoint = "shopify-extract";
-        payload = {
-          source_id: sourceId,
-          custom_query: customQuery,
-          preview_only: true
-        };
-      }
-      
-      console.log("Generating preview with payload:", payload);
-      
-      // Call the appropriate endpoint to get preview data
-      const { data, error: previewError } = await supabase.functions.invoke(endpoint, {
-        body: payload
+      console.log("Fetching preview data for:", {
+        sourceId: effectiveSourceId,
+        datasetType: effectiveDatasetType,
+        templateName: effectiveTemplateName,
+        customQuery: effectiveCustomQuery
       });
       
-      if (previewError) {
-        console.error("Preview error:", previewError);
-        setError(previewError.message || "Failed to generate preview.");
+      // Build the request body based on dataset type
+      let queryBody: any = {
+        extraction_id: "preview",
+        source_id: effectiveSourceId,
+        preview_only: true,
+        limit: 5
+      };
+      
+      if (effectiveDatasetType === "custom") {
+        queryBody.custom_query = effectiveCustomQuery;
+      } else if (effectiveDatasetType === "predefined" || effectiveDatasetType === "dependent") {
+        if (effectiveDatasetType === "dependent") {
+          const { data, error: functionError } = await supabase.functions.invoke("shopify-dependent", {
+            body: {
+              ...queryBody,
+              template_name: effectiveTemplateName
+            }
+          });
+          
+          if (functionError) {
+            console.error("Preview error:", functionError);
+            setError(functionError.message || "Failed to generate preview");
+            return;
+          }
+          
+          if (data.error) {
+            console.error("Preview API error:", data.error);
+            setError(data.error || "Failed to generate preview");
+            return;
+          }
+          
+          console.log("Preview data received:", data);
+          setPreviewData(data.results || []);
+          return;
+        } else {
+          // For predefined queries
+          const { data, error: functionError } = await supabase.functions.invoke("shopify-extract", {
+            body: {
+              ...queryBody,
+              template_name: effectiveTemplateName,
+              extraction_type: "predefined"
+            }
+          });
+          
+          if (functionError) {
+            console.error("Preview error:", functionError);
+            setError(functionError.message || "Failed to generate preview");
+            return;
+          }
+          
+          if (data.error) {
+            console.error("Preview API error:", data.error);
+            setError(data.error || "Failed to generate preview");
+            return;
+          }
+          
+          console.log("Preview data received:", data);
+          setPreviewData(data.results || []);
+          return;
+        }
+      }
+      
+      // Default case for direct custom query
+      const { data, error: functionError } = await supabase.functions.invoke("shopify-extract", {
+        body: queryBody
+      });
+      
+      if (functionError) {
+        console.error("Preview error:", functionError);
+        setError(functionError.message || "Failed to generate preview");
         return;
       }
       
       if (data.error) {
-        console.error("Preview data error:", data.error);
-        setError(data.error);
+        console.error("Preview API error:", data.error);
+        setError(data.error || "Failed to generate preview");
         return;
       }
       
-      // Set the preview data
-      if (data.results) {
-        console.log("Preview data received:", data.results);
-        setPreviewData(data.results);
-      } else {
-        setError("No preview data returned.");
-      }
-    } catch (err) {
-      console.error("Error generating preview:", err);
-      setError("An unexpected error occurred while generating the preview.");
+      console.log("Preview data received:", data);
+      setPreviewData(data.results || []);
       
-      toast({
-        title: "Preview Generation Failed",
-        description: "Could not generate dataset preview. Please try again.",
-        variant: "destructive",
-      });
+    } catch (err: any) {
+      console.error("Preview exception:", err);
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }

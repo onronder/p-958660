@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Source } from "@/types/source";
 
@@ -15,13 +16,20 @@ export const useDatasetState = () => {
       if (backupValue) {
         // If we have a backup value, use it and also save it to the regular key
         const parsedValue = JSON.parse(backupValue);
-        sessionStorage.setItem(`dataset_${key}`, backupValue);
+        sessionStorage.setItem(`dataset_${key}`, JSON.stringify(parsedValue));
+        console.log(`Retrieved ${key} from backup:`, parsedValue);
         return parsedValue;
       }
       
       // Otherwise use the regular stored value
       const stored = sessionStorage.getItem(`dataset_${key}`);
-      return stored ? JSON.parse(stored) : defaultValue;
+      if (stored) {
+        const parsedValue = JSON.parse(stored);
+        console.log(`Retrieved ${key} from session storage:`, parsedValue);
+        return parsedValue;
+      }
+      
+      return defaultValue;
     } catch (error) {
       console.error(`Error retrieving stored state for ${key}:`, error);
       return defaultValue;
@@ -31,9 +39,11 @@ export const useDatasetState = () => {
   const setStoredState = <T>(key: string, value: T) => {
     try {
       const valueStr = JSON.stringify(value);
+      
+      // Store in both regular and backup locations
       sessionStorage.setItem(`dataset_${key}`, valueStr);
-      // Also save as backup
       sessionStorage.setItem(`dataset_${key}_backup`, valueStr);
+      
       console.log(`Stored ${key} in session storage:`, value);
     } catch (error) {
       console.error(`Error storing state for ${key}:`, error);
@@ -51,15 +61,18 @@ export const useDatasetState = () => {
   const [name, setNameState] = useState(() => getStoredState('name', ''));
   const [previewData, setPreviewDataState] = useState<any[]>(() => getStoredState('previewData', []));
   
-  // Sync state with session storage on component mount
+  // Debug log state on init
   useEffect(() => {
     console.log("useDatasetState: Initial state loaded", {
       sourceId,
       sourceName,
       datasetType,
       templateName,
+      customQuery,
       backupSourceId: sessionStorage.getItem('dataset_sourceId_backup'),
-      backupSourceName: sessionStorage.getItem('dataset_sourceName_backup')
+      backupSourceName: sessionStorage.getItem('dataset_sourceName_backup'),
+      backupDatasetType: sessionStorage.getItem('dataset_datasetType_backup'),
+      backupTemplateName: sessionStorage.getItem('dataset_templateName_backup')
     });
   }, []);
   
@@ -81,6 +94,7 @@ export const useDatasetState = () => {
   };
   
   const setTemplateName = (name: string) => {
+    console.log("Setting templateName in storage:", name);
     setStoredState('templateName', name);
     setTemplateNameState(name);
   };
