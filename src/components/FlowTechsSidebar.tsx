@@ -19,7 +19,7 @@ import { useAuth } from "@/contexts/AuthContext"
 // Create a simple MainNav component
 const MainNav = ({ className }: { className?: string }) => (
   <div className={className}>
-    <h1 className="text-xl font-bold">FlowTechs</h1>
+    <h1 className="text-xl font-bold text-primary">FlowTechs</h1>
   </div>
 );
 
@@ -42,88 +42,90 @@ export function FlowTechsSidebar({ onLogout, className }: FlowTechsSidebarProps)
     {
       title: "Dashboard",
       href: "/dashboard",
-      icon: <LayoutDashboard />
+      icon: <LayoutDashboard className="h-5 w-5" />
     },
     {
       title: "My Sources",
       href: "/sources",
-      icon: <Database />
+      icon: <Database className="h-5 w-5" />
     },
     {
       title: "My Datasets",
       href: "/my-datasets",
-      icon: <FileText />
+      icon: <FileText className="h-5 w-5" />
     },
     {
       title: "Transformations",
       href: "/transform",
-      icon: <Waves />
+      icon: <Waves className="h-5 w-5" />
     },
     {
       title: "Destinations",
       href: "/destinations",
-      icon: <HardDrive />
+      icon: <HardDrive className="h-5 w-5" />
     },
     {
       title: "Jobs",
       href: "/jobs",
-      icon: <CalendarClock />
+      icon: <CalendarClock className="h-5 w-5" />
     },
     {
       title: "Analytics",
       href: "/analytics",
-      icon: <BarChartHorizontal />
+      icon: <BarChartHorizontal className="h-5 w-5" />
     },
     {
       title: "Settings",
       href: "/settings",
-      icon: <Settings />
+      icon: <Settings className="h-5 w-5" />
     },
     {
       title: "Help",
       href: "/help",
-      icon: <HelpCircle />
+      icon: <HelpCircle className="h-5 w-5" />
     }
   ];
 
   return (
-    <div className="fixed h-screen w-64 border-r bg-background px-4 py-6">
+    <div className="fixed h-screen w-64 border-r bg-card shadow-sm px-4 py-6 z-10">
       <div className="flex flex-col space-y-4 py-4">
         <div className="px-3 py-2">
           <MainNav className="flex flex-col" />
         </div>
         <div className="flex-1 space-y-1">
-          {sidebarItems?.length ? (
+          {sidebarItems?.length > 0 && (
             <div className="space-y-1">
               {sidebarItems.map((item) => (
                 <NavLink
                   key={item.title}
                   to={item.href}
-                  className={({ isActive }) => `flex items-center text-sm font-medium py-2 px-3 rounded-lg hover:bg-secondary ${
-                    isActive ? "bg-secondary" : "text-foreground"
+                  className={({ isActive }) => `flex items-center text-sm font-medium py-2 px-3 rounded-lg transition-all duration-200 ${
+                    isActive 
+                      ? "bg-primary/10 text-primary font-semibold" 
+                      : "text-foreground hover:bg-secondary/80"
                   }`}
                 >
                   {item.icon && (
-                    <span className="mr-2 h-4 w-4">{item.icon}</span>
+                    <span className="mr-3 h-5 w-5">{item.icon}</span>
                   )}
                   {item.title}
                 </NavLink>
               ))}
             </div>
-          ) : null}
+          )}
         </div>
         {onLogout && (
-          <div className="px-3 mt-6">
+          <div className="px-3 mt-6 border-t pt-4">
             <button 
               onClick={onLogout} 
-              className="flex items-center text-sm font-medium py-2 px-3 rounded-lg hover:bg-secondary text-foreground w-full text-left"
+              className="flex items-center text-sm font-medium py-2 px-3 rounded-lg hover:bg-secondary/80 text-foreground w-full text-left"
             >
-              <User className="mr-2 h-4 w-4" />
+              <User className="mr-3 h-5 w-5" />
               Logout
             </button>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }

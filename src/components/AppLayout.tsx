@@ -75,35 +75,37 @@ const AppLayout = () => {
   return (
     <div className="flex min-h-screen bg-background">
       <FlowTechsSidebar onLogout={handleLogout} />
-      <main className="flex-1 ml-64 p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-end mb-6">
-            <NotificationSidebar />
-          </div>
-          
-          {isLoading && !profile && (
-            <div className="flex justify-center items-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="ml-2">Loading profile...</span>
+      <div className="flex-1 ml-64 overflow-auto">
+        <main className="p-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex justify-end mb-6">
+              <NotificationSidebar />
             </div>
-          )}
-          
-          {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertCircle className="h-5 w-5 mr-2" />
-              <div className="flex-1">
-                <AlertTitle>Profile Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
+            
+            {isLoading && !profile && (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Loading profile...</span>
               </div>
-              <Button variant="destructive" size="sm" onClick={handleTryAgain}>
-                Try Again
-              </Button>
-            </Alert>
-          )}
-          
-          <Outlet />
-        </div>
-      </main>
+            )}
+            
+            {error && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-5 w-5 mr-2" />
+                <div className="flex-1">
+                  <AlertTitle>Profile Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </div>
+                <Button variant="destructive" size="sm" onClick={handleTryAgain}>
+                  Try Again
+                </Button>
+              </Alert>
+            )}
+            
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
