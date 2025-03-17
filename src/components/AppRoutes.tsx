@@ -23,6 +23,7 @@ import Storage from "@/pages/Storage";
 import Notifications from "@/pages/Notifications";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MyDatasets from "@/pages/MyDatasets";
+import AppLayout from "@/components/AppLayout";
 
 export function AppRoutes() {
   // Define the callback functions for Login and Register components
@@ -44,23 +45,25 @@ export function AppRoutes() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       
-      {/* Protected routes */}
+      {/* Protected routes wrapped in AppLayout */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/sources" element={<Sources />} />
-        <Route path="/my-datasets" element={<MyDatasets />} />
-        <Route path="/transform" element={<Transformations />} />
-        <Route path="/destinations" element={<Destinations />} />
-        <Route path="/jobs" element={<Jobs />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/settings/profile" element={<Profile />} />
-        <Route path="/settings/api-keys" element={<ApiKeys />} />
-        <Route path="/settings/users" element={<Users />} />
-        <Route path="/settings/webhooks" element={<Webhooks />} />
-        <Route path="/help" element={<Help />} />
-        <Route path="/storage" element={<Storage />} />
-        <Route path="/notifications" element={<Notifications />} />
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/sources" element={<Sources />} />
+          <Route path="/my-datasets" element={<MyDatasets />} />
+          <Route path="/transform" element={<Transformations />} />
+          <Route path="/destinations" element={<Destinations />} />
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/profile" element={<Profile />} />
+          <Route path="/settings/api-keys" element={<ApiKeys />} />
+          <Route path="/settings/users" element={<Users />} />
+          <Route path="/settings/webhooks" element={<Webhooks />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/storage" element={<Storage />} />
+          <Route path="/notifications" element={<Notifications />} />
+        </Route>
       </Route>
       
       {/* Fallback route */}
