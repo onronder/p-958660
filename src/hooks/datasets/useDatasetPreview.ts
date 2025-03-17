@@ -14,15 +14,22 @@ export const useDatasetPreview = (
   setPreviewData: (data: any[]) => void
 ) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const generatePreview = useCallback(async () => {
     try {
+      if (!sourceId) {
+        throw new Error("No source selected. Please select a source first.");
+      }
+      
       setIsLoading(true);
+      setError(null);
+      console.log("Generating preview for source:", sourceId, "type:", datasetType);
       
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!user) {
+      if (!session) {
         throw new Error("User not authenticated");
       }
       
@@ -31,7 +38,7 @@ export const useDatasetPreview = (
         .from("extractions")
         .insert({
           name: "Preview Dataset",
-          user_id: user.id,
+          user_id: session.user.id,
           source_id: sourceId,
           extraction_type: datasetType,
           template_name: datasetType === "custom" ? null : templateName,
@@ -42,20 +49,18 @@ export const useDatasetPreview = (
         .single();
       
       if (extractionError || !extraction) {
+        console.error("Failed to create preview extraction:", extractionError);
         throw new Error("Failed to create preview extraction");
       }
       
-      // Get session for authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error("No authenticated session");
-      }
+      console.log("Created preview extraction with ID:", extraction.id);
       
       // Determine which endpoint to use based on extraction type
       const endpoint = datasetType === "dependent"
         ? "shopify-dependent"
         : "shopify-extract";
+      
+      console.log("Calling edge function:", endpoint);
       
       // Call the appropriate edge function with preview flag
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`, {
@@ -76,6 +81,7 @@ export const useDatasetPreview = (
       }
       
       const data = await response.json();
+      console.log("Preview data received:", data);
       
       // Set preview data
       setPreviewData(data.results || []);
@@ -88,6 +94,7 @@ export const useDatasetPreview = (
       
     } catch (error) {
       console.error("Error generating preview:", error);
+      setError(error.message);
       toast({
         title: "Error",
         description: "Failed to generate preview: " + error.message,
@@ -101,6 +108,7 @@ export const useDatasetPreview = (
   
   return {
     isLoading,
+    error,
     generatePreview
   };
 };

@@ -1,17 +1,20 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DataPreviewStepProps {
   isLoading: boolean;
   previewData: any[];
+  error?: string | null;
   onRegeneratePreview: () => void;
 }
 
 const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
   isLoading,
   previewData,
+  error,
   onRegeneratePreview
 }) => {
   return (
@@ -32,6 +35,15 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
           Refresh Preview
         </Button>
       </div>
+      
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
       
       <div className="border rounded-md overflow-hidden">
         {isLoading ? (
@@ -65,7 +77,10 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
           </div>
         ) : (
           <div className="flex items-center justify-center h-40 text-muted-foreground">
-            No preview data available. Try refreshing the preview.
+            {error ? 
+              "Preview generation failed. Try refreshing or check your source configuration." : 
+              "No preview data available. Try refreshing the preview."
+            }
           </div>
         )}
       </div>

@@ -2,14 +2,15 @@
 import React from "react";
 import SourceSelectionStep from "./SourceSelectionStep";
 import DatasetTypeStep from "./DatasetTypeStep";
-import StepSelector from "./StepSelector";
+import PredefinedDatasetStep from "./PredefinedDatasetStep";
+import DependentDatasetStep from "./DependentDatasetStep";
+import CustomDatasetStep from "./CustomDatasetStep";
 import DataPreviewStep from "./DataPreviewStep";
 import ConfigurationStep from "./ConfigurationStep";
-import { Source } from "@/types/source";
 
 interface StepContentProps {
   activeStep: string;
-  sources: Source[];
+  sources: any[];
   sourceId: string;
   selectedTab: string;
   setSelectedTab: (tab: string) => void;
@@ -18,13 +19,14 @@ interface StepContentProps {
   name: string;
   previewData: any[];
   isLoading: boolean;
+  error?: string | null;
   onSelectSource: (id: string, name: string) => void;
   onSelectType: (type: "predefined" | "dependent" | "custom") => void;
-  setTemplateName: (template: string) => void;
+  setTemplateName: (name: string) => void;
   setCustomQuery: (query: string) => void;
   setName: (name: string) => void;
   onRegeneratePreview: () => void;
-  selectedType: string;
+  selectedType: "predefined" | "dependent" | "custom";
 }
 
 const StepContent: React.FC<StepContentProps> = ({
@@ -38,6 +40,7 @@ const StepContent: React.FC<StepContentProps> = ({
   name,
   previewData,
   isLoading,
+  error,
   onSelectSource,
   onSelectType,
   setTemplateName,
@@ -46,51 +49,67 @@ const StepContent: React.FC<StepContentProps> = ({
   onRegeneratePreview,
   selectedType
 }) => {
-  return (
-    <div className="space-y-6 py-4">
-      {activeStep === "source" && (
+  switch (activeStep) {
+    case "source":
+      return (
         <SourceSelectionStep 
-          sources={sources}
-          onSelectSource={onSelectSource}
-          selectedSourceId={sourceId}
+          sources={sources} 
+          onSelectSource={onSelectSource} 
         />
-      )}
-      
-      {activeStep === "type" && (
+      );
+    case "type":
+      return (
         <DatasetTypeStep 
-          onSelectType={onSelectType}
-          selectedType={selectedType}
+          onSelectType={onSelectType} 
         />
-      )}
-      
-      {activeStep === "details" && (
-        <StepSelector
-          selectedTab={selectedTab}
-          setSelectedTab={setSelectedTab}
-          templateName={templateName}
-          setTemplateName={setTemplateName}
-          customQuery={customQuery}
-          onQueryChange={setCustomQuery}
-          sourceId={sourceId}
-        />
-      )}
-      
-      {activeStep === "preview" && (
+      );
+    case "details":
+      if (selectedTab === "predefined") {
+        return (
+          <PredefinedDatasetStep 
+            sourceId={sourceId}
+            templateName={templateName} 
+            setTemplateName={setTemplateName} 
+          />
+        );
+      } else if (selectedTab === "dependent") {
+        return (
+          <DependentDatasetStep 
+            sourceId={sourceId}
+            templateName={templateName} 
+            setTemplateName={setTemplateName} 
+          />
+        );
+      } else {
+        return (
+          <CustomDatasetStep 
+            sourceId={sourceId}
+            customQuery={customQuery} 
+            setCustomQuery={setCustomQuery} 
+          />
+        );
+      }
+    case "preview":
+      return (
         <DataPreviewStep 
-          isLoading={isLoading}
-          previewData={previewData}
-          onRegeneratePreview={onRegeneratePreview}
+          isLoading={isLoading} 
+          previewData={previewData} 
+          error={error}
+          onRegeneratePreview={onRegeneratePreview} 
         />
-      )}
-      
-      {activeStep === "configuration" && (
+      );
+    case "configuration":
+      return (
         <ConfigurationStep 
-          name={name}
-          onNameChange={setName}
+          name={name} 
+          setName={setName} 
+          selectedType={selectedType}
+          templateName={templateName}
         />
-      )}
-    </div>
-  );
+      );
+    default:
+      return null;
+  }
 };
 
 export default StepContent;

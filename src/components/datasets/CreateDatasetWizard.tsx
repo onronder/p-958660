@@ -31,6 +31,7 @@ const CreateDatasetWizard: React.FC<CreateDatasetWizardProps> = ({ open, onClose
     previewData,
     isSubmitting,
     isLoading,
+    error,
     setSourceId,
     setSourceName,
     setDatasetType,
@@ -118,6 +119,7 @@ const CreateDatasetWizard: React.FC<CreateDatasetWizardProps> = ({ open, onClose
           name={name}
           previewData={previewData}
           isLoading={isLoading}
+          error={error}
           onSelectSource={handleSourceSelect}
           onSelectType={handleDatasetTypeSelect}
           setTemplateName={setTemplateName}

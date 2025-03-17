@@ -31,7 +31,7 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
   const { sources } = useSourcesData();
   
   // Get preview functionality
-  const { isLoading, generatePreview } = useDatasetPreview(
+  const { isLoading, error, generatePreview } = useDatasetPreview(
     sourceId,
     datasetType,
     templateName,
@@ -74,6 +74,9 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
     // Preview data
     previewData,
     setPreviewData,
+    
+    // Error state
+    error,
     
     // Loading states
     isLoading,

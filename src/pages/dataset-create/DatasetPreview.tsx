@@ -2,12 +2,13 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCreateDataset } from "@/hooks/useCreateDataset";
-import { Loader2, RefreshCw, CheckCircle2, ArrowLeft, ArrowRight } from "lucide-react";
+import { Loader2, RefreshCw, CheckCircle2, ArrowLeft, ArrowRight, AlertTriangle } from "lucide-react";
 
 const DatasetPreview = () => {
   const navigate = useNavigate();
-  const { previewData, isLoading, generatePreview } = useCreateDataset(() => {});
+  const { previewData, isLoading, error, generatePreview } = useCreateDataset(() => {});
   
   useEffect(() => {
     generatePreview();
@@ -67,6 +68,15 @@ const DatasetPreview = () => {
         </Button>
       </div>
       
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="border rounded-md overflow-hidden bg-card">
         {isLoading ? (
           <div className="flex items-center justify-center h-60">
@@ -106,7 +116,12 @@ const DatasetPreview = () => {
           </div>
         ) : (
           <div className="flex items-center justify-center h-60 flex-col">
-            <p className="text-muted-foreground">No preview data available.</p>
+            <p className="text-muted-foreground">
+              {error ? 
+                "Preview generation failed. Please check your source configuration." : 
+                "No preview data available."
+              }
+            </p>
             <Button 
               variant="outline" 
               onClick={generatePreview} 

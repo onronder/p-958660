@@ -7,6 +7,7 @@ export const useGraphQLSchema = (sourceId: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const [schema, setSchema] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isCached, setIsCached] = useState<boolean>(false);
   
   const loadSchema = useCallback(async () => {
     if (!sourceId) {
@@ -37,6 +38,7 @@ export const useGraphQLSchema = (sourceId: string) => {
         if (cacheAgeHours < 4) {
           console.log("Using cached schema, age:", cacheAgeHours.toFixed(2), "hours");
           setSchema(cachedSchema.schema);
+          setIsCached(true);
           setIsLoading(false);
           return;
         }
@@ -77,6 +79,7 @@ export const useGraphQLSchema = (sourceId: string) => {
       
       console.log("Schema loaded successfully");
       setSchema(data.schema);
+      setIsCached(false);
       
       // Cache the schema for future use
       await supabase
@@ -111,6 +114,7 @@ export const useGraphQLSchema = (sourceId: string) => {
     isLoading,
     schema,
     error,
+    isCached,
     loadSchema
   };
 };
