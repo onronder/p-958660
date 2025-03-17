@@ -3,9 +3,6 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-/**
- * Hook for generating dataset previews
- */
 export const useDatasetPreview = (
   sourceId: string,
   datasetType: "predefined" | "dependent" | "custom",
@@ -15,101 +12,95 @@ export const useDatasetPreview = (
 ) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const generatePreview = useCallback(async () => {
     try {
-      // Clear previous errors
+      setIsLoading(true);
       setError(null);
       
-      // Validate source ID
+      // Validate that we have a source ID
       if (!sourceId) {
-        console.error("Missing sourceId when generating preview");
-        throw new Error("No source selected. Please select a source first.");
+        setError("No source selected. Please select a data source first.");
+        return;
       }
       
-      setIsLoading(true);
-      console.log("Generating preview for source:", sourceId, "type:", datasetType);
-      
-      // Get current user
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error("User not authenticated");
+      // Check that we have the necessary parameters based on dataset type
+      if ((datasetType === "predefined" || datasetType === "dependent") && !templateName) {
+        setError("No template selected. Please select a template first.");
+        return;
       }
       
-      // Create a temporary extraction record for preview
-      const { data: extraction, error: extractionError } = await supabase
-        .from("extractions")
-        .insert({
-          name: "Preview Dataset",
-          user_id: session.user.id,
+      if (datasetType === "custom" && !customQuery) {
+        setError("No query provided. Please enter a custom query.");
+        return;
+      }
+      
+      // Prepare the request payload based on the dataset type
+      let endpoint, payload;
+      
+      if (datasetType === "predefined") {
+        endpoint = "shopify-extract";
+        payload = {
           source_id: sourceId,
-          extraction_type: datasetType,
-          template_name: datasetType === "custom" ? null : templateName,
-          custom_query: datasetType === "custom" ? customQuery : null,
-          status: "pending"
-        })
-        .select()
-        .single();
-      
-      if (extractionError || !extraction) {
-        console.error("Failed to create preview extraction:", extractionError);
-        throw new Error("Failed to create preview extraction");
+          template_name: templateName,
+          preview_only: true
+        };
+      } else if (datasetType === "dependent") {
+        endpoint = "shopify-dependent";
+        payload = {
+          source_id: sourceId,
+          extraction_id: templateName, // In dependent queries, templateName is used as extraction_id
+          preview_only: true
+        };
+      } else {
+        endpoint = "shopify-extract";
+        payload = {
+          source_id: sourceId,
+          custom_query: customQuery,
+          preview_only: true
+        };
       }
       
-      console.log("Created preview extraction with ID:", extraction.id);
+      console.log("Generating preview with payload:", payload);
       
-      // Determine which endpoint to use based on extraction type
-      const endpoint = datasetType === "dependent"
-        ? "shopify-dependent"
-        : "shopify-extract";
-      
-      console.log("Calling edge function:", endpoint);
-      
-      // Call the appropriate edge function with preview flag
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          extraction_id: extraction.id,
-          preview_only: true
-        })
+      // Call the appropriate endpoint to get preview data
+      const { data, error: previewError } = await supabase.functions.invoke(endpoint, {
+        body: payload
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate preview");
+      if (previewError) {
+        console.error("Preview error:", previewError);
+        setError(previewError.message || "Failed to generate preview.");
+        return;
       }
       
-      const data = await response.json();
-      console.log("Preview data received:", data);
+      if (data.error) {
+        console.error("Preview data error:", data.error);
+        setError(data.error);
+        return;
+      }
       
-      // Set preview data
-      setPreviewData(data.results || []);
+      // Set the preview data
+      if (data.results) {
+        console.log("Preview data received:", data.results);
+        setPreviewData(data.results);
+      } else {
+        setError("No preview data returned.");
+      }
+    } catch (err) {
+      console.error("Error generating preview:", err);
+      setError("An unexpected error occurred while generating the preview.");
       
-      // Clean up temporary extraction
-      await supabase
-        .from("extractions")
-        .delete()
-        .eq("id", extraction.id);
-      
-    } catch (error) {
-      console.error("Error generating preview:", error);
-      setError(error.message);
       toast({
-        title: "Error",
-        description: "Failed to generate preview: " + error.message,
+        title: "Preview Generation Failed",
+        description: "Could not generate dataset preview. Please try again.",
         variant: "destructive",
       });
-      setPreviewData([]);
     } finally {
       setIsLoading(false);
     }
   }, [sourceId, datasetType, templateName, customQuery, setPreviewData]);
-  
+
   return {
     isLoading,
     error,

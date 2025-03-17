@@ -1,28 +1,45 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, AlertTriangle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
 
 interface DataPreviewStepProps {
   isLoading: boolean;
   previewData: any[];
-  error?: string | null;
+  error: string | null;
   onRegeneratePreview: () => void;
+  sourceId?: string;
 }
 
 const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
   isLoading,
   previewData,
   error,
-  onRegeneratePreview
+  onRegeneratePreview,
+  sourceId
 }) => {
+  if (!sourceId) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-amber-700">
+          <div className="flex items-start">
+            <AlertCircle className="h-5 w-5 mr-2 mt-0.5" />
+            <div>
+              <p className="font-medium">Source Selection Required</p>
+              <p className="mt-1">Please select a data source before previewing data.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">Data Preview</h2>
-        <Button 
-          variant="outline" 
+        <h3 className="text-lg font-medium">Data Preview</h3>
+        <Button
+          variant="outline"
           size="sm"
           onClick={onRegeneratePreview}
           disabled={isLoading}
@@ -36,89 +53,29 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
         </Button>
       </div>
       
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          <AlertDescription>
-            {error}
-          </AlertDescription>
-        </Alert>
+      {isLoading ? (
+        <div className="h-64 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <span className="ml-3 text-muted-foreground">Loading preview data...</span>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">
+          <p className="font-medium">Error loading preview:</p>
+          <p className="mt-1">{error}</p>
+        </div>
+      ) : previewData.length === 0 ? (
+        <div className="h-64 flex items-center justify-center text-muted-foreground">
+          No preview data available. Try refreshing or adjusting your query.
+        </div>
+      ) : (
+        <div className="overflow-auto max-h-96">
+          <pre className="text-xs p-4 bg-muted rounded-md">
+            {JSON.stringify(previewData, null, 2)}
+          </pre>
+        </div>
       )}
-      
-      <div className="border rounded-md overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-40">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        ) : previewData.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted text-muted-foreground">
-                <tr>
-                  {Object.keys(previewData[0]).map(key => (
-                    <th key={key} className="px-4 py-2 text-left font-medium">
-                      {key}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {previewData.map((item, rowIndex) => (
-                  <tr key={rowIndex} className="border-t border-b even:bg-muted/20">
-                    {Object.values(item).map((value: any, cellIndex) => (
-                      <td key={cellIndex} className="px-4 py-2">
-                        {renderCellValue(value)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-40 text-muted-foreground">
-            {error ? 
-              error.includes("No source selected") ? 
-                "No source selected. Please go back to the source selection step." :
-                "Preview generation failed. Try refreshing or check your source configuration." 
-              : "No preview data available. Try refreshing the preview."
-            }
-          </div>
-        )}
-      </div>
-      
-      <div className="text-sm text-muted-foreground">
-        <p>This is a preview of the first few records that will be included in your dataset.</p>
-        {previewData.length > 0 && (
-          <p className="mt-2">
-            <span className="font-medium">Preview contains:</span> {previewData.length} records.
-            The full extraction will likely contain more records.
-          </p>
-        )}
-      </div>
     </div>
   );
-};
-
-// Helper function to render cell values based on their type
-const renderCellValue = (value: any): React.ReactNode => {
-  if (value === null || value === undefined) {
-    return <span className="text-muted-foreground italic">null</span>;
-  }
-  
-  if (typeof value === "object") {
-    return (
-      <div className="max-w-xs truncate">
-        {JSON.stringify(value)}
-      </div>
-    );
-  }
-  
-  if (typeof value === "boolean") {
-    return value ? "true" : "false";
-  }
-  
-  return String(value);
 };
 
 export default DataPreviewStep;

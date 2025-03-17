@@ -49,6 +49,21 @@ const StepContent: React.FC<StepContentProps> = ({
   onRegeneratePreview,
   selectedType
 }) => {
+  // Check if we need to show source selection due to missing sourceId
+  const needsSourceSelection = !sourceId && activeStep !== "source";
+  
+  // If we need source selection and we're not on the source step, show source selection
+  if (needsSourceSelection) {
+    return (
+      <SourceSelectionStep 
+        sources={sources} 
+        selectedSourceId={sourceId}
+        onSelectSource={onSelectSource} 
+      />
+    );
+  }
+  
+  // Regular step content based on activeStep
   switch (activeStep) {
     case "source":
       return (
@@ -95,7 +110,8 @@ const StepContent: React.FC<StepContentProps> = ({
           isLoading={isLoading} 
           previewData={previewData} 
           error={error}
-          onRegeneratePreview={onRegeneratePreview} 
+          onRegeneratePreview={onRegeneratePreview}
+          sourceId={sourceId} 
         />
       );
     case "configuration":

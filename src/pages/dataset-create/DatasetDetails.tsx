@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,10 +16,19 @@ const DatasetDetails = () => {
     templateName, 
     setTemplateName,
     customQuery,
-    setCustomQuery
+    setCustomQuery,
+    sourceId
   } = useCreateDataset(() => {});
   
   const [activeTab, setActiveTab] = useState(datasetType);
+  
+  // Check if source is selected, if not redirect to source selection
+  useEffect(() => {
+    if (!sourceId) {
+      console.log("No source selected, redirecting to source selection page");
+      navigate("/create-dataset/source");
+    }
+  }, [sourceId, navigate]);
   
   const handleBack = () => {
     navigate("/create-dataset/type");
@@ -37,6 +46,15 @@ const DatasetDetails = () => {
     }
     return false;
   };
+  
+  // If there's no source selected, show a minimal UI while redirecting
+  if (!sourceId) {
+    return (
+      <div className="p-8 text-center">
+        <p>No data source selected. Redirecting to source selection...</p>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">

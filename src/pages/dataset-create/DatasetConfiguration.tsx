@@ -1,145 +1,114 @@
 
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 import { useCreateDataset } from "@/hooks/useCreateDataset";
-import { toast } from "@/hooks/use-toast";
-import { SaveAll, ArrowLeft, Tags, Calendar, Bell } from "lucide-react";
 
 const DatasetConfiguration = () => {
   const navigate = useNavigate();
-  const { name, setName, createDataset, isSubmitting } = useCreateDataset(() => {
+  const { 
+    name, 
+    setName, 
+    createDataset, 
+    isSubmitting,
+    sourceId,
+    previewData
+  } = useCreateDataset(() => {
     navigate("/my-datasets");
   });
-  const [submitted, setSubmitted] = useState(false);
+  
+  // Check if source is selected and preview data exists, otherwise redirect
+  useEffect(() => {
+    if (!sourceId) {
+      console.log("No source selected, redirecting to source selection page");
+      navigate("/create-dataset/source");
+      return;
+    }
+    
+    if (!previewData || previewData.length === 0) {
+      console.log("No preview data available, redirecting to preview page");
+      navigate("/create-dataset/preview");
+    }
+  }, [sourceId, previewData, navigate]);
   
   const handleBack = () => {
     navigate("/create-dataset/preview");
   };
   
-  const handleCreate = async () => {
-    setSubmitted(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    if (!name.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please provide a name for your dataset",
-        variant: "destructive"
-      });
+    if (!name) {
       return;
     }
     
     await createDataset();
-    // Navigation is handled in the callback to useCreateDataset
   };
+  
+  // If there's no source selected or preview data, show a minimal UI while redirecting
+  if (!sourceId || !previewData || previewData.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <p>Missing required data. Redirecting...</p>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Dataset Configuration</h2>
+        <h2 className="text-xl font-semibold">Configure Dataset</h2>
         <p className="text-muted-foreground mt-1">
-          Configure the final details for your dataset.
+          Provide a name and configure settings for your dataset.
         </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-6">
+      <Card>
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="dataset-name" className="text-base font-medium">Dataset Name</Label>
-            <div className="relative">
-              <Input
-                id="dataset-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter a descriptive name for this dataset"
-                className={submitted && !name.trim() ? "border-red-500" : ""}
-              />
-              {submitted && !name.trim() && (
-                <p className="text-xs text-red-500 mt-1">
-                  A name is required
-                </p>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              A clear name helps you identify this dataset later.
+            <Label htmlFor="name">Dataset Name</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter a descriptive name for your dataset"
+              required
+            />
+            <p className="text-sm text-muted-foreground">
+              Choose a name that describes what data this dataset contains.
             </p>
           </div>
           
-          {/* Additional settings could be added here */}
-        </div>
-        
-        <div className="space-y-4 border-l pl-8">
-          <h3 className="font-medium">Additional Options</h3>
+          {/* Additional configuration options can be added here */}
           
-          <div className="space-y-4">
-            <div className="flex items-start border rounded-md p-4 bg-muted/20">
-              <div className="p-2 rounded-full bg-amber-100 text-amber-600 mr-3">
-                <Tags className="h-5 w-5" />
-              </div>
-              <div>
-                <h4 className="font-medium">Tags</h4>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Organize your datasets with tags (Coming soon)
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start border rounded-md p-4 bg-muted/20">
-              <div className="p-2 rounded-full bg-blue-100 text-blue-600 mr-3">
-                <Calendar className="h-5 w-5" />
-              </div>
-              <div>
-                <h4 className="font-medium">Schedule</h4>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Set up automatic refresh schedules (Coming soon)
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start border rounded-md p-4 bg-muted/20">
-              <div className="p-2 rounded-full bg-purple-100 text-purple-600 mr-3">
-                <Bell className="h-5 w-5" />
-              </div>
-              <div>
-                <h4 className="font-medium">Notifications</h4>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Get notified when dataset updates (Coming soon)
-                </p>
-              </div>
-            </div>
+          <div className="flex justify-between pt-4">
+            <Button
+              type="button"
+              onClick={handleBack}
+              variant="outline"
+            >
+              Back
+            </Button>
+            <Button
+              type="submit"
+              disabled={!name || isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create Dataset"
+              )}
+            </Button>
           </div>
-        </div>
-      </div>
-      
-      <div className="flex justify-between pt-4">
-        <Button
-          onClick={handleBack}
-          variant="outline"
-          className="flex items-center"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        <Button
-          onClick={handleCreate}
-          disabled={isSubmitting}
-          className="flex items-center"
-        >
-          {isSubmitting ? (
-            <>
-              <span className="mr-2 h-4 w-4 animate-spin">●</span>
-              Creating...
-            </>
-          ) : (
-            <>
-              <SaveAll className="mr-2 h-4 w-4" />
-              Create Dataset
-            </>
-          )}
-        </Button>
-      </div>
+        </form>
+      </Card>
     </div>
   );
 };

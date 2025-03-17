@@ -2,9 +2,9 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCreateDataset } from "@/hooks/useCreateDataset";
-import { Loader2, RefreshCw, CheckCircle2, ArrowLeft, ArrowRight, AlertTriangle } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 const DatasetPreview = () => {
   const navigate = useNavigate();
@@ -12,20 +12,36 @@ const DatasetPreview = () => {
     previewData, 
     isLoading, 
     error, 
-    generatePreview, 
-    sourceId 
+    generatePreview,
+    sourceId,
+    datasetType,
+    templateName,
+    customQuery 
   } = useCreateDataset(() => {});
   
+  // Check if source is selected, if not redirect to source selection
   useEffect(() => {
-    // Only generate preview if we have a source ID
-    if (sourceId) {
-      generatePreview();
-    } else {
-      console.error("No source ID found when trying to generate preview");
-      // Redirect back to source selection if no sourceId is available
+    if (!sourceId) {
+      console.log("No source selected, redirecting to source selection page");
       navigate("/create-dataset/source");
+      return;
     }
-  }, [sourceId]);
+    
+    // Check if we have the necessary data to generate a preview
+    if (
+      (datasetType === "predefined" || datasetType === "dependent") && !templateName ||
+      (datasetType === "custom" && !customQuery)
+    ) {
+      console.log("Missing template or query, redirecting to details page");
+      navigate("/create-dataset/details");
+      return;
+    }
+    
+    // Generate preview if not already generated
+    if (sourceId && (previewData.length === 0 && !isLoading && !error)) {
+      generatePreview();
+    }
+  }, [sourceId, datasetType, templateName, customQuery, previewData, isLoading, error, navigate, generatePreview]);
   
   const handleBack = () => {
     navigate("/create-dataset/details");
@@ -35,163 +51,77 @@ const DatasetPreview = () => {
     navigate("/create-dataset/configure");
   };
   
-  const renderCellValue = (value: any): React.ReactNode => {
-    if (value === null || value === undefined) {
-      return <span className="text-muted-foreground italic">null</span>;
-    }
-    
-    if (typeof value === "object") {
-      return (
-        <div className="max-w-xs truncate">
-          {JSON.stringify(value)}
-        </div>
-      );
-    }
-    
-    if (typeof value === "boolean") {
-      return value ? "true" : "false";
-    }
-    
-    return String(value);
-  };
+  // If there's no source selected, show a minimal UI while redirecting
+  if (!sourceId) {
+    return (
+      <div className="p-8 text-center">
+        <p>No data source selected. Redirecting to source selection...</p>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-semibold">Data Preview</h2>
-          <p className="text-muted-foreground mt-1">
-            Review a sample of the data before finalizing
-          </p>
+      <div>
+        <h2 className="text-xl font-semibold">Preview Dataset</h2>
+        <p className="text-muted-foreground mt-1">
+          Review a sample of your dataset before finalizing.
+        </p>
+      </div>
+      
+      <Card className="p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium">Data Preview</h3>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={generatePreview}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Refresh Preview
+          </Button>
         </div>
         
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={generatePreview}
-          disabled={isLoading || !sourceId}
-          className="flex items-center"
-        >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4 mr-2" />
-          )}
-          Refresh Preview
-        </Button>
-      </div>
-      
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          <AlertDescription>
-            {error}
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {!sourceId && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          <AlertDescription>
-            No source selected. Please go back to the source selection step.
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      <div className="border rounded-md overflow-hidden bg-card">
         {isLoading ? (
-          <div className="flex items-center justify-center h-60">
-            <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-              <p className="text-muted-foreground">Generating data preview...</p>
-            </div>
+          <div className="h-64 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <span className="ml-3 text-muted-foreground">Loading preview data...</span>
           </div>
-        ) : previewData.length > 0 ? (
-          <div className="overflow-x-auto">
-            <div className="p-4 bg-blue-50 border-b flex items-center">
-              <CheckCircle2 className="h-5 w-5 text-blue-500 mr-2" />
-              <span className="text-blue-700 font-medium">Preview data loaded successfully</span>
-            </div>
-            <table className="w-full text-sm">
-              <thead className="bg-muted text-muted-foreground">
-                <tr>
-                  {Object.keys(previewData[0]).map(key => (
-                    <th key={key} className="px-4 py-3 text-left font-medium">
-                      {key}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {previewData.map((item, rowIndex) => (
-                  <tr key={rowIndex} className="border-t border-b even:bg-muted/20">
-                    {Object.values(item).map((value: any, cellIndex) => (
-                      <td key={cellIndex} className="px-4 py-3">
-                        {renderCellValue(value)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">
+            <p className="font-medium">Error loading preview:</p>
+            <p className="mt-1">{error}</p>
+          </div>
+        ) : previewData.length === 0 ? (
+          <div className="h-64 flex items-center justify-center text-muted-foreground">
+            No preview data available. Try refreshing or adjusting your query.
           </div>
         ) : (
-          <div className="flex items-center justify-center h-60 flex-col">
-            <p className="text-muted-foreground">
-              {error ? 
-                "Preview generation failed. Please check your source configuration." : 
-                sourceId ? "No preview data available." : "No source selected. Please select a source first."
-              }
-            </p>
-            {sourceId && (
-              <Button 
-                variant="outline" 
-                onClick={generatePreview} 
-                className="mt-4"
-              >
-                Try Refreshing
-              </Button>
-            )}
-            {!sourceId && (
-              <Button 
-                variant="outline" 
-                onClick={() => navigate("/create-dataset/source")} 
-                className="mt-4"
-              >
-                Go to Source Selection
-              </Button>
-            )}
+          <div className="overflow-auto max-h-96">
+            <pre className="text-xs p-4 bg-muted rounded-md">
+              {JSON.stringify(previewData, null, 2)}
+            </pre>
           </div>
         )}
-      </div>
-      
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-sm text-blue-700">
-        <p>This is a preview of the first few records that will be included in your dataset.</p>
-        {previewData.length > 0 && (
-          <p className="mt-2">
-            <span className="font-medium">Preview contains:</span> {previewData.length} records.
-            The full extraction will likely contain more records.
-          </p>
-        )}
-      </div>
+      </Card>
       
       <div className="flex justify-between pt-4">
         <Button
           onClick={handleBack}
           variant="outline"
-          className="flex items-center"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
         <Button
           onClick={handleNext}
-          disabled={isLoading || previewData.length === 0 || !sourceId}
-          className="flex items-center"
+          disabled={isLoading || !!error || previewData.length === 0}
         >
-          Next
-          <ArrowRight className="ml-2 h-4 w-4" />
+          Next Step
         </Button>
       </div>
     </div>
