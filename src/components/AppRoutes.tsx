@@ -27,12 +27,22 @@ import MyDatasets from "@/pages/MyDatasets";
 import AppLayout from "@/components/AppLayout";
 
 export function AppRoutes() {
+  const handleLogin = () => {
+    console.log("Login successful");
+    // Any additional login handling logic
+  };
+
+  const handleRegister = () => {
+    console.log("Registration successful");
+    // Any additional registration handling logic
+  };
+
   return (
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Index />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<Login onLogin={handleLogin} />} />
+      <Route path="/register" element={<Register onRegister={handleRegister} />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
