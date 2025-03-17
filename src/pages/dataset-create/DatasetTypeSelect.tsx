@@ -12,23 +12,30 @@ const DatasetTypeSelect = () => {
   
   // Log component mount for debugging
   useEffect(() => {
-    console.log("DatasetTypeSelect mounted with sourceId:", sourceId, "datasetType:", datasetType);
+    console.log("DatasetTypeSelect mounted with sourceId:", sourceId);
+    console.log("Session storage sourceId:", sessionStorage.getItem('dataset_sourceId'));
+    console.log("Backup sourceId:", sessionStorage.getItem('dataset_sourceId_backup'));
     
-    // If no source is selected, redirect to source selection
+    // If no source is selected, try to recover from backup first
     if (!sourceId) {
-      console.log("No source ID found, redirecting to source selection");
-      toast.error("Please select a data source first");
-      navigate("/create-dataset/source");
+      const backupSourceId = sessionStorage.getItem('dataset_sourceId_backup');
+      const backupSourceName = sessionStorage.getItem('dataset_sourceName_backup');
+      
+      if (backupSourceId) {
+        console.log("Recovered sourceId from backup:", backupSourceId);
+        // Do nothing here - the useDatasetState hook should already be checking the backup
+      } else {
+        console.log("No source ID found, redirecting to source selection");
+        toast.error("Please select a data source first");
+        navigate("/create-dataset/source");
+      }
     }
-  }, [sourceId, datasetType, navigate]);
+  }, [sourceId, navigate]);
   
   const handleNext = () => {
     if (datasetType) {
       console.log("Navigating to details with datasetType:", datasetType);
-      // Force a direct navigation rather than relying on state updates
-      setTimeout(() => {
-        navigate("/create-dataset/details");
-      }, 10);
+      navigate("/create-dataset/details");
     } else {
       toast.error("Please select a dataset type");
     }
@@ -62,12 +69,17 @@ const DatasetTypeSelect = () => {
     }
   ];
   
+  // Show loading state while checking for source ID
   if (!sourceId) {
-    return (
-      <div className="p-8 text-center">
-        <p>No data source selected. Redirecting to source selection...</p>
-      </div>
-    );
+    const backupSourceId = sessionStorage.getItem('dataset_sourceId_backup');
+    
+    if (!backupSourceId) {
+      return (
+        <div className="p-8 text-center">
+          <p>No data source selected. Redirecting to source selection...</p>
+        </div>
+      );
+    }
   }
   
   return (

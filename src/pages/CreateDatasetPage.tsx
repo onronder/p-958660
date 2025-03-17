@@ -34,23 +34,32 @@ const CreateDatasetPage = () => {
   // Log state changes for debugging
   useEffect(() => {
     console.log("CreateDatasetPage current path:", location.pathname);
-    console.log("CreateDatasetPage state:", { sourceId, datasetType });
+    console.log("CreateDatasetPage state:", { 
+      sourceId, 
+      datasetType,
+      storedSourceId: sessionStorage.getItem('dataset_sourceId'),
+      backupSourceId: sessionStorage.getItem('dataset_sourceId_backup')
+    });
     
     // Check for missing state based on current route
     const currentPath = location.pathname.split("/").pop();
     
+    // Try to recover sourceId from backup if needed
+    const backupSourceId = sessionStorage.getItem('dataset_sourceId_backup');
+    const effectiveSourceId = sourceId || backupSourceId;
+    
     // If user manually navigates to a step, ensure we have the required state
-    if (currentPath === "type" && !sourceId) {
+    if (currentPath === "type" && !effectiveSourceId) {
       console.log("Missing sourceId for type step, redirecting to source selection");
       toast.error("Please select a data source first");
       navigate("/create-dataset/source");
     }
     
     if ((currentPath === "details" || currentPath === "preview" || currentPath === "configure") && 
-        (!sourceId || !datasetType)) {
+        (!effectiveSourceId || !datasetType)) {
       console.log("Missing required state for current step, redirecting");
       
-      if (!sourceId) {
+      if (!effectiveSourceId) {
         toast.error("Please select a data source first");
         navigate("/create-dataset/source");
       } else if (!datasetType) {

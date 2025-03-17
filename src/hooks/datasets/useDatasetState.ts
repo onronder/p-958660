@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Source } from "@/types/source";
 
@@ -9,6 +8,18 @@ export const useDatasetState = () => {
   // Use sessionStorage to persist state between page navigations
   const getStoredState = <T>(key: string, defaultValue: T): T => {
     try {
+      // First check the backup value directly
+      const backupKey = `dataset_${key}_backup`;
+      const backupValue = sessionStorage.getItem(backupKey);
+      
+      if (backupValue) {
+        // If we have a backup value, use it and also save it to the regular key
+        const parsedValue = JSON.parse(backupValue);
+        sessionStorage.setItem(`dataset_${key}`, backupValue);
+        return parsedValue;
+      }
+      
+      // Otherwise use the regular stored value
       const stored = sessionStorage.getItem(`dataset_${key}`);
       return stored ? JSON.parse(stored) : defaultValue;
     } catch (error) {
@@ -19,7 +30,11 @@ export const useDatasetState = () => {
 
   const setStoredState = <T>(key: string, value: T) => {
     try {
-      sessionStorage.setItem(`dataset_${key}`, JSON.stringify(value));
+      const valueStr = JSON.stringify(value);
+      sessionStorage.setItem(`dataset_${key}`, valueStr);
+      // Also save as backup
+      sessionStorage.setItem(`dataset_${key}_backup`, valueStr);
+      console.log(`Stored ${key} in session storage:`, value);
     } catch (error) {
       console.error(`Error storing state for ${key}:`, error);
     }
@@ -42,7 +57,9 @@ export const useDatasetState = () => {
       sourceId,
       sourceName,
       datasetType,
-      templateName
+      templateName,
+      backupSourceId: sessionStorage.getItem('dataset_sourceId_backup'),
+      backupSourceName: sessionStorage.getItem('dataset_sourceName_backup')
     });
   }, []);
   

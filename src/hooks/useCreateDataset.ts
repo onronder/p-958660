@@ -62,12 +62,17 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
     setSourceId(id);
     setSourceName(name);
     
+    // Also store as direct backup in session storage
+    sessionStorage.setItem('dataset_sourceId_backup', id);
+    sessionStorage.setItem('dataset_sourceName_backup', name);
+    
     // Log the state after setting
     setTimeout(() => {
       console.log("useCreateDataset: Source state after update:", { 
         sourceId: id, 
         sourceName: name,
-        storedSourceId: sessionStorage.getItem('dataset_sourceId')
+        storedSourceId: sessionStorage.getItem('dataset_sourceId'),
+        backupSourceId: sessionStorage.getItem('dataset_sourceId_backup')
       });
     }, 0);
   };
@@ -77,11 +82,15 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
     console.log("useCreateDataset: Setting dataset type", type);
     setDatasetType(type);
     
+    // Also store as direct backup in session storage
+    sessionStorage.setItem('dataset_datasetType_backup', type);
+    
     // Log the state after setting
     setTimeout(() => {
       console.log("useCreateDataset: Dataset type after update:", { 
         datasetType: type,
-        storedDatasetType: sessionStorage.getItem('dataset_datasetType')
+        storedDatasetType: sessionStorage.getItem('dataset_datasetType'),
+        backupDatasetType: sessionStorage.getItem('dataset_datasetType_backup')
       });
     }, 0);
   };

@@ -19,15 +19,17 @@ const DatasetSourceSelect = () => {
   // Log when component mounts to help with debugging
   useEffect(() => {
     console.log("DatasetSourceSelect mounted with sourceId:", sourceId);
+    console.log("Session storage sourceId:", sessionStorage.getItem('dataset_sourceId'));
   }, [sourceId]);
   
   const handleNext = () => {
     if (sourceId) {
       console.log("Navigating to dataset type selection with sourceId:", sourceId);
+      // Store sourceId in session storage directly as a backup
+      sessionStorage.setItem('dataset_sourceId_backup', sourceId);
+      
       // Force a direct navigation rather than relying on state updates
-      setTimeout(() => {
-        navigate("/create-dataset/type");
-      }, 10);
+      navigate("/create-dataset/type");
     } else {
       toast.error("Please select a data source first");
     }
@@ -51,6 +53,12 @@ const DatasetSourceSelect = () => {
         }}
         onTestConnection={testConnection}
       />
+      
+      {connectionTestResult && connectionTestResult.success && (
+        <div className="text-green-600 mt-2 text-sm">
+          Connection test successful! You can proceed to the next step.
+        </div>
+      )}
       
       <div className="flex justify-end pt-4">
         <Button
