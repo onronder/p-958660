@@ -20,27 +20,19 @@ import Users from "@/pages/settings/Users";
 import Webhooks from "@/pages/settings/Webhooks";
 import Help from "@/pages/Help";
 import Storage from "@/pages/Storage";
+import Insights from "@/pages/Insights";
 import Notifications from "@/pages/Notifications";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MyDatasets from "@/pages/MyDatasets";
 import AppLayout from "@/components/AppLayout";
 
 export function AppRoutes() {
-  // Define the callback functions for Login and Register components
-  const handleLogin = () => {
-    console.log("User logged in successfully");
-  };
-
-  const handleRegister = () => {
-    console.log("User registered successfully");
-  };
-
   return (
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Index />} />
-      <Route path="/login" element={<Login onLogin={handleLogin} />} />
-      <Route path="/register" element={<Register onRegister={handleRegister} />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
@@ -55,13 +47,14 @@ export function AppRoutes() {
           <Route path="/destinations" element={<Destinations />} />
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/insights" element={<Insights />} />
+          <Route path="/storage" element={<Storage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/profile" element={<Profile />} />
           <Route path="/settings/api-keys" element={<ApiKeys />} />
           <Route path="/settings/users" element={<Users />} />
           <Route path="/settings/webhooks" element={<Webhooks />} />
           <Route path="/help" element={<Help />} />
-          <Route path="/storage" element={<Storage />} />
           <Route path="/notifications" element={<Notifications />} />
         </Route>
       </Route>

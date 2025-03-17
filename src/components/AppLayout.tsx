@@ -75,7 +75,7 @@ const AppLayout = () => {
   return (
     <div className="flex min-h-screen bg-background">
       <FlowTechsSidebar onLogout={handleLogout} />
-      <div className="flex-1 ml-64 overflow-auto">
+      <div className="flex-1 ml-64">
         <main className="p-8">
           <div className="max-w-7xl mx-auto">
             <div className="flex justify-end mb-6">
@@ -108,6 +108,6 @@ const AppLayout = () => {
       </div>
     </div>
   );
-};
+}
 
 export default AppLayout;
