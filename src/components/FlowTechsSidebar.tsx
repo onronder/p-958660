@@ -1,3 +1,4 @@
+
 import {
   BarChartHorizontal,
   CalendarClock,
@@ -98,12 +99,12 @@ export function FlowTechsSidebar() {
               <NavLink
                 key={item.title}
                 to={item.href}
-                className={`flex items-center text-sm font-medium py-2 px-3 rounded-lg hover:bg-secondary ${
-                  pathname === item.href ? "bg-secondary" : "text-foreground"
+                className={({ isActive }) => `flex items-center text-sm font-medium py-2 px-3 rounded-lg hover:bg-secondary ${
+                  isActive ? "bg-secondary" : "text-foreground"
                 }`}
               >
                 {item.icon && (
-                  <item.icon className="mr-2 h-4 w-4" />
+                  <span className="mr-2 h-4 w-4">{item.icon}</span>
                 )}
                 {item.title}
               </NavLink>
