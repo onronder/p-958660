@@ -27,6 +27,8 @@ interface StepContentProps {
   setName: (name: string) => void;
   onRegeneratePreview: () => void;
   selectedType: "predefined" | "dependent" | "custom";
+  connectionTestResult?: { success: boolean; message: string };
+  onTestConnection?: () => void;
 }
 
 const StepContent: React.FC<StepContentProps> = ({
@@ -47,7 +49,9 @@ const StepContent: React.FC<StepContentProps> = ({
   setCustomQuery,
   setName,
   onRegeneratePreview,
-  selectedType
+  selectedType,
+  connectionTestResult,
+  onTestConnection
 }) => {
   // Check if we need to show source selection due to missing sourceId
   const needsSourceSelection = !sourceId && activeStep !== "source";
@@ -59,6 +63,7 @@ const StepContent: React.FC<StepContentProps> = ({
         sources={sources} 
         selectedSourceId={sourceId}
         onSelectSource={onSelectSource} 
+        onTestConnection={onTestConnection}
       />
     );
   }
@@ -71,6 +76,7 @@ const StepContent: React.FC<StepContentProps> = ({
           sources={sources} 
           selectedSourceId={sourceId}
           onSelectSource={onSelectSource} 
+          onTestConnection={onTestConnection}
         />
       );
     case "type":
@@ -111,7 +117,8 @@ const StepContent: React.FC<StepContentProps> = ({
           previewData={previewData} 
           error={error}
           onRegeneratePreview={onRegeneratePreview}
-          sourceId={sourceId} 
+          sourceId={sourceId}
+          connectionTestResult={connectionTestResult}
         />
       );
     case "configuration":

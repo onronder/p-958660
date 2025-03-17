@@ -31,7 +31,13 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
   const { sources } = useSourcesData();
   
   // Get preview functionality
-  const { isLoading, error, generatePreview } = useDatasetPreview(
+  const { 
+    isLoading, 
+    error, 
+    generatePreview,
+    testConnection,
+    connectionTestResult
+  } = useDatasetPreview(
     sourceId,
     datasetType,
     templateName,
@@ -81,6 +87,10 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
     // Loading states
     isLoading,
     isSubmitting,
+    
+    // Connection test
+    testConnection,
+    connectionTestResult,
     
     // Actions
     generatePreview,

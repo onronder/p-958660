@@ -39,6 +39,8 @@ const CreateDatasetWizard: React.FC<CreateDatasetWizardProps> = ({ open, onClose
     setCustomQuery,
     setName,
     generatePreview,
+    testConnection,
+    connectionTestResult,
     createDataset,
     resetState,
     sources,
@@ -127,6 +129,8 @@ const CreateDatasetWizard: React.FC<CreateDatasetWizardProps> = ({ open, onClose
           setName={setName}
           onRegeneratePreview={generatePreview}
           selectedType={datasetType}
+          connectionTestResult={connectionTestResult}
+          onTestConnection={testConnection}
         />
         
         <DialogFooter>

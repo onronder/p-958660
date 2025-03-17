@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
+import { Loader2, RefreshCw, AlertCircle, CheckCircle } from "lucide-react";
 
 interface DataPreviewStepProps {
   isLoading: boolean;
@@ -9,6 +9,10 @@ interface DataPreviewStepProps {
   error: string | null;
   onRegeneratePreview: () => void;
   sourceId?: string;
+  connectionTestResult?: {
+    success: boolean;
+    message: string;
+  };
 }
 
 const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
@@ -16,7 +20,8 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
   previewData,
   error,
   onRegeneratePreview,
-  sourceId
+  sourceId,
+  connectionTestResult
 }) => {
   if (!sourceId) {
     return (
@@ -52,6 +57,22 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
           Refresh Preview
         </Button>
       </div>
+      
+      {connectionTestResult && (
+        <div className={`p-4 border rounded-md ${connectionTestResult.success ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+          <div className="flex items-start">
+            {connectionTestResult.success ? (
+              <CheckCircle className="h-5 w-5 mr-2 mt-0.5" />
+            ) : (
+              <AlertCircle className="h-5 w-5 mr-2 mt-0.5" />
+            )}
+            <div>
+              <p className="font-medium">{connectionTestResult.success ? 'Connection Successful' : 'Connection Failed'}</p>
+              <p className="mt-1">{connectionTestResult.message}</p>
+            </div>
+          </div>
+        </div>
+      )}
       
       {isLoading ? (
         <div className="h-64 flex items-center justify-center">

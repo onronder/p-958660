@@ -12,6 +12,71 @@ export const useDatasetPreview = (
 ) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [connectionTestResult, setConnectionTestResult] = useState<{ success: boolean; message: string } | undefined>(undefined);
+
+  const testConnection = useCallback(async () => {
+    if (!sourceId) {
+      toast({
+        title: "No source selected",
+        description: "Please select a data source first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const { data, error: testError } = await supabase.functions.invoke("shopify-schema", {
+        body: { 
+          source_id: sourceId,
+          test_only: true
+        }
+      });
+      
+      if (testError || (data && data.error)) {
+        const errorMessage = testError?.message || data?.error || "Failed to connect to GraphQL API";
+        setConnectionTestResult({
+          success: false,
+          message: errorMessage
+        });
+        
+        toast({
+          title: "Connection Test Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setConnectionTestResult({
+        success: true,
+        message: "Successfully connected to the Shopify GraphQL API"
+      });
+      
+      toast({
+        title: "Connection Test Successful",
+        description: "Successfully connected to the Shopify GraphQL API",
+      });
+    } catch (err) {
+      console.error("Error testing connection:", err);
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+      
+      setConnectionTestResult({
+        success: false,
+        message: errorMessage
+      });
+      
+      toast({
+        title: "Connection Test Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sourceId]);
 
   const generatePreview = useCallback(async () => {
     try {
@@ -104,6 +169,8 @@ export const useDatasetPreview = (
   return {
     isLoading,
     error,
-    generatePreview
+    generatePreview,
+    testConnection,
+    connectionTestResult
   };
 };

@@ -4,16 +4,28 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Source } from "@/types/source";
 import { useCreateDataset } from "@/hooks/useCreateDataset";
-import { ShoppingBag, Database, Server } from "lucide-react";
+import { ShoppingBag, Database, Server, CheckCircle2 } from "lucide-react";
 
 const DatasetSourceSelect = () => {
   const navigate = useNavigate();
-  const { sources, sourceId, setSourceId, setSourceName } = useCreateDataset(() => {});
+  const { 
+    sources, 
+    sourceId, 
+    setSourceId, 
+    setSourceName, 
+    testConnection,
+    connectionTestResult 
+  } = useCreateDataset(() => {});
   
   const handleSourceSelect = (id: string, name: string) => {
     setSourceId(id);
     setSourceName(name);
-    navigate("/create-dataset/type");
+  };
+  
+  const handleNext = () => {
+    if (sourceId) {
+      navigate("/create-dataset/type");
+    }
   };
   
   // Function to get a random color class for the icon background
@@ -47,6 +59,22 @@ const DatasetSourceSelect = () => {
           Choose the data source you want to extract data from.
         </p>
       </div>
+      
+      {connectionTestResult && (
+        <div className={`p-4 border rounded-md ${connectionTestResult.success ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+          <div className="flex items-start">
+            {connectionTestResult.success ? (
+              <CheckCircle2 className="h-5 w-5 mr-2 mt-0.5" />
+            ) : (
+              <CheckCircle2 className="h-5 w-5 mr-2 mt-0.5" />
+            )}
+            <div>
+              <p className="font-medium">{connectionTestResult.success ? 'Connection Successful' : 'Connection Failed'}</p>
+              <p className="mt-1">{connectionTestResult.message}</p>
+            </div>
+          </div>
+        </div>
+      )}
       
       {sources.length === 0 ? (
         <div className="text-center py-10 border rounded-lg bg-muted/20">
@@ -91,7 +119,7 @@ const DatasetSourceSelect = () => {
         </div>
       )}
       
-      <div className="flex justify-end pt-4">
+      <div className="flex justify-between pt-4">
         <Button
           onClick={() => navigate("/my-datasets")}
           variant="outline"
@@ -99,12 +127,25 @@ const DatasetSourceSelect = () => {
         >
           Cancel
         </Button>
-        <Button
-          onClick={() => navigate("/create-dataset/type")}
-          disabled={!sourceId}
-        >
-          Next Step
-        </Button>
+        
+        <div className="flex gap-2">
+          {sourceId && (
+            <Button
+              onClick={testConnection}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Test Connection
+            </Button>
+          )}
+          <Button
+            onClick={handleNext}
+            disabled={!sourceId}
+          >
+            Next Step
+          </Button>
+        </div>
       </div>
     </div>
   );
