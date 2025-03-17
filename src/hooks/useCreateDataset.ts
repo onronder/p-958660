@@ -55,6 +55,17 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
     onSuccess
   );
   
+  // Handle source selection
+  const handleSourceSelect = (id: string, name: string) => {
+    setSourceId(id);
+    setSourceName(name);
+  };
+  
+  // Handle dataset type selection
+  const handleTypeSelect = (type: "predefined" | "dependent" | "custom") => {
+    setDatasetType(type);
+  };
+  
   return {
     // Source state
     sources,
@@ -62,10 +73,12 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
     sourceName,
     setSourceId,
     setSourceName,
+    handleSourceSelect,
     
     // Dataset type
     datasetType,
     setDatasetType,
+    handleTypeSelect,
     
     // Template/query
     templateName,

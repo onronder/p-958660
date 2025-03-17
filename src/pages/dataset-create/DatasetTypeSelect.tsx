@@ -7,11 +7,7 @@ import { FileIcon, FileLineChart, FileEdit } from "lucide-react";
 
 const DatasetTypeSelect = () => {
   const navigate = useNavigate();
-  const { datasetType, setDatasetType, sourceId } = useCreateDataset(() => {});
-  
-  const handleTypeSelect = (type: "predefined" | "dependent" | "custom") => {
-    setDatasetType(type);
-  };
+  const { datasetType, handleTypeSelect, sourceId } = useCreateDataset(() => {});
   
   const handleNext = () => {
     navigate("/create-dataset/details");
@@ -44,6 +40,21 @@ const DatasetTypeSelect = () => {
       color: "bg-blue-100 text-blue-600"
     }
   ];
+  
+  // If no source is selected, redirect to source selection
+  React.useEffect(() => {
+    if (!sourceId) {
+      navigate("/create-dataset/source");
+    }
+  }, [sourceId, navigate]);
+  
+  if (!sourceId) {
+    return (
+      <div className="p-8 text-center">
+        <p>No data source selected. Redirecting to source selection...</p>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">

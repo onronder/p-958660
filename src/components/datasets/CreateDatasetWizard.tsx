@@ -32,9 +32,8 @@ const CreateDatasetWizard: React.FC<CreateDatasetWizardProps> = ({ open, onClose
     isSubmitting,
     isLoading,
     error,
-    setSourceId,
-    setSourceName,
-    setDatasetType,
+    handleSourceSelect,
+    handleTypeSelect,
     setTemplateName,
     setCustomQuery,
     setName,
@@ -50,20 +49,17 @@ const CreateDatasetWizard: React.FC<CreateDatasetWizardProps> = ({ open, onClose
   useEffect(() => {
     if (!open) {
       resetState();
+      setActiveStep("source");
+      setSelectedTab("predefined");
     }
   }, [open, resetState]);
   
-  const handleSourceSelect = (id: string, name: string) => {
-    setSourceId(id);
-    setSourceName(name);
-    setActiveStep("type");
-  };
-  
-  const handleDatasetTypeSelect = (type: "predefined" | "dependent" | "custom") => {
-    setDatasetType(type);
-    setSelectedTab(type);
-    setActiveStep("details");
-  };
+  // Update selected tab when dataset type changes
+  useEffect(() => {
+    if (datasetType) {
+      setSelectedTab(datasetType);
+    }
+  }, [datasetType]);
   
   const handleNext = () => {
     if (activeStep === "details") {
@@ -123,7 +119,7 @@ const CreateDatasetWizard: React.FC<CreateDatasetWizardProps> = ({ open, onClose
           isLoading={isLoading}
           error={error}
           onSelectSource={handleSourceSelect}
-          onSelectType={handleDatasetTypeSelect}
+          onSelectType={handleTypeSelect}
           setTemplateName={setTemplateName}
           setCustomQuery={setCustomQuery}
           setName={setName}

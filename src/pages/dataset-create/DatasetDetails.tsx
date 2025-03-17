@@ -22,6 +22,13 @@ const DatasetDetails = () => {
   
   const [activeTab, setActiveTab] = useState(datasetType);
   
+  // Set active tab based on dataset type
+  useEffect(() => {
+    if (datasetType) {
+      setActiveTab(datasetType);
+    }
+  }, [datasetType]);
+  
   // Check if source is selected, if not redirect to source selection
   useEffect(() => {
     if (!sourceId) {

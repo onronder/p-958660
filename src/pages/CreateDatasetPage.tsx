@@ -8,7 +8,7 @@ import { useCreateDataset } from "@/hooks/useCreateDataset";
 const CreateDatasetPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { resetState } = useCreateDataset(() => {});
+  const { sourceId, datasetType, resetState } = useCreateDataset(() => {});
   
   // Get the current step from the URL
   const getCurrentStep = () => {
@@ -29,6 +29,21 @@ const CreateDatasetPage = () => {
         return 0;
     }
   };
+  
+  // Force the correct route based on state
+  useEffect(() => {
+    const currentPath = location.pathname.split("/").pop();
+    
+    // If on details page without a data type, redirect to type selection
+    if (currentPath === "details" && !datasetType) {
+      navigate("/create-dataset/type");
+    }
+    
+    // If on preview or configure page without a source, redirect to source selection
+    if ((currentPath === "preview" || currentPath === "configure") && !sourceId) {
+      navigate("/create-dataset/source");
+    }
+  }, [location.pathname, sourceId, datasetType, navigate]);
   
   // Reset state when component unmounts
   useEffect(() => {
