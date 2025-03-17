@@ -226,6 +226,92 @@ export type Database = {
           },
         ]
       }
+      extractions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          custom_query: string | null
+          destination_type: string | null
+          export_details: Json | null
+          export_format: string | null
+          exported_at: string | null
+          extraction_type: string
+          id: string
+          last_run: string | null
+          name: string
+          next_run: string | null
+          progress: number
+          record_count: number | null
+          result_data: Json | null
+          schedule: string | null
+          source_id: string
+          started_at: string | null
+          status: string
+          status_message: string | null
+          template_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          custom_query?: string | null
+          destination_type?: string | null
+          export_details?: Json | null
+          export_format?: string | null
+          exported_at?: string | null
+          extraction_type: string
+          id?: string
+          last_run?: string | null
+          name: string
+          next_run?: string | null
+          progress?: number
+          record_count?: number | null
+          result_data?: Json | null
+          schedule?: string | null
+          source_id: string
+          started_at?: string | null
+          status?: string
+          status_message?: string | null
+          template_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          custom_query?: string | null
+          destination_type?: string | null
+          export_details?: Json | null
+          export_format?: string | null
+          exported_at?: string | null
+          extraction_type?: string
+          id?: string
+          last_run?: string | null
+          name?: string
+          next_run?: string | null
+          progress?: number
+          record_count?: number | null
+          result_data?: Json | null
+          schedule?: string | null
+          source_id?: string
+          started_at?: string | null
+          status?: string
+          status_message?: string | null
+          template_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extractions_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       help_articles: {
         Row: {
           category: string
@@ -551,6 +637,38 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      schema_cache: {
+        Row: {
+          api_version: string
+          cached_at: string
+          id: string
+          schema: Json
+          source_id: string
+        }
+        Insert: {
+          api_version: string
+          cached_at?: string
+          id?: string
+          schema: Json
+          source_id: string
+        }
+        Update: {
+          api_version?: string
+          cached_at?: string
+          id?: string
+          schema?: Json
+          source_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schema_cache_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shopify_credentials: {
         Row: {
