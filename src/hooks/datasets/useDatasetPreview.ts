@@ -18,12 +18,16 @@ export const useDatasetPreview = (
   
   const generatePreview = useCallback(async () => {
     try {
+      // Clear previous errors
+      setError(null);
+      
+      // Validate source ID
       if (!sourceId) {
+        console.error("Missing sourceId when generating preview");
         throw new Error("No source selected. Please select a source first.");
       }
       
       setIsLoading(true);
-      setError(null);
       console.log("Generating preview for source:", sourceId, "type:", datasetType);
       
       // Get current user

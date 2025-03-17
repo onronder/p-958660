@@ -8,11 +8,24 @@ import { Loader2, RefreshCw, CheckCircle2, ArrowLeft, ArrowRight, AlertTriangle 
 
 const DatasetPreview = () => {
   const navigate = useNavigate();
-  const { previewData, isLoading, error, generatePreview } = useCreateDataset(() => {});
+  const { 
+    previewData, 
+    isLoading, 
+    error, 
+    generatePreview, 
+    sourceId 
+  } = useCreateDataset(() => {});
   
   useEffect(() => {
-    generatePreview();
-  }, []);
+    // Only generate preview if we have a source ID
+    if (sourceId) {
+      generatePreview();
+    } else {
+      console.error("No source ID found when trying to generate preview");
+      // Redirect back to source selection if no sourceId is available
+      navigate("/create-dataset/source");
+    }
+  }, [sourceId]);
   
   const handleBack = () => {
     navigate("/create-dataset/details");
@@ -56,7 +69,7 @@ const DatasetPreview = () => {
           variant="outline" 
           size="sm"
           onClick={generatePreview}
-          disabled={isLoading}
+          disabled={isLoading || !sourceId}
           className="flex items-center"
         >
           {isLoading ? (
@@ -73,6 +86,15 @@ const DatasetPreview = () => {
           <AlertTriangle className="h-4 w-4 mr-2" />
           <AlertDescription>
             {error}
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {!sourceId && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            No source selected. Please go back to the source selection step.
           </AlertDescription>
         </Alert>
       )}
@@ -119,16 +141,27 @@ const DatasetPreview = () => {
             <p className="text-muted-foreground">
               {error ? 
                 "Preview generation failed. Please check your source configuration." : 
-                "No preview data available."
+                sourceId ? "No preview data available." : "No source selected. Please select a source first."
               }
             </p>
-            <Button 
-              variant="outline" 
-              onClick={generatePreview} 
-              className="mt-4"
-            >
-              Try Refreshing
-            </Button>
+            {sourceId && (
+              <Button 
+                variant="outline" 
+                onClick={generatePreview} 
+                className="mt-4"
+              >
+                Try Refreshing
+              </Button>
+            )}
+            {!sourceId && (
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/create-dataset/source")} 
+                className="mt-4"
+              >
+                Go to Source Selection
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -154,7 +187,7 @@ const DatasetPreview = () => {
         </Button>
         <Button
           onClick={handleNext}
-          disabled={isLoading || previewData.length === 0}
+          disabled={isLoading || previewData.length === 0 || !sourceId}
           className="flex items-center"
         >
           Next

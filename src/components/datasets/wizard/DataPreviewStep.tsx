@@ -78,8 +78,10 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
         ) : (
           <div className="flex items-center justify-center h-40 text-muted-foreground">
             {error ? 
-              "Preview generation failed. Try refreshing or check your source configuration." : 
-              "No preview data available. Try refreshing the preview."
+              error.includes("No source selected") ? 
+                "No source selected. Please go back to the source selection step." :
+                "Preview generation failed. Try refreshing or check your source configuration." 
+              : "No preview data available. Try refreshing the preview."
             }
           </div>
         )}
