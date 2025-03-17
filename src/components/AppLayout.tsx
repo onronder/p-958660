@@ -1,13 +1,13 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { Outlet } from "react-router-dom";
-import FlowTechsSidebar from "@/components/FlowTechsSidebar";
+import { FlowTechsSidebar } from "@/components/FlowTechsSidebar";
 import NotificationSidebar from "@/components/NotificationSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { useSettings } from "@/hooks/useSettings";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 const AppLayout = () => {
   const { signOut } = useAuth();
@@ -106,8 +106,5 @@ const AppLayout = () => {
     </div>
   );
 };
-
-// This is needed to make the Button component available
-import { Button } from "@/components/ui/button";
 
 export default AppLayout;

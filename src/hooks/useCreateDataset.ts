@@ -59,11 +59,19 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
     try {
       setIsLoading(true);
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+      
       // Create a temporary extraction record for preview
       const { data: extraction, error: extractionError } = await supabase
         .from("extractions")
         .insert({
           name: "Preview Dataset",
+          user_id: user.id,  // Add user_id here
           source_id: sourceId,
           extraction_type: datasetType,
           template_name: datasetType === "custom" ? null : templateName,
@@ -135,11 +143,19 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
     try {
       setIsSubmitting(true);
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+      
       // Create the extraction record
       const { data: extraction, error: extractionError } = await supabase
         .from("extractions")
         .insert({
           name,
+          user_id: user.id,  // Add user_id here
           source_id: sourceId,
           extraction_type: datasetType,
           template_name: datasetType === "custom" ? null : templateName,

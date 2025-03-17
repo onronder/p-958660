@@ -10,34 +10,33 @@ import {
   Settings,
   User,
   Users,
-  WaveSine
+  WavesIcon
 } from "lucide-react"
 
-import { MainNav } from "@/components/main-nav"
-import { SidebarNavItem } from "@/types/nav"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { usePathname } from "next/navigation"
 import { NavLink } from "react-router-dom"
-import { useEffect, useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 
-interface SidebarProps {
-  className?: string
-  items?: SidebarNavItem[]
+// Create a simple MainNav component since the import was missing
+const MainNav = ({ className }: { className?: string }) => (
+  <div className={className}>
+    <h1 className="text-xl font-bold">FlowTechs</h1>
+  </div>
+);
+
+// Define the SidebarNavItem type since it was missing
+interface SidebarNavItem {
+  title: string;
+  href: string;
+  icon?: React.ReactNode;
 }
 
-export function FlowTechsSidebar() {
-  const pathname = usePathname()
-  const [expanded, setExpanded] = useState<string[]>([])
+interface FlowTechsSidebarProps {
+  onLogout?: () => void;
+  className?: string;
+}
+
+export function FlowTechsSidebar({ onLogout, className }: FlowTechsSidebarProps) {
   const { user } = useAuth();
-  
-  useEffect(() => {
-    // Expand the accordion item that contains the current path
-    const activeItem = sidebarItems.find((item) => pathname?.startsWith(item.href))
-    if (activeItem) {
-      setExpanded([activeItem.title])
-    }
-  }, [pathname])
   
   const sidebarItems = [
     {
@@ -58,7 +57,7 @@ export function FlowTechsSidebar() {
     {
       title: "Transformations",
       href: "/transform",
-      icon: <WaveSine />
+      icon: <WavesIcon />
     },
     {
       title: "Destinations",
@@ -112,6 +111,17 @@ export function FlowTechsSidebar() {
           </div>
         ) : null}
       </div>
+      {onLogout && (
+        <div className="px-3 mt-6">
+          <button 
+            onClick={onLogout} 
+            className="flex items-center text-sm font-medium py-2 px-3 rounded-lg hover:bg-secondary text-foreground w-full text-left"
+          >
+            <User className="mr-2 h-4 w-4" />
+            Logout
+          </button>
+        </div>
+      )}
     </div>
   )
 }
