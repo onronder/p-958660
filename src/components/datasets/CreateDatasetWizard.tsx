@@ -8,18 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 import { useCreateDataset } from "@/hooks/useCreateDataset";
-import { supabase } from "@/integrations/supabase/client";
-import SourceSelectionStep from "@/components/datasets/wizard/SourceSelectionStep";
-import DatasetTypeStep from "@/components/datasets/wizard/DatasetTypeStep";
-import PredefinedDatasetStep from "@/components/datasets/wizard/PredefinedDatasetStep";
-import DependentDatasetStep from "@/components/datasets/wizard/DependentDatasetStep";
-import CustomDatasetStep from "@/components/datasets/wizard/CustomDatasetStep";
-import DataPreviewStep from "@/components/datasets/wizard/DataPreviewStep";
-import ConfigurationStep from "@/components/datasets/wizard/ConfigurationStep";
+import StepContent from "./wizard/StepContent";
+import WizardStepNavigator from "./wizard/WizardStepNavigator";
 
 interface CreateDatasetWizardProps {
   open: boolean;
@@ -46,7 +37,6 @@ const CreateDatasetWizard: React.FC<CreateDatasetWizardProps> = ({ open, onClose
     setTemplateName,
     setCustomQuery,
     setName,
-    setPreviewData,
     generatePreview,
     createDataset,
     resetState,
@@ -117,116 +107,38 @@ const CreateDatasetWizard: React.FC<CreateDatasetWizardProps> = ({ open, onClose
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
-          {activeStep === "source" && (
-            <SourceSelectionStep 
-              sources={sources}
-              onSelectSource={handleSourceSelect}
-              selectedSourceId={sourceId}
-            />
-          )}
-          
-          {activeStep === "type" && (
-            <DatasetTypeStep 
-              onSelectType={handleDatasetTypeSelect}
-              selectedType={datasetType}
-            />
-          )}
-          
-          {activeStep === "details" && (
-            <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="predefined">Predefined</TabsTrigger>
-                <TabsTrigger value="dependent">Dependent</TabsTrigger>
-                <TabsTrigger value="custom">Custom</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="predefined">
-                <PredefinedDatasetStep 
-                  selectedTemplate={templateName}
-                  onSelectTemplate={setTemplateName}
-                />
-              </TabsContent>
-              
-              <TabsContent value="dependent">
-                <DependentDatasetStep 
-                  selectedTemplate={templateName}
-                  onSelectTemplate={setTemplateName}
-                />
-              </TabsContent>
-              
-              <TabsContent value="custom">
-                <CustomDatasetStep 
-                  sourceId={sourceId}
-                  query={customQuery}
-                  onQueryChange={setCustomQuery}
-                />
-              </TabsContent>
-            </Tabs>
-          )}
-          
-          {activeStep === "preview" && (
-            <DataPreviewStep 
-              isLoading={isLoading}
-              previewData={previewData}
-              onRegeneratePreview={generatePreview}
-            />
-          )}
-          
-          {activeStep === "configuration" && (
-            <ConfigurationStep 
-              name={name}
-              onNameChange={setName}
-            />
-          )}
-        </div>
+        <StepContent
+          activeStep={activeStep}
+          sources={sources}
+          sourceId={sourceId}
+          selectedTab={selectedTab}
+          setSelectedTab={setSelectedTab}
+          templateName={templateName}
+          customQuery={customQuery}
+          name={name}
+          previewData={previewData}
+          isLoading={isLoading}
+          onSelectSource={handleSourceSelect}
+          onSelectType={handleDatasetTypeSelect}
+          setTemplateName={setTemplateName}
+          setCustomQuery={setCustomQuery}
+          setName={setName}
+          onRegeneratePreview={generatePreview}
+          selectedType={datasetType}
+        />
         
-        <DialogFooter className="flex flex-col sm:flex-row justify-between space-y-2 sm:space-y-0 sm:space-x-2">
-          {activeStep !== "source" && (
-            <Button variant="outline" onClick={handleBack} disabled={isSubmitting}>
-              Back
-            </Button>
-          )}
-          
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={() => onClose()} disabled={isSubmitting}>
-              Cancel
-            </Button>
-            
-            {activeStep !== "configuration" ? (
-              <Button 
-                onClick={handleNext} 
-                disabled={
-                  (activeStep === "details" && !canProceedFromDetails()) ||
-                  isLoading ||
-                  isSubmitting
-                }
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  "Next"
-                )}
-              </Button>
-            ) : (
-              <Button 
-                onClick={createDataset} 
-                disabled={!canProceedFromConfig() || isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create Dataset"
-                )}
-              </Button>
-            )}
-          </div>
+        <DialogFooter>
+          <WizardStepNavigator
+            activeStep={activeStep}
+            handleBack={handleBack}
+            handleNext={handleNext}
+            canProceedFromDetails={canProceedFromDetails}
+            canProceedFromConfig={canProceedFromConfig}
+            isLoading={isLoading}
+            isSubmitting={isSubmitting}
+            createDataset={createDataset}
+            onClose={onClose}
+          />
         </DialogFooter>
       </DialogContent>
     </Dialog>
