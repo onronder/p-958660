@@ -13,7 +13,6 @@ import DatasetList from "@/components/datasets/DatasetList";
 import EmptyDatasetsState from "@/components/datasets/EmptyDatasetsState";
 import { useDatasets } from "@/hooks/useDatasets";
 import { useAuth } from "@/contexts/AuthContext";
-import CreateDatasetWizard from "@/components/datasets/CreateDatasetWizard";
 
 const MyDatasets = () => {
   const navigate = useNavigate();
@@ -27,21 +26,12 @@ const MyDatasets = () => {
     runDataset
   } = useDatasets();
   
-  const [showCreateWizard, setShowCreateWizard] = useState(false);
-  
   useEffect(() => {
     loadDatasets();
   }, []);
   
   const handleCreateDataset = () => {
-    setShowCreateWizard(true);
-  };
-  
-  const handleWizardClose = (success = false) => {
-    setShowCreateWizard(false);
-    if (success) {
-      loadDatasets();
-    }
+    navigate("/create-dataset");
   };
   
   const handleDownload = async (datasetId: string, format = "json") => {
@@ -128,13 +118,6 @@ const MyDatasets = () => {
           />
         )}
       </Card>
-      
-      {showCreateWizard && (
-        <CreateDatasetWizard 
-          open={showCreateWizard}
-          onClose={handleWizardClose}
-        />
-      )}
       
       <HelpFloatingButton />
     </div>
