@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useCreateDataset } from "@/hooks/useCreateDataset";
 import SourceSelectionStep from "@/components/datasets/wizard/SourceSelectionStep";
+import { toast } from "sonner";
 
 const DatasetSourceSelect = () => {
   const navigate = useNavigate();
@@ -17,9 +18,17 @@ const DatasetSourceSelect = () => {
   
   const handleNext = () => {
     if (sourceId) {
+      console.log("Navigating to dataset type selection with sourceId:", sourceId);
       navigate("/create-dataset/type");
+    } else {
+      toast.error("Please select a data source first");
     }
   };
+
+  // Log when component mounts to help with debugging
+  useEffect(() => {
+    console.log("DatasetSourceSelect mounted with sourceId:", sourceId);
+  }, [sourceId]);
   
   return (
     <div className="space-y-6">
@@ -34,6 +43,7 @@ const DatasetSourceSelect = () => {
         sources={sources}
         selectedSourceId={sourceId}
         onSelectSource={(id, name) => {
+          console.log("Source selected:", id, name);
           handleSourceSelect(id, name);
         }}
         onTestConnection={testConnection}

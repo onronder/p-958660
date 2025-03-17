@@ -1,16 +1,27 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useCreateDataset } from "@/hooks/useCreateDataset";
 import { FileIcon, FileLineChart, FileEdit } from "lucide-react";
+import { toast } from "sonner";
 
 const DatasetTypeSelect = () => {
   const navigate = useNavigate();
   const { datasetType, handleTypeSelect, sourceId } = useCreateDataset(() => {});
   
+  // Log component mount for debugging
+  useEffect(() => {
+    console.log("DatasetTypeSelect mounted with sourceId:", sourceId, "datasetType:", datasetType);
+  }, [sourceId, datasetType]);
+  
   const handleNext = () => {
-    navigate("/create-dataset/details");
+    if (datasetType) {
+      console.log("Navigating to details with datasetType:", datasetType);
+      navigate("/create-dataset/details");
+    } else {
+      toast.error("Please select a dataset type");
+    }
   };
   
   const handleBack = () => {
@@ -42,8 +53,9 @@ const DatasetTypeSelect = () => {
   ];
   
   // If no source is selected, redirect to source selection
-  React.useEffect(() => {
+  useEffect(() => {
     if (!sourceId) {
+      console.log("No source ID found, redirecting to source selection");
       navigate("/create-dataset/source");
     }
   }, [sourceId, navigate]);
@@ -72,7 +84,10 @@ const DatasetTypeSelect = () => {
             className={`border rounded-lg p-6 cursor-pointer transition-all hover:shadow-md ${
               datasetType === option.id ? "border-primary ring-2 ring-primary/20" : ""
             }`}
-            onClick={() => handleTypeSelect(option.id as "predefined" | "dependent" | "custom")}
+            onClick={() => {
+              console.log("Type option clicked:", option.id);
+              handleTypeSelect(option.id as "predefined" | "dependent" | "custom");
+            }}
           >
             <div className="flex items-center">
               <div className={`p-4 rounded-full mr-6 ${option.color}`}>

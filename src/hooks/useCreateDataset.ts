@@ -57,12 +57,14 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
   
   // Handle source selection
   const handleSourceSelect = (id: string, name: string) => {
+    console.log("useCreateDataset: Setting source", id, name);
     setSourceId(id);
     setSourceName(name);
   };
   
   // Handle dataset type selection
   const handleTypeSelect = (type: "predefined" | "dependent" | "custom") => {
+    console.log("useCreateDataset: Setting dataset type", type);
     setDatasetType(type);
   };
   

@@ -30,17 +30,31 @@ const CreateDatasetPage = () => {
     }
   };
   
+  // Log state changes for debugging
+  useEffect(() => {
+    console.log("CreateDatasetPage current path:", location.pathname);
+    console.log("CreateDatasetPage state:", { sourceId, datasetType });
+  }, [location.pathname, sourceId, datasetType]);
+  
   // Force the correct route based on state
   useEffect(() => {
     const currentPath = location.pathname.split("/").pop();
     
     // If on details page without a data type, redirect to type selection
     if (currentPath === "details" && !datasetType) {
+      console.log("Redirecting to type selection - missing datasetType");
       navigate("/create-dataset/type");
+    }
+    
+    // If on type page without a source, redirect to source selection
+    if (currentPath === "type" && !sourceId) {
+      console.log("Redirecting to source selection - missing sourceId");
+      navigate("/create-dataset/source");
     }
     
     // If on preview or configure page without a source, redirect to source selection
     if ((currentPath === "preview" || currentPath === "configure") && !sourceId) {
+      console.log("Redirecting to source selection - missing sourceId for preview/configure");
       navigate("/create-dataset/source");
     }
   }, [location.pathname, sourceId, datasetType, navigate]);
