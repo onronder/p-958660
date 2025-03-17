@@ -58,6 +58,7 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
   // Handle source selection
   const handleSourceSelect = (id: string, name: string) => {
     console.log("useCreateDataset: Setting source", id, name);
+    
     // Ensure we update both state variables
     setSourceId(id);
     setSourceName(name);
@@ -80,7 +81,15 @@ export const useCreateDataset = (onSuccess: (success?: boolean) => void) => {
   // Handle dataset type selection
   const handleTypeSelect = (type: "predefined" | "dependent" | "custom") => {
     console.log("useCreateDataset: Setting dataset type", type);
+    
     setDatasetType(type);
+    
+    // Set appropriate default tab for details page based on type
+    if (type === "predefined" || type === "dependent") {
+      setTemplateName("");  // Reset template when changing type
+    } else if (type === "custom") {
+      setCustomQuery("");  // Reset custom query when changing to custom
+    }
     
     // Also store as direct backup in session storage
     sessionStorage.setItem('dataset_datasetType_backup', type);

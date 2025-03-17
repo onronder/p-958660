@@ -38,7 +38,8 @@ const CreateDatasetPage = () => {
       sourceId, 
       datasetType,
       storedSourceId: sessionStorage.getItem('dataset_sourceId'),
-      backupSourceId: sessionStorage.getItem('dataset_sourceId_backup')
+      backupSourceId: sessionStorage.getItem('dataset_sourceId_backup'),
+      backupDatasetType: sessionStorage.getItem('dataset_datasetType_backup')
     });
     
     // Check for missing state based on current route
@@ -48,23 +49,41 @@ const CreateDatasetPage = () => {
     const backupSourceId = sessionStorage.getItem('dataset_sourceId_backup');
     const effectiveSourceId = sourceId || backupSourceId;
     
-    // If user manually navigates to a step, ensure we have the required state
+    // Try to recover datasetType from backup if needed
+    const backupDatasetType = sessionStorage.getItem('dataset_datasetType_backup');
+    const effectiveDatasetType = datasetType || backupDatasetType;
+    
+    // Redirect logic based on current path and missing state
     if (currentPath === "type" && !effectiveSourceId) {
       console.log("Missing sourceId for type step, redirecting to source selection");
       toast.error("Please select a data source first");
-      navigate("/create-dataset/source");
+      setTimeout(() => navigate("/create-dataset/source"), 100);
+      return;
     }
     
-    if ((currentPath === "details" || currentPath === "preview" || currentPath === "configure") && 
-        (!effectiveSourceId || !datasetType)) {
+    if (currentPath === "details" && (!effectiveSourceId || !effectiveDatasetType)) {
+      console.log("Missing required state for details step, redirecting");
+      
+      if (!effectiveSourceId) {
+        toast.error("Please select a data source first");
+        setTimeout(() => navigate("/create-dataset/source"), 100);
+      } else if (!effectiveDatasetType) {
+        toast.error("Please select a dataset type");
+        setTimeout(() => navigate("/create-dataset/type"), 100);
+      }
+      return;
+    }
+    
+    if ((currentPath === "preview" || currentPath === "configure") && 
+        (!effectiveSourceId || !effectiveDatasetType)) {
       console.log("Missing required state for current step, redirecting");
       
       if (!effectiveSourceId) {
         toast.error("Please select a data source first");
-        navigate("/create-dataset/source");
-      } else if (!datasetType) {
+        setTimeout(() => navigate("/create-dataset/source"), 100);
+      } else if (!effectiveDatasetType) {
         toast.error("Please select a dataset type");
-        navigate("/create-dataset/type");
+        setTimeout(() => navigate("/create-dataset/type"), 100);
       }
     }
   }, [location.pathname, sourceId, datasetType, navigate]);

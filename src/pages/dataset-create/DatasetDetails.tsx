@@ -8,6 +8,7 @@ import DatasetDetailsHeader from "@/components/datasets/templates/DatasetDetails
 import PredefinedTemplatesList from "@/components/datasets/templates/PredefinedTemplatesList";
 import DependentTemplatesList from "@/components/datasets/templates/DependentTemplatesList";
 import CustomQueryEditor from "@/components/datasets/templates/CustomQueryEditor";
+import { toast } from "sonner";
 
 const DatasetDetails = () => {
   const navigate = useNavigate();
@@ -20,52 +21,122 @@ const DatasetDetails = () => {
     sourceId
   } = useCreateDataset(() => {});
   
-  const [activeTab, setActiveTab] = useState(datasetType);
+  const [activeTab, setActiveTab] = useState<"predefined" | "dependent" | "custom">("predefined");
+  const [isNavigating, setIsNavigating] = useState(false);
   
-  // Set active tab based on dataset type
+  // Set active tab based on dataset type and log on mount
   useEffect(() => {
-    if (datasetType) {
-      setActiveTab(datasetType);
+    console.log("DatasetDetails mounted with state:", {
+      sourceId,
+      datasetType,
+      templateName,
+      storedDatasetType: sessionStorage.getItem('dataset_datasetType'),
+      backupDatasetType: sessionStorage.getItem('dataset_datasetType_backup')
+    });
+    
+    // Try to recover datasetType from backup if needed
+    let effectiveDatasetType = datasetType;
+    if (!effectiveDatasetType) {
+      const backupType = sessionStorage.getItem('dataset_datasetType_backup') as "predefined" | "dependent" | "custom" | null;
+      if (backupType) {
+        console.log("Recovered dataset type from backup:", backupType);
+        effectiveDatasetType = backupType;
+      }
     }
-  }, [datasetType]);
+    
+    if (effectiveDatasetType) {
+      setActiveTab(effectiveDatasetType);
+    }
+  }, [datasetType, sourceId]);
   
-  // Check if source is selected, if not redirect to source selection
+  // Check if source and type are selected, if not redirect
   useEffect(() => {
-    if (!sourceId) {
-      console.log("No source selected, redirecting to source selection page");
-      navigate("/create-dataset/source");
-    }
-  }, [sourceId, navigate]);
+    const checkRequiredState = () => {
+      // Check source ID first
+      if (!sourceId) {
+        const backupSourceId = sessionStorage.getItem('dataset_sourceId_backup');
+        if (!backupSourceId) {
+          console.log("No source ID found, redirecting to source selection");
+          toast.error("Please select a data source first");
+          navigate("/create-dataset/source");
+          return;
+        }
+      }
+      
+      // Then check dataset type
+      if (!datasetType) {
+        const backupType = sessionStorage.getItem('dataset_datasetType_backup');
+        if (!backupType) {
+          console.log("No dataset type found, redirecting to type selection");
+          toast.error("Please select a dataset type");
+          navigate("/create-dataset/type");
+          return;
+        }
+      }
+    };
+    
+    checkRequiredState();
+  }, [sourceId, datasetType, navigate]);
   
   const handleBack = () => {
     navigate("/create-dataset/type");
   };
   
   const handleNext = () => {
-    navigate("/create-dataset/preview");
+    if (canProceed()) {
+      setIsNavigating(true);
+      
+      // Ensure we have the backup values in session storage
+      if (datasetType) {
+        sessionStorage.setItem('dataset_datasetType_backup', datasetType);
+      }
+      
+      if (templateName) {
+        sessionStorage.setItem('dataset_templateName_backup', templateName);
+      }
+      
+      if (customQuery) {
+        sessionStorage.setItem('dataset_customQuery_backup', customQuery);
+      }
+      
+      setTimeout(() => {
+        navigate("/create-dataset/preview");
+      }, 100);
+    } else {
+      if (activeTab === "predefined" || activeTab === "dependent") {
+        toast.error("Please select a template");
+      } else {
+        toast.error("Please enter a custom query");
+      }
+    }
   };
   
   const canProceed = () => {
-    if (datasetType === "predefined" || datasetType === "dependent") {
+    if (activeTab === "predefined" || activeTab === "dependent") {
       return !!templateName;
-    } else if (datasetType === "custom") {
+    } else if (activeTab === "custom") {
       return !!customQuery;
     }
     return false;
   };
   
-  // If there's no source selected, show a minimal UI while redirecting
-  if (!sourceId) {
-    return (
-      <div className="p-8 text-center">
-        <p>No data source selected. Redirecting to source selection...</p>
-      </div>
-    );
+  // If there's no source or dataset type selected, show a minimal UI while redirecting
+  if (!sourceId || !datasetType) {
+    const backupSourceId = sessionStorage.getItem('dataset_sourceId_backup');
+    const backupDatasetType = sessionStorage.getItem('dataset_datasetType_backup');
+    
+    if (!backupSourceId || !backupDatasetType) {
+      return (
+        <div className="p-8 text-center">
+          <p>Missing required information. Redirecting...</p>
+        </div>
+      );
+    }
   }
   
   return (
     <div className="space-y-6">
-      <DatasetDetailsHeader datasetType={datasetType} />
+      <DatasetDetailsHeader datasetType={activeTab} />
       
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "predefined" | "dependent" | "custom")}>
         <TabsList className="grid w-full grid-cols-3">
@@ -100,14 +171,15 @@ const DatasetDetails = () => {
         <Button
           onClick={handleBack}
           variant="outline"
+          disabled={isNavigating}
         >
           Back
         </Button>
         <Button
           onClick={handleNext}
-          disabled={!canProceed()}
+          disabled={!canProceed() || isNavigating}
         >
-          Next Step
+          {isNavigating ? "Processing..." : "Next Step"}
         </Button>
       </div>
     </div>

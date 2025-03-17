@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useCreateDataset } from "@/hooks/useCreateDataset";
@@ -9,12 +9,14 @@ import { toast } from "sonner";
 const DatasetTypeSelect = () => {
   const navigate = useNavigate();
   const { datasetType, handleTypeSelect, sourceId } = useCreateDataset(() => {});
+  const [isNavigating, setIsNavigating] = useState(false);
   
   // Log component mount for debugging
   useEffect(() => {
     console.log("DatasetTypeSelect mounted with sourceId:", sourceId);
     console.log("Session storage sourceId:", sessionStorage.getItem('dataset_sourceId'));
     console.log("Backup sourceId:", sessionStorage.getItem('dataset_sourceId_backup'));
+    console.log("Current datasetType:", datasetType);
     
     // If no source is selected, try to recover from backup first
     if (!sourceId) {
@@ -34,8 +36,17 @@ const DatasetTypeSelect = () => {
   
   const handleNext = () => {
     if (datasetType) {
+      setIsNavigating(true);
       console.log("Navigating to details with datasetType:", datasetType);
-      navigate("/create-dataset/details");
+      
+      // Store directly to session storage as additional backup
+      sessionStorage.setItem('dataset_datasetType_backup', datasetType);
+      
+      // Use setTimeout to ensure state is updated before navigation
+      setTimeout(() => {
+        // Force a direct navigation to details
+        navigate("/create-dataset/details");
+      }, 100);
     } else {
       toast.error("Please select a dataset type");
     }
@@ -122,14 +133,15 @@ const DatasetTypeSelect = () => {
         <Button
           onClick={handleBack}
           variant="outline"
+          disabled={isNavigating}
         >
           Back
         </Button>
         <Button
           onClick={handleNext}
-          disabled={!datasetType}
+          disabled={!datasetType || isNavigating}
         >
-          Next Step
+          {isNavigating ? "Processing..." : "Next Step"}
         </Button>
       </div>
     </div>
