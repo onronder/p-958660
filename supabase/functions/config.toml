@@ -29,3 +29,7 @@ src = "./get-analytics-data/index.ts"
 [[api.endpoints]]
 path = "/dashboard-data"
 src = "./get-dashboard-metrics/index.ts"
+
+[[api.endpoints]]
+path = "/shopify-extract"
+src = "./shopify-extract/index.ts"

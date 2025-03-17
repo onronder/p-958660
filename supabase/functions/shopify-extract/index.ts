@@ -3,6 +3,10 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { corsHeaders, getProductionCorsHeaders } from "../_shared/cors.ts";
 import { validateUser, createSupabaseClient } from "../oauth-callback/helpers.ts";
+import { handlePreviewRequest } from "./preview-handler.ts";
+import { getPredefinedQuery, getDependentQueryTemplate } from "./query-templates.ts";
+import { extractResults } from "./extraction-utils.ts";
+import { executeShopifyQuery } from "./shopify-api.ts";
 
 serve(async (req: Request) => {
   // Handle CORS preflight requests
@@ -190,26 +194,24 @@ serve(async (req: Request) => {
     
     // Execute the query
     const apiVersion = "2023-10"; // Could be made configurable
-    const endpoint = `https://${shopifyCredentials.store_name}.myshopify.com/admin/api/${apiVersion}/graphql.json`;
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Access-Token": shopifyCredentials.api_token
-      },
-      body: JSON.stringify({ query, variables })
+    
+    // Execute Shopify GraphQL query
+    const result = await executeShopifyQuery({
+      shopName: shopifyCredentials.store_name,
+      apiToken: shopifyCredentials.api_token,
+      query,
+      variables,
+      apiVersion
     });
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      
+    if (result.error) {
       // Update extraction status if not a preview
       if (!preview_only) {
         await supabase
           .from("extractions")
           .update({ 
             status: "failed", 
-            status_message: `Shopify API error: ${response.status} ${errorText}`,
+            status_message: `Shopify API error: ${result.error}`,
             completed_at: new Date().toISOString()
           })
           .eq("id", extraction_id);
@@ -217,46 +219,28 @@ serve(async (req: Request) => {
       
       return new Response(
         JSON.stringify({ 
-          error: `Shopify API error: ${response.status} ${response.statusText}`,
-          details: errorText
+          error: result.error,
+          details: result.details
         }),
         { 
-          status: response.status, 
+          status: result.status || 500, 
           headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
         }
       );
     }
     
-    const data = await response.json();
-    
-    // Handle GraphQL errors
-    if (data.errors && data.errors.length > 0) {
-      // Update extraction status if not a preview
-      if (!preview_only) {
-        await supabase
-          .from("extractions")
-          .update({ 
-            status: "failed", 
-            status_message: `GraphQL error: ${data.errors[0].message}`,
-            completed_at: new Date().toISOString()
-          })
-          .eq("id", extraction_id);
-      }
-      
+    if (!result.data) {
       return new Response(
-        JSON.stringify({ 
-          error: "GraphQL error", 
-          details: data.errors 
-        }),
+        JSON.stringify({ error: "No data returned from Shopify API" }),
         { 
-          status: 400, 
+          status: 500, 
           headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
         }
       );
     }
     
     // Extract results based on query type
-    const results = extractResults(data.data);
+    const results = extractResults(result.data);
     
     // For preview only, just return the results
     if (preview_only) {
@@ -309,337 +293,3 @@ serve(async (req: Request) => {
     );
   }
 });
-
-// Update the handlePreviewRequest function with better error handling
-async function handlePreviewRequest({
-  user,
-  supabase,
-  source_id,
-  custom_query,
-  limit,
-  responseCorsHeaders
-}) {
-  try {
-    console.log("Processing preview request for source:", source_id);
-    
-    // Get source details
-    const { data: source, error: sourceError } = await supabase
-      .from("sources")
-      .select("*")
-      .eq("id", source_id)
-      .eq("user_id", user.id)
-      .single();
-    
-    if (sourceError || !source) {
-      console.error("Source error:", sourceError);
-      return new Response(
-        JSON.stringify({ error: "Source not found or not authorized" }),
-        { 
-          status: 404, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-        }
-      );
-    }
-    
-    // For Shopify sources, get the credentials
-    if (source.source_type !== "Shopify") {
-      return new Response(
-        JSON.stringify({ error: "Only Shopify sources are supported currently" }),
-        { 
-          status: 400, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-        }
-      );
-    }
-    
-    // Get Shopify credentials
-    const credentialId = source.credentials.credential_id;
-    console.log("Fetching credentials with ID:", credentialId);
-    
-    const { data: shopifyCredentials, error: credentialsError } = await supabase
-      .from("shopify_credentials")
-      .select("*")
-      .eq("id", credentialId)
-      .eq("user_id", user.id)
-      .single();
-    
-    if (credentialsError || !shopifyCredentials) {
-      console.error("Credentials error:", credentialsError);
-      return new Response(
-        JSON.stringify({ error: "Shopify credentials not found" }),
-        { 
-          status: 404, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-        }
-      );
-    }
-    
-    console.log("Executing GraphQL query to Shopify store:", shopifyCredentials.store_name);
-    
-    // Execute the query directly
-    const variables = { first: limit };
-    const apiVersion = "2023-10"; // Could be made configurable
-    const endpoint = `https://${shopifyCredentials.store_name}.myshopify.com/admin/api/${apiVersion}/graphql.json`;
-    
-    // Log query for debugging
-    console.log("GraphQL query:", custom_query);
-    
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Access-Token": shopifyCredentials.api_token
-      },
-      body: JSON.stringify({ query: custom_query, variables })
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Shopify API error:", response.status, errorText);
-      return new Response(
-        JSON.stringify({ 
-          error: `Shopify API error: ${response.status} ${response.statusText}`,
-          details: errorText
-        }),
-        { 
-          status: response.status, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-        }
-      );
-    }
-    
-    const data = await response.json();
-    
-    // Handle GraphQL errors
-    if (data.errors && data.errors.length > 0) {
-      console.error("GraphQL errors:", data.errors);
-      return new Response(
-        JSON.stringify({ 
-          error: "GraphQL error", 
-          details: data.errors 
-        }),
-        { 
-          status: 400, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-        }
-      );
-    }
-    
-    // Extract results
-    const results = extractResults(data.data);
-    console.log("Successfully extracted results:", results.length);
-    
-    return new Response(
-      JSON.stringify({ 
-        results,
-        count: results.length,
-        preview: true
-      }),
-      { 
-        status: 200, 
-        headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-      }
-    );
-  } catch (error) {
-    console.error("Preview error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "An unknown error occurred during preview" }),
-      { 
-        status: 500, 
-        headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-      }
-    );
-  }
-}
-
-// Helper function to get predefined query
-function getPredefinedQuery(templateName: string): string {
-  const templates: Record<string, string> = {
-    "products_basic": `
-      query GetProducts($first: Int!) {
-        products(first: $first) {
-          edges {
-            node {
-              id
-              title
-              handle
-              description
-              createdAt
-              updatedAt
-              productType
-              vendor
-              publishedAt
-              tags
-              priceRangeV2 {
-                minVariantPrice {
-                  amount
-                  currencyCode
-                }
-                maxVariantPrice {
-                  amount
-                  currencyCode
-                }
-              }
-            }
-          }
-        }
-      }
-    `,
-    "orders_basic": `
-      query GetOrders($first: Int!) {
-        orders(first: $first) {
-          edges {
-            node {
-              id
-              name
-              createdAt
-              displayFinancialStatus
-              displayFulfillmentStatus
-              email
-              phone
-              totalPriceSet {
-                shopMoney {
-                  amount
-                  currencyCode
-                }
-              }
-              customer {
-                id
-                email
-                firstName
-                lastName
-              }
-            }
-          }
-        }
-      }
-    `,
-    "customers_basic": `
-      query GetCustomers($first: Int!) {
-        customers(first: $first) {
-          edges {
-            node {
-              id
-              firstName
-              lastName
-              email
-              phone
-              createdAt
-              updatedAt
-              tags
-              ordersCount
-              totalSpent {
-                amount
-                currencyCode
-              }
-            }
-          }
-        }
-      }
-    `,
-    // Add more predefined templates as needed
-  };
-  
-  return templates[templateName] || "";
-}
-
-// Helper function for dependent query templates
-function getDependentQueryTemplate(templateName: string): any {
-  const templates: Record<string, any> = {
-    "customer_with_orders": {
-      primaryQuery: `
-        query GetCustomers($first: Int!, $after: String) {
-          customers(first: $first, after: $after) {
-            edges {
-              node {
-                id
-                firstName
-                lastName
-                email
-                phone
-                createdAt
-                tags
-                ordersCount
-              }
-            }
-            pageInfo {
-              hasNextPage
-              endCursor
-            }
-          }
-        }
-      `,
-      buildSecondaryQuery: (customerId: string) => {
-        return {
-          query: `
-            query GetCustomerOrders($customerId: ID!, $first: Int!) {
-              customer(id: $customerId) {
-                orders(first: $first) {
-                  edges {
-                    node {
-                      id
-                      name
-                      createdAt
-                      totalPriceSet {
-                        shopMoney {
-                          amount
-                          currencyCode
-                        }
-                      }
-                      displayFinancialStatus
-                      displayFulfillmentStatus
-                    }
-                  }
-                }
-              }
-            }
-          `,
-          variables: {
-            customerId,
-            first: 10
-          }
-        };
-      },
-      idExtractor: (customers: any[]) => {
-        return customers.map(customer => customer.id);
-      },
-      resultMerger: (customers: any[], orderData: any[]) => {
-        // Create a map of customer ID to orders
-        const ordersMap = new Map();
-        
-        orderData.forEach(data => {
-          if (data.customer && data.customer.orders) {
-            const customerId = data.customer.id;
-            const orders = data.customer.orders.edges.map((edge: any) => edge.node);
-            ordersMap.set(customerId, orders);
-          }
-        });
-        
-        // Merge customers with their orders
-        return customers.map(customer => {
-          return {
-            ...customer,
-            orders: ordersMap.get(customer.id) || []
-          };
-        });
-      }
-    },
-    // Add more dependent query templates as needed
-  };
-  
-  return templates[templateName] || { primaryQuery: "", buildSecondaryQuery: () => ({}), idExtractor: () => [], resultMerger: () => [] };
-}
-
-// Helper function to extract results from GraphQL response
-function extractResults(data: any): any[] {
-  if (!data) return [];
-  
-  // Find the first property that has an edges array
-  for (const key in data) {
-    if (data[key] && data[key].edges && Array.isArray(data[key].edges)) {
-      return data[key].edges.map((edge: any) => edge.node);
-    }
-  }
-  
-  return [];
-}
