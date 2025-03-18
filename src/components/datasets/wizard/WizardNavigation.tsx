@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { StepType } from '@/hooks/datasets/useCreateDatasetState';
+import { StepType } from '@/hooks/datasets/state/types';
 import { devLogger } from '@/utils/DevLogger';
 
 interface WizardNavigationProps {
