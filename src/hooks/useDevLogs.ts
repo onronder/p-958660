@@ -26,23 +26,27 @@ export function useDevLogs() {
   const { user } = useAuth();
 
   // Function to load logs
-  const loadLogs = async (limit: number = 100, offset: number = 0, filters: Record<string, any> = {}) => {
+  const loadLogs = async (
+    limit: number = 100,
+    offset: number = 0,
+    filters: Record<string, any> = {}
+  ) => {
     try {
       setIsLoading(true);
       setError(null);
 
+      // Define the expected return type explicitly
       let query = supabase
         .from('dev_logs')
-        .select('*')
+        .select('id, timestamp, log_level, source, message, details, user_id, route, stack_trace, request_data, response_data') // Explicit selection to avoid deep type inference
         .order('timestamp', { ascending: false })
         .limit(limit)
         .range(offset, offset + limit - 1);
 
-      // Apply filters without recreating the query each time
+      // Apply filters dynamically
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
-          // Apply filter to existing query
-          query = query.eq(key, value);
+          query = query.eq(key, value); // Modify existing query
         }
       });
 
@@ -54,10 +58,10 @@ export function useDevLogs() {
 
       setLogs(data || []);
 
-      // Get total count
+      // Get total count explicitly
       const { count, error: countError } = await supabase
         .from('dev_logs')
-        .select('*', { count: 'exact', head: true });
+        .select('id', { count: 'exact', head: true });
 
       if (!countError) {
         setLogCount(count || 0);
