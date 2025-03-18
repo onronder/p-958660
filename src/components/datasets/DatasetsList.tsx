@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { DatasetsTable } from './DatasetsTable';
+import DatasetsTable from './DatasetsTable';
 import { Dataset } from '@/types/dataset';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDatasetActions } from '@/hooks/useDatasetActions';

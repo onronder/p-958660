@@ -17,6 +17,25 @@ import { fetchUserDatasets, fetchDeletedDatasets } from '@/services/datasets';
 import { useDatasetActions } from '@/hooks/useDatasetActions';
 import { devLogger } from '@/utils/DevLogger';
 
+// Define props interface for components that were missing them
+interface EmptyDatasetsStateProps {
+  onCreate: () => void;
+}
+
+interface DeletedDatasetsTableProps {
+  deletedDatasets: Dataset[];
+  isRestoring: boolean;
+  isDeleting: boolean;
+  onRestore: (id: string, name: string) => Promise<boolean>;
+  onDelete: (id: string, name: string) => Promise<boolean>;
+}
+
+interface CreateDatasetDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (templateId: string) => void;
+}
+
 const MyDatasetsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -105,7 +124,7 @@ const MyDatasetsPage: React.FC = () => {
           {isLoading ? (
             <LoadingState />
           ) : datasets.length === 0 ? (
-            <EmptyDatasetsState onCreateClick={handleCreateDataset} />
+            <EmptyDatasetsState onCreate={handleCreateDataset} />
           ) : (
             <DatasetsList 
               datasets={datasets} 
@@ -124,7 +143,7 @@ const MyDatasetsPage: React.FC = () => {
             </div>
           ) : (
             <DeletedDatasetsTable 
-              datasets={deletedDatasets}
+              deletedDatasets={deletedDatasets}
               isRestoring={datasetActions.isRestoring}
               isDeleting={datasetActions.isDeleting}
               onRestore={handleRestore}
@@ -135,7 +154,7 @@ const MyDatasetsPage: React.FC = () => {
       </Tabs>
 
       <CreateDatasetDialog
-        open={showCreateDialog}
+        isOpen={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onSubmit={onCreateDatasetSubmit}
       />
