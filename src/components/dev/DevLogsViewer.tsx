@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useDevLogs, useLogFilters } from '@/hooks/dev-logs';
+import { useDevLogs } from '@/hooks/dev-logs';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LogHeader } from './LogHeader';
 import { LogFilters } from './LogFilters';

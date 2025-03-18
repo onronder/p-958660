@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { DevLogEntry, PersistedLog, LogLevel } from './types';
+import { DevLogEntry, PersistedLog, LogLevel, LogDetails } from './types';
 
 /**
  * Handles log storage operations
@@ -93,7 +93,7 @@ export class LogStorage {
         log_level: (item.log_level as LogLevel) || 'info',
         source: item.source,
         message: item.message,
-        details: item.details || {},
+        details: item.details as LogDetails || {},
         user_id: item.user_id,
         route: item.route,
         stack_trace: item.stack_trace,

@@ -1,56 +1,56 @@
 
 import React, { useEffect } from 'react';
-import { DevLogger } from './logger';
+import { useLocation } from 'react-router-dom';
+import { devLogger } from './logger';
+import type { DevLoggerImpl } from './core/DevLoggerImpl';
 
 /**
- * HOC for logging React component lifecycle
+ * HOC to wrap components with logging
  */
-export function withLogging<P>(
+export function withLogging<P extends object>(
   Component: React.ComponentType<P>,
-  logger: DevLogger,
-  componentName: string = Component.displayName || Component.name
-): React.FC<P> {
-  return (props: P) => {
+  componentName: string,
+  logger: typeof devLogger = devLogger
+) {
+  const WithLogging: React.FC<P> = (props) => {
     useEffect(() => {
-      logger.logComponentLifecycle(componentName, 'mount', props);
+      // Log component mount
+      logger.debug('Component', `${componentName} mounted`, { props });
+      
+      // Log component unmount
       return () => {
-        logger.logComponentLifecycle(componentName, 'unmount');
+        logger.debug('Component', `${componentName} unmounted`);
       };
     }, []);
-
-    useEffect(() => {
-      logger.logComponentLifecycle(componentName, 'update', props);
-    }, [props]);
-
-    return React.createElement(Component, props);
+    
+    // Log rendering and pass props through
+    return <Component {...props} />;
   };
+  
+  WithLogging.displayName = `withLogging(${componentName})`;
+  return WithLogging;
 }
 
 /**
- * Wrapper for logging hook usage
+ * Hook wrapper for custom hooks
  */
 export function wrapHook<T extends (...args: any[]) => any>(
-  hookName: string,
   hook: T,
-  logger: DevLogger
+  hookName: string,
+  logger: typeof devLogger = devLogger
 ): T {
-  return logger.wrapFunction('Hook', hookName, hook);
+  return devLogger.wrapFunction('Hook', hookName, hook) as T;
 }
 
 /**
- * Hook for accessing the logger in components
+ * Component hook for using the logger
  */
-export function useLogger(logger: DevLogger) {
-  return {
-    debug: (source: string, message: string, details?: any) => 
-      logger.debug(source, message, details),
-    info: (source: string, message: string, details?: any) => 
-      logger.info(source, message, details),
-    warn: (source: string, message: string, details?: any) => 
-      logger.warn(source, message, details),
-    error: (source: string, message: string, error?: any, details?: any) => 
-      logger.error(source, message, error, details),
-    critical: (source: string, message: string, error?: any, details?: any) => 
-      logger.critical(source, message, error, details)
-  };
+export function useLogger() {
+  const location = useLocation();
+  
+  useEffect(() => {
+    devLogger.setCurrentRoute(location.pathname);
+  }, [location.pathname]);
+  
+  return devLogger;
 }
