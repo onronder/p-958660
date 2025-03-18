@@ -38,8 +38,7 @@ const CreateDatasetPage = () => {
     datasetName: datasetState.datasetName,
     selectedTemplate: datasetState.selectedTemplate,
     selectedDependentTemplate: datasetState.selectedDependentTemplate,
-    customQuery: datasetState.customQuery,
-    checkCanProceed: () => true
+    customQuery: datasetState.customQuery
   });
   
   // Check for sources on load

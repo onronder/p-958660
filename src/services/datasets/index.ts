@@ -18,8 +18,23 @@ export const fetchDatasets = async (): Promise<Dataset[]> => {
       return [];
     }
 
-    // Type assertion with type checking
-    return (data || []) as Dataset[];
+    // Type casting with proper mapping to match Dataset interface
+    return (data || []).map(item => ({
+      id: item.id,
+      user_id: item.user_id,
+      source_id: item.source_id,
+      name: item.name,
+      extraction_type: item.dataset_type as "predefined" | "dependent" | "custom",
+      template_name: item.description || undefined,
+      custom_query: item.query_params?.custom_query,
+      status: item.status,
+      progress: 100, // Completed datasets are at 100%
+      result_data: item.result_data,
+      record_count: item.record_count || 0,
+      created_at: item.created_at,
+      updated_at: item.last_updated,
+      is_deleted: false,
+    }));
   } catch (error) {
     console.error("Error in fetchDatasets:", error);
     return [];
@@ -41,8 +56,24 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
       return [];
     }
 
-    // Type assertion with type checking
-    return (data || []) as Dataset[];
+    // Type casting with proper mapping to match Dataset interface
+    return (data || []).map(item => ({
+      id: item.id,
+      user_id: item.user_id,
+      source_id: item.source_id,
+      name: item.name,
+      extraction_type: item.dataset_type as "predefined" | "dependent" | "custom",
+      template_name: item.description || undefined,
+      custom_query: item.query_params?.custom_query,
+      status: item.status,
+      progress: 100, // Completed datasets are at 100%
+      result_data: item.result_data,
+      record_count: item.record_count || 0,
+      created_at: item.created_at,
+      updated_at: item.last_updated,
+      is_deleted: true,
+      deletion_marked_at: item.deleted_at,
+    }));
   } catch (error) {
     console.error("Error in fetchDeletedDatasets:", error);
     return [];
@@ -92,7 +123,23 @@ export const restoreDataset = async (datasetId: string): Promise<Dataset | null>
       return null;
     }
 
-    return data as Dataset;
+    // Map to the Dataset interface
+    return {
+      id: data.id,
+      user_id: data.user_id,
+      source_id: data.source_id,
+      name: data.name,
+      extraction_type: data.dataset_type as "predefined" | "dependent" | "custom",
+      template_name: data.description || undefined,
+      custom_query: data.query_params?.custom_query,
+      status: data.status,
+      progress: 100, // Restored datasets are at 100%
+      result_data: data.result_data,
+      record_count: data.record_count || 0,
+      created_at: data.created_at,
+      updated_at: data.last_updated,
+      is_deleted: false
+    };
   } catch (error) {
     console.error("Error in restoreDataset:", error);
     return null;

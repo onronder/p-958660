@@ -57,13 +57,18 @@ export const useDatasetPreview = () => {
         
         try {
           const { data: templateDetails, error: templateError } = await supabase
-            .from('predefined_templates')
-            .select('*')
-            .eq('id', selectedTemplate)
+            .from("pre_datasettemplate")
+            .select("*")
+            .eq("id", selectedTemplate)
             .single();
           
           if (templateError || !templateDetails) {
             throw new Error('Failed to fetch template details');
+          }
+          
+          // Ensure template_key exists
+          if (!templateDetails.template_key) {
+            throw new Error('Template key not found in template details');
           }
           
           const templateKey = templateDetails.template_key;
@@ -241,15 +246,18 @@ export const useDatasetPreview = () => {
       // For Shopify sources, use the shopify-private edge function
       if (sourceData.source_type === 'Shopify') {
         // Extract the credential ID from the source
-        const credentialId = sourceData.credentials?.credential_id;
+        // Handle credentials as a JSON object 
+        const credentials = sourceData.credentials;
         
-        if (!credentialId) {
+        if (!credentials || typeof credentials !== 'object' || !credentials.credential_id) {
           devLogger.error('Dataset Preview', 'Source has no credential ID', null, { sourceId });
           return {
             success: false,
             message: 'Source has no credentials attached.'
           };
         }
+        
+        const credentialId = credentials.credential_id;
         
         // Get the Shopify credentials
         const { data: credentialData, error: credentialError } = await supabase
