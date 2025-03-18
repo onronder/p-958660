@@ -38,13 +38,19 @@ export function useDevLogs() {
         .limit(limit)
         .range(offset, offset + limit - 1);
 
-      // Apply filters - fixed to prevent infinite type recursion
-      Object.entries(filters).forEach(([key, value]) => {
+      // Apply filters - completely rewritten to avoid type recursion
+      for (const [key, value] of Object.entries(filters)) {
         if (value !== undefined && value !== null && value !== '') {
-          // Use type assertion to avoid TypeScript's type recursion issue
-          query = query.eq(key, value) as typeof query;
+          // Don't chain, create a new query reference each time
+          query = supabase
+            .from('dev_logs')
+            .select('*')
+            .order('timestamp', { ascending: false })
+            .limit(limit)
+            .range(offset, offset + limit - 1)
+            .eq(key, value);
         }
-      });
+      }
 
       const { data, error: fetchError } = await query;
 
