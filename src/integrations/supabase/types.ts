@@ -935,9 +935,11 @@ export type Database = {
         Row: {
           created_at: string | null
           dataset_type: string
+          deletion_marked_at: string | null
           description: string | null
           error_message: string | null
           id: string
+          is_deleted: boolean | null
           last_updated: string | null
           name: string
           query_params: Json | null
@@ -951,9 +953,11 @@ export type Database = {
         Insert: {
           created_at?: string | null
           dataset_type: string
+          deletion_marked_at?: string | null
           description?: string | null
           error_message?: string | null
           id?: string
+          is_deleted?: boolean | null
           last_updated?: string | null
           name: string
           query_params?: Json | null
@@ -967,9 +971,11 @@ export type Database = {
         Update: {
           created_at?: string | null
           dataset_type?: string
+          deletion_marked_at?: string | null
           description?: string | null
           error_message?: string | null
           id?: string
+          is_deleted?: boolean | null
           last_updated?: string | null
           name?: string
           query_params?: Json | null
@@ -1124,6 +1130,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_deleted_datasets: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_deleted_sources: {
         Args: Record<PropertyKey, never>
         Returns: undefined
