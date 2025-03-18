@@ -1,104 +1,113 @@
 
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useState } from 'react';
-import { getSupabaseUrl } from '@/hooks/destinations/api/apiUtils';
+import { executePreDefinedDataset } from '@/services/predefinedDatasets';
+import { toast } from '@/hooks/use-toast';
 
 export const useDatasetPreview = () => {
-  const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
-  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [previewData, setPreviewData] = useState<any>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const [connectionTestResult, setConnectionTestResult] = useState<{success: boolean; message: string} | undefined>(undefined);
-  
-  // Generate preview data based on selected options
+  const [connectionTestResult, setConnectionTestResult] = useState<boolean | null>(null);
+
   const generatePreview = async (
-    datasetType: 'predefined' | 'dependent' | 'custom',
-    selectedSourceId: string,
+    datasetType: string,
+    sourceId: string,
     selectedTemplate: string,
-    selectedDependentTemplate: string,
-    customQuery: string
+    selectedDependentTemplate?: string,
+    customQuery?: string
   ) => {
     setIsPreviewLoading(true);
     setPreviewError(null);
-    setPreviewData([]);
+    setPreviewData(null);
     
     try {
-      // Get session for authentication
-      const { data: { session } } = await supabase.auth.getSession();
+      // Test the connection first
+      const testConnectionResult = await testConnection(sourceId);
+      setConnectionTestResult(testConnectionResult);
       
-      if (!session) {
-        throw new Error("No authenticated session");
+      if (!testConnectionResult) {
+        setIsPreviewLoading(false);
+        setPreviewError('Connection to the data source failed. Please check your credentials and try again.');
+        return;
       }
-      
-      let endpoint = '';
-      let payload = {};
-      
-      // Determine endpoint and payload based on dataset type
+
+      // Handle different dataset types
       if (datasetType === 'predefined') {
-        endpoint = '/functions/v1/shopify-extract';
-        payload = {
-          source_id: selectedSourceId,
-          template_name: selectedTemplate,
-          preview_only: true,
-          limit: 5
-        };
-      } else if (datasetType === 'dependent') {
-        endpoint = '/functions/v1/shopify-dependent';
-        payload = {
-          source_id: selectedSourceId,
-          template_name: selectedDependentTemplate,
-          preview_only: true,
-          limit: 5
-        };
-      } else if (datasetType === 'custom') {
-        endpoint = '/functions/v1/shopify-extract';
-        payload = {
-          source_id: selectedSourceId,
-          custom_query: customQuery,
-          preview_only: true,
-          limit: 5
-        };
+        // Fetch the template details to get the template_key
+        const templateDetailsResponse = await fetch(`/api/datasets/template/${selectedTemplate}`);
+        if (!templateDetailsResponse.ok) {
+          throw new Error('Failed to fetch template details');
+        }
+        
+        const templateDetails = await templateDetailsResponse.json();
+        const templateKey = templateDetails.template_key;
+        
+        // Execute the predefined dataset
+        const { data, error } = await executePreDefinedDataset(templateKey, sourceId);
+        
+        if (error) {
+          throw new Error(error.message || 'Failed to generate preview');
+        }
+        
+        setPreviewData(data);
+      } 
+      else if (datasetType === 'dependent') {
+        // Logic for dependent dataset preview
+        // This will be implemented in a future step
+        setPreviewError('Dependent dataset preview is not yet implemented');
+      } 
+      else if (datasetType === 'custom') {
+        // Logic for custom dataset preview
+        if (!customQuery) {
+          throw new Error('Custom query is required');
+        }
+        
+        // Execute custom query
+        const response = await fetch('/api/datasets/custom-preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sourceId,
+            query: customQuery,
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to generate preview');
+        }
+        
+        const data = await response.json();
+        setPreviewData(data);
       }
-      
-      // Make request to the appropriate endpoint
-      const supabaseUrl = getSupabaseUrl();
-      const response = await fetch(`${supabaseUrl}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify(payload)
+    } catch (error) {
+      console.error('Error generating preview:', error);
+      setPreviewError(error.message || 'Failed to generate preview');
+      toast({
+        title: 'Preview Generation Failed',
+        description: error.message || 'There was an error generating the preview.',
+        variant: 'destructive',
       });
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+
+  const testConnection = async (sourceId: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/sources/test-connection/${sourceId}`);
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate preview");
+        return false;
       }
       
       const data = await response.json();
-      
-      if (data.results) {
-        setPreviewData(data.results);
-        if (data.connection_result) {
-          setConnectionTestResult({
-            success: data.connection_result.success,
-            message: data.connection_result.message
-          });
-        }
-      } else {
-        toast({
-          title: "Warning",
-          description: "Preview generated but returned no results",
-          variant: "default",
-        });
-        setPreviewData([]);
-      }
-    } catch (error: any) {
-      console.error("Error generating preview:", error);
-      setPreviewError(error.message || "Failed to generate preview");
-    } finally {
-      setIsPreviewLoading(false);
+      return data.success === true;
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      return false;
     }
   };
 
@@ -107,7 +116,6 @@ export const useDatasetPreview = () => {
     previewData,
     previewError,
     connectionTestResult,
-    setConnectionTestResult,
-    generatePreview
+    generatePreview,
   };
 };

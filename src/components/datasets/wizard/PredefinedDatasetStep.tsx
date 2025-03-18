@@ -1,38 +1,88 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ShoppingBag, FileText, UserCheck } from "lucide-react";
+import { ShoppingBag, FileText, UserCheck, Loader2 } from "lucide-react";
+import { usePredefinedTemplates } from "@/hooks/datasets/usePredefinedDatasets";
 
 interface PredefinedDatasetStepProps {
   selectedTemplate: string;
   onSelectTemplate: (template: string) => void;
+  sourceType?: string;
+}
+
+interface TemplateDisplay {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  color: string;
 }
 
 const PredefinedDatasetStep: React.FC<PredefinedDatasetStepProps> = ({
   selectedTemplate,
-  onSelectTemplate
+  onSelectTemplate,
+  sourceType = 'shopify'
 }) => {
-  const templates = [
-    {
-      id: "products_basic",
-      name: "Products Basic",
-      description: "Basic product information including title, price, vendor, and type.",
-      icon: <ShoppingBag className="h-4 w-4 mr-2 text-green-600" />
-    },
-    {
-      id: "orders_basic",
-      name: "Orders Basic",
-      description: "Basic order information including order number, customer, total, and status.",
-      icon: <FileText className="h-4 w-4 mr-2 text-blue-600" />
-    },
-    {
-      id: "customers_basic",
-      name: "Customers Basic",
-      description: "Basic customer information including name, email, orders count, and total spent.",
-      icon: <UserCheck className="h-4 w-4 mr-2 text-amber-600" />
+  const { data: predefinedTemplates, isLoading, error } = usePredefinedTemplates(sourceType);
+  const [templates, setTemplates] = useState<TemplateDisplay[]>([]);
+
+  // Map predefined templates to display templates with icons
+  useEffect(() => {
+    if (predefinedTemplates?.length) {
+      const mappedTemplates = predefinedTemplates.map(template => {
+        let icon = <ShoppingBag className="h-4 w-4 mr-2" />;
+        let color = 'text-green-600';
+        
+        if (template.template_key.includes('order')) {
+          icon = <FileText className="h-4 w-4 mr-2" />;
+          color = 'text-blue-600';
+        } else if (template.template_key.includes('customer')) {
+          icon = <UserCheck className="h-4 w-4 mr-2" />;
+          color = 'text-amber-600';
+        }
+        
+        return {
+          id: template.id,
+          name: template.name,
+          description: template.description,
+          icon: React.cloneElement(icon as React.ReactElement, { className: `h-4 w-4 mr-2 ${color}` }),
+          color: color.replace('text-', 'bg-').replace('-600', '-100')
+        };
+      });
+      
+      setTemplates(mappedTemplates);
+      
+      // If we have templates but none is selected, select the first one
+      if (mappedTemplates.length > 0 && !selectedTemplate) {
+        onSelectTemplate(mappedTemplates[0].id);
+      }
     }
-  ];
+  }, [predefinedTemplates, selectedTemplate, onSelectTemplate]);
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="p-4 text-center text-red-500">
+        Error loading predefined templates. Please try again.
+      </div>
+    );
+  }
+  
+  if (templates.length === 0) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        No predefined templates available for this source type.
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-4">
