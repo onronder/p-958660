@@ -1,4 +1,9 @@
 
+// Fixing recursive type definition
+export type Json = null | boolean | number | string | JsonObject | JsonArray;
+export type JsonObject = { [key: string]: Json };
+export type JsonArray = Json[];
+
 export interface Dataset {
   id: string;
   user_id: string;

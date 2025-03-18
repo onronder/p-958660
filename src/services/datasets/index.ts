@@ -122,6 +122,7 @@ export const createDataset = async (datasetData: Partial<Dataset>): Promise<Data
     error_message: datasetData.status_message,
     record_count: datasetData.record_count,
     result_data: datasetData.result_data || [],
+    is_deleted: datasetData.is_deleted || false // Add is_deleted handling
   };
 
   const { data, error } = await supabase
@@ -169,7 +170,7 @@ export const createDataset = async (datasetData: Partial<Dataset>): Promise<Data
     record_count: data.record_count || 0,
     created_at: data.created_at,
     updated_at: data.last_updated,
-    is_deleted: Boolean(data.is_deleted)
+    is_deleted: Boolean(data.is_deleted || false)
   };
 
   return dataset;
@@ -272,7 +273,7 @@ export const updateDataset = async (datasetId: string, updates: Partial<Dataset>
     record_count: data.record_count || 0,
     created_at: data.created_at,
     updated_at: data.last_updated,
-    is_deleted: Boolean(data.is_deleted)
+    is_deleted: Boolean(data.is_deleted || false)
   };
 
   return dataset;
@@ -322,9 +323,8 @@ export const fetchDatasetById = async (datasetId: string): Promise<Dataset> => {
     record_count: data.record_count || 0,
     created_at: data.created_at,
     updated_at: data.last_updated,
-    is_deleted: Boolean(data.is_deleted)
+    is_deleted: Boolean(data.is_deleted || false)
   };
 
   return dataset;
 };
-
