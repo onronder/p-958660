@@ -19,6 +19,13 @@ export const useConnectionTest = () => {
     try {
       devLogger.info('Dataset Preview', 'Testing connection to source', { sourceId });
       
+      if (!sourceId) {
+        return {
+          success: false,
+          message: 'No source selected. Please select a valid source.'
+        };
+      }
+      
       // First get source details to determine the source type
       const { data: sourceData, error: sourceError } = await supabase
         .from('sources')
@@ -36,9 +43,9 @@ export const useConnectionTest = () => {
       
       // For Shopify sources, use the shopify-private edge function
       if (sourceData.source_type === 'Shopify') {
-        // Extract the credential ID from the source
-        // Handle credentials as a JSON object
-        let credentials: any = null;
+        // Extract the credential details from the source
+        let credentialId: string | null = null;
+        let shopifyCredentialData: any = null;
         
         // Log the raw credentials data for debugging
         devLogger.info('Dataset Preview', 'Raw source credentials data', { 
@@ -46,86 +53,76 @@ export const useConnectionTest = () => {
           hasCredentials: !!sourceData.credentials
         });
         
-        if (typeof sourceData.credentials === 'string') {
-          try {
-            // Attempt to parse if it's a JSON string
-            credentials = JSON.parse(sourceData.credentials);
-          } catch (e) {
-            devLogger.error('Dataset Preview', 'Failed to parse credentials string', e);
-            credentials = null;
-          }
-        } else if (sourceData.credentials && typeof sourceData.credentials === 'object') {
-          credentials = sourceData.credentials;
-        }
-        
-        // Find credential_id field
-        let credentialId: string | null = null;
-        
-        if (credentials) {
-          // Different ways to extract credential ID based on shape of credentials object
-          if (typeof credentials === 'object' && credentials !== null) {
-            if ('credential_id' in credentials) {
-              credentialId = credentials.credential_id;
+        // Try to extract credential_id from the credentials
+        if (sourceData.credentials) {
+          if (typeof sourceData.credentials === 'object' && sourceData.credentials !== null) {
+            // If credentials is a direct object with credential_id
+            if ('credential_id' in sourceData.credentials) {
+              credentialId = sourceData.credentials.credential_id;
               devLogger.info('Dataset Preview', 'Found credential_id in credentials object', { 
-                hasCredentialId: true 
+                credentialId 
               });
-            } else if (Array.isArray(credentials) && credentials.length > 0) {
-              // If it's an array, try to find credential_id in the first item
-              const firstItem = credentials[0];
-              if (typeof firstItem === 'object' && firstItem !== null && 'credential_id' in firstItem) {
-                credentialId = firstItem.credential_id;
-                devLogger.info('Dataset Preview', 'Found credential_id in first array item', { 
-                  hasCredentialId: true 
-                });
-              }
-            } else {
-              // Log all available keys in credentials object to help debug
-              devLogger.info('Dataset Preview', 'Credentials object keys', { 
-                keys: Object.keys(credentials) 
+            } 
+            // If credentials contains api_key and api_token directly
+            else if ('api_key' in sourceData.credentials && 'api_token' in sourceData.credentials && 'store_name' in sourceData.credentials) {
+              // Use credentials directly without fetching from shopify_credentials
+              shopifyCredentialData = {
+                store_name: sourceData.credentials.store_name,
+                api_key: sourceData.credentials.api_key,
+                api_token: sourceData.credentials.api_token
+              };
+              
+              devLogger.info('Dataset Preview', 'Found credentials directly in source', { 
+                hasCredentials: true,
+                storeUrl: sourceData.credentials.store_name 
               });
             }
           }
         }
         
-        if (!credentialId) {
-          devLogger.error('Dataset Preview', 'Source has no credential ID', null, { 
+        // If we have a credential ID but not the credential data yet, fetch it
+        if (credentialId && !shopifyCredentialData) {
+          const { data: fetchedCredentialData, error: credentialError } = await supabase
+            .from('shopify_credentials')
+            .select('*')
+            .eq('id', credentialId)
+            .single();
+            
+          if (credentialError || !fetchedCredentialData) {
+            devLogger.error('Dataset Preview', 'Failed to fetch shopify credentials', credentialError, { credentialId });
+            return {
+              success: false,
+              message: 'Failed to fetch credentials for this source.'
+            };
+          }
+          
+          shopifyCredentialData = fetchedCredentialData;
+        }
+        
+        // Check if we have the necessary credential data
+        if (!shopifyCredentialData) {
+          devLogger.error('Dataset Preview', 'No shopify credentials found', null, { 
             sourceId,
-            source: sourceData.name,
-            sourceType: sourceData.source_type
+            source: sourceData.name
           });
           return {
             success: false,
-            message: 'Source has no credentials attached.'
-          };
-        }
-        
-        // Get the Shopify credentials
-        const { data: credentialData, error: credentialError } = await supabase
-          .from('shopify_credentials')
-          .select('*')
-          .eq('id', credentialId)
-          .single();
-          
-        if (credentialError || !credentialData) {
-          devLogger.error('Dataset Preview', 'Failed to fetch credentials', credentialError, { credentialId });
-          return {
-            success: false,
-            message: 'Failed to fetch credentials for this source.'
+            message: 'No valid credentials found for this Shopify source.'
           };
         }
         
         // Test connection using shopify-private edge function
         devLogger.info('Dataset Preview', 'Testing Shopify connection', { 
-          storeUrl: credentialData.store_name,
+          storeUrl: shopifyCredentialData.store_name,
           userId: user?.id 
         });
         
         const { data, error } = await supabase.functions.invoke('shopify-private', {
           body: {
             action: 'test_connection',
-            store_url: credentialData.store_name,
-            api_key: credentialData.api_key,
-            api_token: credentialData.api_token,
+            store_url: shopifyCredentialData.store_name,
+            api_key: shopifyCredentialData.api_key,
+            api_token: shopifyCredentialData.api_token,
             user_id: user?.id
           }
         });

@@ -1,51 +1,72 @@
 
-import { useState } from "react";
-import { Dataset } from "@/types/dataset";
-import LoadingState from "./LoadingState";
-import EmptyDatasetsState from "./EmptyDatasetsState";
-import DatasetsTable from "./DatasetsTable";
-import { useDatasetActions } from "@/hooks/useDatasetActions";
+import React from 'react';
+import { DatasetsTable } from './DatasetsTable';
+import { Dataset } from '@/types/dataset';
+import { useAuth } from '@/contexts/AuthContext';
+import { useDatasetActions } from '@/hooks/useDatasetActions';
+import DeleteDatasetDialog from './DeleteDatasetDialog';
 
 interface DatasetsListProps {
   datasets: Dataset[];
-  isLoading: boolean;
-  onDatasetsUpdated: () => void;
-  openCreateDialog: () => void;
-  sourcesExist: boolean;
+  isLoading?: boolean;
+  onRunDataset?: (datasetId: string) => Promise<void>;
+  onDeleteDataset?: (datasetId: string) => Promise<void>;
+  onRefresh?: () => void;
 }
 
-const DatasetsList = ({ 
+export const DatasetsList: React.FC<DatasetsListProps> = ({ 
   datasets, 
-  isLoading, 
-  onDatasetsUpdated, 
-  openCreateDialog, 
-  sourcesExist 
-}: DatasetsListProps) => {
+  isLoading,
+  onRunDataset,
+  onDeleteDataset,
+  onRefresh
+}) => {
+  const { user } = useAuth();
+  const [datasetToDelete, setDatasetToDelete] = React.useState<Dataset | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+  const datasetActions = useDatasetActions();
   
-  const { 
-    handleRunDataset, 
-    handleDeleteDataset 
-  } = useDatasetActions(onDatasetsUpdated);
-
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  if (datasets.length === 0) {
-    return (
-      <EmptyDatasetsState 
-        sourcesExist={sourcesExist} 
-        openCreateDialog={openCreateDialog} 
-      />
-    );
-  }
-
+  const handleDelete = async (datasetId: string, datasetName: string) => {
+    // Find the dataset to delete
+    const dataset = datasets.find(d => d.id === datasetId);
+    if (dataset) {
+      setDatasetToDelete(dataset);
+      setShowDeleteModal(true);
+    }
+  };
+  
+  const confirmDelete = async () => {
+    if (!datasetToDelete) return;
+    
+    const success = await datasetActions.handleDelete(datasetToDelete.id, datasetToDelete.name);
+    
+    if (success && onRefresh) {
+      onRefresh();
+    }
+    
+    setShowDeleteModal(false);
+    setDatasetToDelete(null);
+  };
+  
   return (
-    <DatasetsTable 
-      datasets={datasets}
-      onRunDataset={handleRunDataset}
-      onDeleteDataset={handleDeleteDataset}
-    />
+    <>
+      <DatasetsTable 
+        datasets={datasets}
+        isLoading={isLoading}
+        onDelete={handleDelete}
+        onRun={onRunDataset}
+      />
+      
+      {datasetToDelete && (
+        <DeleteDatasetDialog 
+          open={showDeleteModal}
+          onOpenChange={setShowDeleteModal}
+          onConfirm={confirmDelete}
+          datasetName={datasetToDelete.name}
+          isDeleting={datasetActions.isDeleting}
+        />
+      )}
+    </>
   );
 };
 

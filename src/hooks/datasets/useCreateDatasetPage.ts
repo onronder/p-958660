@@ -69,11 +69,32 @@ export function useCreateDatasetPage() {
   };
   
   // Handler for testing connection
-  const handleTestConnection = () => {
+  const handleTestConnection = async () => {
     devLogger.debug('CreateDatasetPage', 'Testing connection');
+    
+    if (!datasetState.selectedSourceId) {
+      toast({
+        title: "No Source Selected",
+        description: "Please select a data source before testing connection.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     toast({
       title: "Testing Connection",
       description: "Testing connection to the selected source...",
+    });
+    
+    // Use the test connection function from previewHook
+    const result = await previewHook.testConnection(datasetState.selectedSourceId);
+    
+    // The result will be shown through the connectionTestResult state
+    // which is already being updated via the useEffect above
+    
+    devLogger.debug('CreateDatasetPage', 'Connection test completed', {
+      success: result.success,
+      message: result.message
     });
   };
   

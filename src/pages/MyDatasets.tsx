@@ -1,160 +1,146 @@
 
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Plus, FileText, AlertTriangle } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
-import { Dataset } from "@/types/dataset";
-import { 
-  fetchDatasets, 
-  fetchDeletedDatasets 
-} from "@/services/datasets";
-import InfoBanner from "@/components/InfoBanner";
-import CreateDatasetDialog from "@/components/datasets/CreateDatasetDialog";
-import DatasetsList from "@/components/datasets/DatasetsList";
-import DeletedDatasetsTable from "@/components/datasets/DeletedDatasetsTable";
-import LoadingState from "@/components/datasets/LoadingState";
-import { useDatasetActions } from "@/hooks/useDatasetActions";
-import { useSources } from "@/hooks/useSources";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { Dataset } from '@/types/dataset';
+import { DatasetsList } from '@/components/datasets/DatasetsList';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import EmptyDatasetsState from '@/components/datasets/EmptyDatasetsState';
+import LoadingState from '@/components/datasets/LoadingState';
+import CreateDatasetDialog from '@/components/datasets/CreateDatasetDialog';
+import DeletedDatasetsTable from '@/components/datasets/DeletedDatasetsTable';
+import { fetchUserDatasets, fetchDeletedDatasets } from '@/services/datasets';
+import { useDatasetActions } from '@/hooks/useDatasetActions';
+import { devLogger } from '@/utils/DevLogger';
 
-const MyDatasets = () => {
+const MyDatasetsPage: React.FC = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const { sources, isLoading: sourcesLoading } = useSources();
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [deletedDatasets, setDeletedDatasets] = useState<Dataset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDeletedLoading, setIsDeletedLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [sourcesExist, setSourcesExist] = useState(false);
-  
+  const [activeTab, setActiveTab] = useState('active');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const datasetActions = useDatasetActions();
+
   const loadDatasets = async () => {
     setIsLoading(true);
     try {
-      const datasetsData = await fetchDatasets();
-      setDatasets(datasetsData);
+      const fetchedDatasets = await fetchUserDatasets();
+      setDatasets(fetchedDatasets);
+      
+      // Also fetch deleted datasets if we're on the trash tab
+      if (activeTab === 'trash') {
+        const fetchedDeletedDatasets = await fetchDeletedDatasets();
+        setDeletedDatasets(fetchedDeletedDatasets);
+      }
     } catch (error) {
-      console.error("Failed to load datasets:", error);
+      console.error('Error loading datasets:', error);
       toast({
-        title: "Error",
-        description: "Failed to load datasets. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load datasets',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const loadDeletedDatasets = async () => {
-    setIsDeletedLoading(true);
-    try {
-      const deletedDatasetsData = await fetchDeletedDatasets();
-      setDeletedDatasets(deletedDatasetsData);
-    } catch (error) {
-      console.error("Failed to load deleted datasets:", error);
-    } finally {
-      setIsDeletedLoading(false);
-    }
-  };
-  
-  const { handleRestoreDataset, handlePermanentDelete } = useDatasetActions(loadDatasets);
 
   useEffect(() => {
-    loadDatasets();
-    loadDeletedDatasets();
-  }, []);
-  
-  useEffect(() => {
-    setSourcesExist(sources.length > 0);
-  }, [sources]);
-
-  const handleDatasetCreated = (newDataset: Dataset) => {
-    setDatasets([newDataset, ...datasets]);
-  };
-
-  const handleCreateButtonClick = () => {
-    if (!sourcesExist) {
-      toast({
-        title: "No Data Sources",
-        description: "You need to connect a data source before creating a dataset.",
-        variant: "destructive",
-      });
-      navigate("/sources");
-      return;
+    if (user) {
+      loadDatasets();
     }
-    
-    setIsDialogOpen(true);
+  }, [user, activeTab]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
   };
 
-  const sourcesForDialog = sources.map(source => ({
-    id: source.id,
-    name: source.name
-  }));
+  const handleRestore = async (id: string, name: string) => {
+    const success = await datasetActions.handleRestore(id, name);
+    if (success) {
+      loadDatasets();
+    }
+    return success;
+  };
+
+  const handlePermanentDelete = async (id: string, name: string) => {
+    const success = await datasetActions.handlePermanentDelete(id, name);
+    if (success) {
+      loadDatasets();
+    }
+    return success;
+  };
+
+  const handleCreateDataset = () => {
+    setShowCreateDialog(true);
+  };
+
+  const onCreateDatasetSubmit = (templateId: string) => {
+    navigate(`/create-dataset?template=${templateId}`);
+    setShowCreateDialog(false);
+  };
 
   return (
-    <div className="space-y-8">
-      <InfoBanner 
-        messageId="datasets-info"
-        message={
-          <span>
-            <span className="font-bold">📊 My Datasets</span> allows you to create, manage, and explore datasets extracted from your connected data sources.
-          </span>
-        } 
-      />
-
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-primary">My Datasets</h1>
-        {sourcesExist ? (
-          <CreateDatasetDialog 
-            sources={sourcesForDialog}
-            onDatasetCreated={handleDatasetCreated}
-            isOpen={isDialogOpen}
-            onOpenChange={setIsDialogOpen}
-          />
-        ) : (
-          <Button asChild>
-            <Link to="/sources" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Connect a Data Source
-            </Link>
-          </Button>
-        )}
+    <div className="container mx-auto py-6 max-w-6xl">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">My Datasets</h1>
+        <Button onClick={handleCreateDataset}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Dataset
+        </Button>
       </div>
 
-      <Card className="p-6">
-        <h3 className="text-xl font-semibold mb-4">Active Datasets</h3>
-        <DatasetsList 
-          datasets={datasets}
-          isLoading={isLoading || sourcesLoading}
-          onDatasetsUpdated={loadDatasets}
-          openCreateDialog={handleCreateButtonClick}
-          sourcesExist={sourcesExist}
-        />
-      </Card>
-      
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-xl font-semibold">Deleted Datasets</h3>
-          <AlertTriangle className="h-5 w-5 text-amber-500" />
-        </div>
-        
-        <p className="text-muted-foreground mb-6">
-          Deleted datasets remain for 30 days after which they are permanently deleted.
-        </p>
-        
-        {isDeletedLoading ? (
-          <LoadingState />
-        ) : (
-          <DeletedDatasetsTable 
-            deletedDatasets={deletedDatasets}
-            onRestoreDataset={handleRestoreDataset}
-            onPermanentDelete={handlePermanentDelete}
-          />
-        )}
-      </Card>
+      <Tabs defaultValue="active" value={activeTab} onValueChange={handleTabChange}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="active">Active Datasets</TabsTrigger>
+          <TabsTrigger value="trash">Trash</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active">
+          {isLoading ? (
+            <LoadingState />
+          ) : datasets.length === 0 ? (
+            <EmptyDatasetsState onCreateClick={handleCreateDataset} />
+          ) : (
+            <DatasetsList 
+              datasets={datasets} 
+              isLoading={isLoading}
+              onRefresh={loadDatasets}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="trash">
+          {isLoading ? (
+            <LoadingState />
+          ) : deletedDatasets.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">The trash is empty</p>
+            </div>
+          ) : (
+            <DeletedDatasetsTable 
+              datasets={deletedDatasets}
+              isRestoring={datasetActions.isRestoring}
+              isDeleting={datasetActions.isDeleting}
+              onRestore={handleRestore}
+              onDelete={handlePermanentDelete}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
+
+      <CreateDatasetDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSubmit={onCreateDatasetSubmit}
+      />
     </div>
   );
 };
 
-export default MyDatasets;
+export default MyDatasetsPage;

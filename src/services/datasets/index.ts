@@ -1,127 +1,115 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Dataset } from '@/types/dataset';
 
-export async function getDatasets(userId: string): Promise<any[]> {
-  try {
-    const { data, error } = await supabase
-      .from('user_datasets')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+export const fetchUserDatasets = async (): Promise<Dataset[]> => {
+  const { data, error } = await supabase
+    .from('user_datasets')
+    .select('*')
+    .eq('is_deleted', false)
+    .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching datasets:', error);
-      return [];
-    }
-
-    return data || [];
-  } catch (error) {
+  if (error) {
     console.error('Error fetching datasets:', error);
-    return [];
+    throw new Error('Failed to fetch datasets');
   }
-}
 
-export async function deleteDataset(id: string): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('user_datasets')
-      .update({
-        status: 'deleted'
-      })
-      .eq('id', id);
+  return data || [];
+};
 
-    if (error) {
-      console.error('Error deleting dataset:', error);
-      return false;
-    }
+export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
+  const { data, error } = await supabase
+    .from('user_datasets')
+    .select('*')
+    .eq('is_deleted', true)
+    .order('created_at', { ascending: false });
 
-    return true;
-  } catch (error) {
-    console.error('Error deleting dataset:', error);
-    return false;
-  }
-}
-
-export async function restoreDataset(id: string): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('user_datasets')
-      .update({
-        status: 'active'
-      })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error restoring dataset:', error);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Error restoring dataset:', error);
-    return false;
-  }
-}
-
-export async function getDatasetById(id: string): Promise<any | null> {
-  try {
-    const { data, error } = await supabase
-      .from('user_datasets')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error('Error fetching dataset by ID:', error);
-      return null;
-    }
-
-    return data || null;
-  } catch (error) {
-    console.error('Error fetching dataset by ID:', error);
-    return null;
-  }
-}
-
-// Add these functions to fix the build errors
-export const fetchDatasets = getDatasets;
-
-export async function fetchDeletedDatasets(userId: string): Promise<any[]> {
-  try {
-    const { data, error } = await supabase
-      .from('user_datasets')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('status', 'deleted')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching deleted datasets:', error);
-      return [];
-    }
-
-    return data || [];
-  } catch (error) {
+  if (error) {
     console.error('Error fetching deleted datasets:', error);
-    return [];
+    throw new Error('Failed to fetch deleted datasets');
   }
-}
 
-export async function permanentlyDeleteDataset(id: string): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('user_datasets')
-      .delete()
-      .eq('id', id);
+  return data || [];
+};
 
-    if (error) {
-      console.error('Error permanently deleting dataset:', error);
-      return false;
-    }
+export const createDataset = async (datasetData: Partial<Dataset>): Promise<Dataset> => {
+  const { data, error } = await supabase
+    .from('user_datasets')
+    .insert([datasetData])
+    .select()
+    .single();
 
-    return true;
-  } catch (error) {
+  if (error) {
+    console.error('Error creating dataset:', error);
+    throw new Error('Failed to create dataset');
+  }
+
+  return data;
+};
+
+export const deleteDataset = async (datasetId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('user_datasets')
+    .update({ is_deleted: true })
+    .eq('id', datasetId);
+
+  if (error) {
+    console.error('Error deleting dataset:', error);
+    throw new Error('Failed to delete dataset');
+  }
+};
+
+export const restoreDataset = async (datasetId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('user_datasets')
+    .update({ is_deleted: false })
+    .eq('id', datasetId);
+
+  if (error) {
+    console.error('Error restoring dataset:', error);
+    throw new Error('Failed to restore dataset');
+  }
+};
+
+export const permanentlyDeleteDataset = async (datasetId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('user_datasets')
+    .delete()
+    .eq('id', datasetId);
+
+  if (error) {
     console.error('Error permanently deleting dataset:', error);
-    return false;
+    throw new Error('Failed to permanently delete dataset');
   }
-}
+};
+
+export const updateDataset = async (datasetId: string, updates: Partial<Dataset>): Promise<Dataset> => {
+  const { data, error } = await supabase
+    .from('user_datasets')
+    .update(updates)
+    .eq('id', datasetId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating dataset:', error);
+    throw new Error('Failed to update dataset');
+  }
+
+  return data;
+};
+
+export const fetchDatasetById = async (datasetId: string): Promise<Dataset> => {
+  const { data, error } = await supabase
+    .from('user_datasets')
+    .select('*')
+    .eq('id', datasetId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching dataset:', error);
+    throw new Error('Failed to fetch dataset');
+  }
+
+  return data;
+};

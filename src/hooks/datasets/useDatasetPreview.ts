@@ -43,6 +43,8 @@ export const useDatasetPreview = () => {
       // Test the connection first
       devLogger.info('Dataset Preview', 'Testing connection to source', { sourceId });
       const testResult = await testConnection(sourceId);
+      
+      // Store the connection test result
       setConnectionTestResult(testResult);
       
       if (!testResult.success) {
@@ -156,5 +158,6 @@ export const useDatasetPreview = () => {
     connectionTestResult,
     previewSample,
     generatePreview,
+    testConnection,  // Expose the testConnection function
   };
 };
