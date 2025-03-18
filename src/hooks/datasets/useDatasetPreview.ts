@@ -7,7 +7,10 @@ export const useDatasetPreview = () => {
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const [connectionTestResult, setConnectionTestResult] = useState<boolean | null>(null);
+  const [connectionTestResult, setConnectionTestResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   const generatePreview = async (
     datasetType: string,
@@ -22,10 +25,10 @@ export const useDatasetPreview = () => {
     
     try {
       // Test the connection first
-      const testConnectionResult = await testConnection(sourceId);
-      setConnectionTestResult(testConnectionResult);
+      const testResult = await testConnection(sourceId);
+      setConnectionTestResult(testResult);
       
-      if (!testConnectionResult) {
+      if (!testResult.success) {
         setIsPreviewLoading(false);
         setPreviewError('Connection to the data source failed. Please check your credentials and try again.');
         return;
@@ -95,19 +98,31 @@ export const useDatasetPreview = () => {
     }
   };
 
-  const testConnection = async (sourceId: string): Promise<boolean> => {
+  const testConnection = async (sourceId: string): Promise<{
+    success: boolean;
+    message: string;
+  }> => {
     try {
       const response = await fetch(`/api/sources/test-connection/${sourceId}`);
       
       if (!response.ok) {
-        return false;
+        return {
+          success: false,
+          message: 'Connection failed. Please check your credentials.'
+        };
       }
       
       const data = await response.json();
-      return data.success === true;
+      return {
+        success: data.success === true,
+        message: data.success ? 'Connection successful' : 'Connection failed'
+      };
     } catch (error) {
       console.error('Error testing connection:', error);
-      return false;
+      return {
+        success: false,
+        message: 'Error testing connection'
+      };
     }
   };
 

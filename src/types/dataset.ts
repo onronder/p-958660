@@ -26,3 +26,35 @@ export interface Dataset {
   last_run?: string;
   schedule?: string;
 }
+
+export interface PredefinedDatasetTemplate {
+  id: string;
+  name: string;
+  description: string;
+  template_key: string;
+  query_structure: {
+    query: string;
+    defaultParams: Record<string, any>;
+    dataPath: string;
+  };
+  source_type: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserDataset {
+  id: string;
+  user_id: string;
+  source_id: string;
+  template_id: string | null;
+  name: string;
+  description: string | null;
+  dataset_type: 'predefined' | 'dependent' | 'custom';
+  query_params: Record<string, any> | null;
+  result_data: any;
+  status: 'pending' | 'processing' | 'completed' | 'error';
+  error_message: string | null;
+  record_count: number | null;
+  last_updated: string;
+  created_at: string;
+}

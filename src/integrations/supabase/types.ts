@@ -632,6 +632,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pre_datasettemplate: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          query_structure: Json
+          source_type: string
+          template_key: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          query_structure: Json
+          source_type: string
+          template_key: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          query_structure?: Json
+          source_type?: string
+          template_key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           auto_logout_minutes: number | null
@@ -897,6 +930,72 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_datasets: {
+        Row: {
+          created_at: string | null
+          dataset_type: string
+          description: string | null
+          error_message: string | null
+          id: string
+          last_updated: string | null
+          name: string
+          query_params: Json | null
+          record_count: number | null
+          result_data: Json | null
+          source_id: string
+          status: string
+          template_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dataset_type: string
+          description?: string | null
+          error_message?: string | null
+          id?: string
+          last_updated?: string | null
+          name: string
+          query_params?: Json | null
+          record_count?: number | null
+          result_data?: Json | null
+          source_id: string
+          status?: string
+          template_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dataset_type?: string
+          description?: string | null
+          error_message?: string | null
+          id?: string
+          last_updated?: string | null
+          name?: string
+          query_params?: Json | null
+          record_count?: number | null
+          result_data?: Json | null
+          source_id?: string
+          status?: string
+          template_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_datasets_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_datasets_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "pre_datasettemplate"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
