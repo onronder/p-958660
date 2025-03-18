@@ -38,10 +38,11 @@ export function useDevLogs() {
         .limit(limit)
         .range(offset, offset + limit - 1);
 
-      // Apply filters
+      // Apply filters - fixed to prevent infinite type recursion
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) {
-          query = query.eq(key, value);
+        if (value !== undefined && value !== null && value !== '') {
+          // Use type assertion to avoid TypeScript's type recursion issue
+          query = query.eq(key, value) as typeof query;
         }
       });
 

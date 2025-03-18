@@ -1,5 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import React from 'react';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'critical';
 
@@ -234,8 +234,6 @@ class DevLogger {
       console.error('Failed to clear logs:', error);
     }
   }
-
-  // Private methods
 
   private async storeLog(entry: DevLogEntry): Promise<void> {
     try {
