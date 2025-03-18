@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dataset } from '@/types/dataset';
 import { transformDbRecordToDataset } from './transformations';
 
-// Define a type to match the database structure exactly
+// Define a type to match the database structure exactly with more specific types
+// to prevent TypeScript from creating deep recursive type structures
 type DbDatasetRecord = {
   id: string;
   user_id: string;
@@ -11,11 +12,11 @@ type DbDatasetRecord = {
   name: string;
   dataset_type: string;
   description: string | null;
-  query_params: any;
+  query_params: Record<string, unknown> | null; // More specific than 'any'
   status: string;
   error_message: string | null;
   record_count: number | null;
-  result_data: any;
+  result_data: unknown[] | null; // Array of unknown instead of any
   created_at: string;
   last_updated: string;
   is_deleted: boolean | null;
@@ -26,25 +27,20 @@ type DbDatasetRecord = {
  */
 export const fetchUserDatasets = async (): Promise<Dataset[]> => {
   try {
-    // Use type assertion to bypass TypeScript's deep type inference
-    const response = await supabase
+    // Use explicit casting to prevent TypeScript from deep type inference
+    const { data, error } = await supabase
       .from('user_datasets')
       .select('id, user_id, source_id, name, dataset_type, description, query_params, status, error_message, record_count, result_data, created_at, last_updated, is_deleted')
       .eq('is_deleted', false)
       .order('created_at', { ascending: false });
     
-    const { data, error } = response as unknown as { 
-      data: DbDatasetRecord[] | null; 
-      error: any 
-    };
-
     if (error) {
       console.error('Error fetching datasets:', error);
       throw new Error('Failed to fetch datasets');
     }
 
     // Transform the data to match Dataset type
-    const datasets: Dataset[] = (data || []).map(transformDbRecordToDataset);
+    const datasets: Dataset[] = (data as DbDatasetRecord[] || []).map(transformDbRecordToDataset);
     return datasets;
   } catch (error) {
     console.error('Error in fetchUserDatasets:', error);
@@ -54,18 +50,13 @@ export const fetchUserDatasets = async (): Promise<Dataset[]> => {
       .select('id, user_id, source_id, name, dataset_type, description, query_params, status, error_message, record_count, result_data, created_at, last_updated, is_deleted')
       .order('created_at', { ascending: false });
     
-    const { data, error: fallbackError } = response as unknown as {
-      data: DbDatasetRecord[] | null;
-      error: any;
-    };
-    
-    if (fallbackError) {
-      console.error('Error in fallback fetch:', fallbackError);
+    if (response.error) {
+      console.error('Error in fallback fetch:', response.error);
       throw new Error('Failed to fetch datasets');
     }
     
     // Transform and filter out deleted items
-    const datasets: Dataset[] = (data || [])
+    const datasets: Dataset[] = (response.data as DbDatasetRecord[] || [])
       .map(transformDbRecordToDataset)
       .filter(dataset => !dataset.is_deleted);
     
@@ -78,25 +69,20 @@ export const fetchUserDatasets = async (): Promise<Dataset[]> => {
  */
 export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
   try {
-    // Use type assertion to bypass TypeScript's deep type inference
-    const response = await supabase
+    // Use explicit casting to prevent TypeScript from deep type inference
+    const { data, error } = await supabase
       .from('user_datasets')
       .select('id, user_id, source_id, name, dataset_type, description, query_params, status, error_message, record_count, result_data, created_at, last_updated, is_deleted')
       .eq('is_deleted', true)
       .order('created_at', { ascending: false });
     
-    const { data, error } = response as unknown as {
-      data: DbDatasetRecord[] | null;
-      error: any;
-    };
-
     if (error) {
       console.error('Error fetching deleted datasets:', error);
       throw new Error('Failed to fetch deleted datasets');
     }
 
     // Transform the data to match Dataset type
-    const datasets: Dataset[] = (data || []).map(transformDbRecordToDataset);
+    const datasets: Dataset[] = (data as DbDatasetRecord[] || []).map(transformDbRecordToDataset);
     return datasets;
   } catch (error) {
     console.error('Error in fetchDeletedDatasets:', error);
@@ -108,22 +94,16 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
  * Fetches a single dataset by ID
  */
 export const fetchDatasetById = async (datasetId: string): Promise<Dataset> => {
-  // Use type assertion to bypass TypeScript's deep type inference
-  const response = await supabase
+  const { data, error } = await supabase
     .from('user_datasets')
     .select('id, user_id, source_id, name, dataset_type, description, query_params, status, error_message, record_count, result_data, created_at, last_updated, is_deleted')
     .eq('id', datasetId)
     .single();
   
-  const { data, error } = response as unknown as {
-    data: DbDatasetRecord | null;
-    error: any;
-  };
-
   if (error) {
     console.error('Error fetching dataset:', error);
     throw new Error('Failed to fetch dataset');
   }
 
-  return transformDbRecordToDataset(data);
+  return transformDbRecordToDataset(data as DbDatasetRecord);
 };
