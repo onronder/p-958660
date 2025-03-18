@@ -30,7 +30,7 @@ export const fetchDatasets = async (): Promise<Dataset[]> => {
                    (item.query_params as any).custom_query : undefined,
       status: mapDatabaseStatus(item.status),
       progress: 100, // Completed datasets are at 100%
-      result_data: item.result_data,
+      result_data: ensureArrayData(item.result_data),
       record_count: item.record_count || 0,
       created_at: item.created_at,
       updated_at: item.last_updated,
@@ -40,6 +40,31 @@ export const fetchDatasets = async (): Promise<Dataset[]> => {
     console.error("Error in fetchDatasets:", error);
     return [];
   }
+};
+
+// Helper function to ensure result_data is an array
+const ensureArrayData = (data: any): any[] => {
+  if (!data) {
+    return [];
+  }
+  
+  if (Array.isArray(data)) {
+    return data;
+  }
+  
+  // If it's a string that looks like JSON, try to parse it
+  if (typeof data === 'string' && (data.startsWith('[') || data.startsWith('{'))) {
+    try {
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch (e) {
+      console.error("Error parsing result_data:", e);
+      return [data]; // Return as single item array if parsing fails
+    }
+  }
+  
+  // Return as single item array for any other type
+  return [data];
 };
 
 // Helper function to map database status to Dataset status type
@@ -65,7 +90,7 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
       .from("user_datasets")
       .select("*")
       .eq("status", "deleted")
-      .order("deleted_at", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching deleted datasets:", error);
@@ -85,7 +110,7 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
                    (item.query_params as any).custom_query : undefined,
       status: "completed", // Deleted datasets are considered completed
       progress: 100, // Completed datasets are at 100%
-      result_data: item.result_data,
+      result_data: ensureArrayData(item.result_data),
       record_count: item.record_count || 0,
       created_at: item.created_at,
       updated_at: item.last_updated,
@@ -153,7 +178,7 @@ export const restoreDataset = async (datasetId: string): Promise<Dataset | null>
                    (data.query_params as any).custom_query : undefined,
       status: "completed", // Restored datasets are considered completed
       progress: 100, // Restored datasets are at 100%
-      result_data: Array.isArray(data.result_data) ? data.result_data : [],
+      result_data: ensureArrayData(data.result_data),
       record_count: data.record_count || 0,
       created_at: data.created_at,
       updated_at: data.last_updated,

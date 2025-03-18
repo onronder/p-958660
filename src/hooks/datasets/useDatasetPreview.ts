@@ -246,19 +246,51 @@ export const useDatasetPreview = () => {
       // For Shopify sources, use the shopify-private edge function
       if (sourceData.source_type === 'Shopify') {
         // Extract the credential ID from the source
-        // Handle credentials as a JSON object 
-        const credentials = sourceData.credentials;
+        // Handle credentials as a JSON object
+        let credentials: any = null;
+        
+        // Log the raw credentials data for debugging
+        devLogger.info('Dataset Preview', 'Raw source credentials data', { 
+          credentialsType: typeof sourceData.credentials,
+          hasCredentials: !!sourceData.credentials
+        });
+        
+        if (typeof sourceData.credentials === 'string') {
+          try {
+            // Attempt to parse if it's a JSON string
+            credentials = JSON.parse(sourceData.credentials);
+          } catch (e) {
+            devLogger.error('Dataset Preview', 'Failed to parse credentials string', e);
+            credentials = null;
+          }
+        } else if (sourceData.credentials && typeof sourceData.credentials === 'object') {
+          credentials = sourceData.credentials;
+        }
+        
+        // Find credential_id field
         let credentialId: string | null = null;
         
-        if (typeof credentials === 'object' && credentials !== null) {
-          // Check if credentials is an object with credential_id property
+        if (credentials) {
+          // Directly check for credential_id in the object
           if ('credential_id' in credentials) {
-            credentialId = credentials.credential_id as string;
+            credentialId = credentials.credential_id;
+            devLogger.info('Dataset Preview', 'Found credential_id in credentials object', { 
+              hasCredentialId: true 
+            });
+          } else {
+            // Log all available keys in credentials object to help debug
+            devLogger.info('Dataset Preview', 'Credentials object keys', { 
+              keys: Object.keys(credentials) 
+            });
           }
         }
         
         if (!credentialId) {
-          devLogger.error('Dataset Preview', 'Source has no credential ID', null, { sourceId });
+          devLogger.error('Dataset Preview', 'Source has no credential ID', null, { 
+            sourceId,
+            source: sourceData.name,
+            sourceType: sourceData.source_type
+          });
           return {
             success: false,
             message: 'Source has no credentials attached.'
