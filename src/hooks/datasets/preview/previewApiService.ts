@@ -31,8 +31,6 @@ export const executePredefinedDataset = async (templateKey: string, sourceId: st
     
     // Log the response for debugging
     devLogger.debug('Dataset Preview API', 'Edge function response', {
-      status: response.status,
-      statusText: response.statusText,
       hasData: !!response.data,
       hasError: !!response.error
     });
@@ -85,8 +83,6 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
     
     // Log the response for debugging
     devLogger.debug('Dataset Preview API', 'Custom query response', {
-      status: response.status,
-      statusText: response.statusText,
       hasData: !!response.data,
       hasError: !!response.error
     });

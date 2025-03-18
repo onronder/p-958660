@@ -82,19 +82,19 @@ export const useDatasetPreview = () => {
             sourceId 
           });
           
-          const { data, error } = await executePredefinedDataset(templateKey, sourceId);
+          const response = await executePredefinedDataset(templateKey, sourceId);
           
-          if (error) {
-            throw new Error(error.message || 'Failed to generate preview');
+          if (response.error) {
+            throw new Error(response.error.message || 'Failed to generate preview');
           }
           
           // Check if we received the expected data structure
-          if (!data || !data.results) {
+          if (!response.data || !response.data.results) {
             throw new Error('Invalid response format from the Edge Function');
           }
           
           // Process the data for preview
-          const processedData = Array.isArray(data.results) ? data.results : [];
+          const processedData = Array.isArray(response.data.results) ? response.data.results : [];
           setPreviewData(processedData);
           
           // Generate sample preview
@@ -131,18 +131,19 @@ export const useDatasetPreview = () => {
             queryLength: customQuery.length
           });
           
-          const { data, error } = await executeCustomQuery(sourceId, customQuery);
+          const response = await executeCustomQuery(sourceId, customQuery);
           
-          if (error) {
-            devLogger.error('Dataset Preview', 'Custom query execution failed', error);
-            throw new Error(error.message || 'Failed to execute custom query');
+          if (response.error) {
+            devLogger.error('Dataset Preview', 'Custom query execution failed', response.error);
+            throw new Error(response.error.message || 'Failed to execute custom query');
           }
           
-          if (!data || !data.results) {
+          // Type guard to check if response.data exists before accessing it
+          if (!response.data || !response.data.results) {
             throw new Error('Invalid response format from the Edge Function');
           }
           
-          const processedData = Array.isArray(data.results) ? data.results : [];
+          const processedData = Array.isArray(response.data.results) ? response.data.results : [];
           
           setPreviewData(processedData);
           
