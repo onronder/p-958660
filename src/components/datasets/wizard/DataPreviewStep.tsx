@@ -1,10 +1,10 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, AlertCircle, CheckCircle, Save, Database } from "lucide-react";
+import { Loader2, RefreshCw, AlertCircle, CheckCircle, Save, Database, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
-import { devLogger } from "@/utils/DevLogger";
+import { devLogger } from "@/utils/logger";
 
 interface DataPreviewStepProps {
   isLoading: boolean;
@@ -128,10 +128,23 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
           </div>
         </div>
       ) : error ? (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
+        <Alert variant="destructive" className="border-red-300">
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error loading preview</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>
+            {error}
+            {error.includes('Edge Function') && (
+              <div className="mt-2 text-sm bg-red-50 p-2 rounded">
+                <p className="font-semibold">Troubleshooting tips:</p>
+                <ul className="list-disc list-inside mt-1">
+                  <li>Check the Edge Function logs in the dev_logs table</li>
+                  <li>Verify your Shopify credentials are correct</li>
+                  <li>Ensure your GraphQL query syntax is valid</li>
+                  <li>Try refreshing the preview</li>
+                </ul>
+              </div>
+            )}
+          </AlertDescription>
         </Alert>
       ) : previewData.length === 0 ? (
         <div className="h-64 flex flex-col items-center justify-center space-y-4">

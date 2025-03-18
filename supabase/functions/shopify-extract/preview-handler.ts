@@ -46,6 +46,18 @@ export async function handlePreviewRequest({
       );
     }
     
+    // Get Shopify credentials from the source
+    if (!source.credentials || !source.credentials.credential_id) {
+      console.error("Missing credential_id in source credentials:", source.credentials);
+      return new Response(
+        JSON.stringify({ error: "Source credentials are missing or invalid" }),
+        { 
+          status: 400, 
+          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+        }
+      );
+    }
+    
     // Get Shopify credentials
     const credentialId = source.credentials.credential_id;
     console.log("Fetching credentials with ID:", credentialId);
@@ -54,7 +66,6 @@ export async function handlePreviewRequest({
       .from("shopify_credentials")
       .select("*")
       .eq("id", credentialId)
-      .eq("user_id", user.id)
       .single();
     
     if (credentialsError || !shopifyCredentials) {
@@ -63,6 +74,22 @@ export async function handlePreviewRequest({
         JSON.stringify({ error: "Shopify credentials not found" }),
         { 
           status: 404, 
+          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+        }
+      );
+    }
+    
+    // Validate required credentials
+    if (!shopifyCredentials.store_name || !shopifyCredentials.api_token) {
+      console.error("Missing required Shopify credentials:", {
+        hasStoreName: !!shopifyCredentials.store_name,
+        hasApiToken: !!shopifyCredentials.api_token
+      });
+      
+      return new Response(
+        JSON.stringify({ error: "Incomplete Shopify credentials (missing store name or API token)" }),
+        { 
+          status: 400, 
           headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
         }
       );

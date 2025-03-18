@@ -1,49 +1,86 @@
 
 /**
- * Executes a GraphQL query against the Shopify API
+ * Execute a GraphQL query against the Shopify Admin API
  */
 export async function executeShopifyQuery({
   shopName,
   apiToken,
   query,
-  variables,
-  apiVersion
+  variables = {},
+  apiVersion = '2023-10'
 }) {
   try {
-    // Ensure we have a valid API version
-    if (!apiVersion) {
-      console.warn("No API version provided, falling back to default 2025-01");
-      apiVersion = "2025-01"; // Update to the latest known version
+    // Validate inputs
+    if (!shopName) {
+      console.error("Missing shopName in executeShopifyQuery");
+      return { error: "Missing shop name", status: 400 };
     }
     
-    const endpoint = `https://${shopName}.myshopify.com/admin/api/${apiVersion}/graphql.json`;
+    if (!apiToken) {
+      console.error("Missing apiToken in executeShopifyQuery");
+      return { error: "Missing API token", status: 400 };
+    }
     
-    console.log(`Executing Shopify query using API version: ${apiVersion}`);
+    if (!query) {
+      console.error("Missing query in executeShopifyQuery");
+      return { error: "Missing GraphQL query", status: 400 };
+    }
     
-    const response = await fetch(endpoint, {
-      method: "POST",
+    // Ensure shop name is properly formatted
+    const formattedShopName = shopName.includes('.myshopify.com') 
+      ? shopName 
+      : `${shopName}.myshopify.com`;
+    
+    const url = `https://${formattedShopName}/admin/api/${apiVersion}/graphql.json`;
+    
+    console.log(`Executing Shopify GraphQL query to: ${url}`);
+    
+    // Make the request to Shopify GraphQL API
+    const response = await fetch(url, {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Access-Token": apiToken
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': apiToken
       },
-      body: JSON.stringify({ query, variables })
+      body: JSON.stringify({
+        query,
+        variables
+      })
     });
     
+    // Log response status
+    console.log(`Shopify API response status: ${response.status}`);
+    
+    // Handle non-200 responses
     if (!response.ok) {
       const errorText = await response.text();
-      return {
-        error: `Shopify API error: ${response.status} ${response.statusText}`,
-        details: errorText,
-        status: response.status
-      };
+      console.error('Shopify API error response:', errorText);
+      
+      try {
+        // Try to parse as JSON
+        const errorJson = JSON.parse(errorText);
+        return {
+          error: 'Shopify API request failed',
+          details: errorJson,
+          status: response.status
+        };
+      } catch (e) {
+        // If not JSON, return the raw text
+        return {
+          error: 'Shopify API request failed',
+          details: errorText,
+          status: response.status
+        };
+      }
     }
     
     const data = await response.json();
     
     // Handle GraphQL errors
-    if (data.errors && data.errors.length > 0) {
+    if (data.errors) {
+      console.error('Shopify GraphQL errors:', data.errors);
       return {
-        error: "GraphQL error",
+        error: 'GraphQL query execution failed',
         details: data.errors,
         status: 400
       };
@@ -51,8 +88,9 @@ export async function executeShopifyQuery({
     
     return { data: data.data };
   } catch (error) {
+    console.error('Exception in executeShopifyQuery:', error);
     return {
-      error: `Error executing Shopify query: ${error.message}`,
+      error: `Failed to execute Shopify GraphQL query: ${error.message}`,
       status: 500
     };
   }

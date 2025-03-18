@@ -66,7 +66,7 @@ export const useDatasetPreview = () => {
           const { data: templateDetails, error: templateError } = await fetchTemplateDetails(selectedTemplate);
           
           if (templateError || !templateDetails) {
-            throw new Error('Failed to fetch template details');
+            throw new Error('Failed to fetch template details: ' + (templateError?.message || 'Unknown error'));
           }
           
           // Ensure template_key exists
@@ -77,14 +77,24 @@ export const useDatasetPreview = () => {
           const templateKey = templateDetails.template_key;
           
           // Execute the predefined dataset
+          devLogger.info('Dataset Preview', 'Executing predefined dataset', { 
+            templateKey, 
+            sourceId 
+          });
+          
           const { data, error } = await executePredefinedDataset(templateKey, sourceId);
           
           if (error) {
             throw new Error(error.message || 'Failed to generate preview');
           }
           
+          // Check if we received the expected data structure
+          if (!data || !data.results) {
+            throw new Error('Invalid response format from the Edge Function');
+          }
+          
           // Process the data for preview
-          const processedData = processPreviewData(data);
+          const processedData = Array.isArray(data.results) ? data.results : [];
           setPreviewData(processedData);
           
           // Generate sample preview
@@ -116,11 +126,20 @@ export const useDatasetPreview = () => {
         
         try {
           // Execute custom query
+          devLogger.info('Dataset Preview', 'Executing custom query', {
+            sourceId,
+            queryLength: customQuery.length
+          });
+          
           const { data, error } = await executeCustomQuery(sourceId, customQuery);
           
           if (error) {
             devLogger.error('Dataset Preview', 'Custom query execution failed', error);
             throw new Error(error.message || 'Failed to execute custom query');
+          }
+          
+          if (!data || !data.results) {
+            throw new Error('Invalid response format from the Edge Function');
           }
           
           const processedData = Array.isArray(data.results) ? data.results : [];
@@ -140,14 +159,23 @@ export const useDatasetPreview = () => {
         }
       }
     } catch (error) {
+      let errorMessage = error instanceof Error ? error.message : 'Failed to generate preview';
+      
+      // Check if the error relates to Edge Function
+      if (errorMessage.includes('Failed to fetch') || 
+          errorMessage.includes('network') || 
+          errorMessage.includes('ECONNREFUSED')) {
+        errorMessage = 'Failed to send a request to the Edge Function. Please check network connectivity and edge function logs.';
+      }
+      
       console.error('Error generating preview:', error);
-      setPreviewError(error.message || 'Failed to generate preview');
+      setPreviewError(errorMessage);
       
       devLogger.error('Dataset Preview', 'Preview generation failed', error);
       
       toast({
         title: 'Preview Generation Failed',
-        description: error.message || 'There was an error generating the preview.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

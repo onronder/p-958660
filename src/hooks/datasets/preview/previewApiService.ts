@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { devLogger } from '@/utils/DevLogger';
+import { devLogger } from '@/utils/logger';
 
 /**
  * Execute a predefined dataset template
@@ -12,6 +12,14 @@ export const executePredefinedDataset = async (templateKey: string, sourceId: st
       sourceId 
     });
     
+    // Log the request parameters for debugging
+    devLogger.debug('Dataset Preview API', 'Shopify-extract edge function request', {
+      source_id: sourceId,
+      template_key: templateKey,
+      preview_only: true,
+      limit: 10
+    });
+    
     const response = await supabase.functions.invoke("shopify-extract", {
       body: {
         source_id: sourceId,
@@ -20,6 +28,26 @@ export const executePredefinedDataset = async (templateKey: string, sourceId: st
         limit: 10
       }
     });
+    
+    // Log the response for debugging
+    devLogger.debug('Dataset Preview API', 'Edge function response', {
+      status: response.status,
+      statusText: response.statusText,
+      hasData: !!response.data,
+      hasError: !!response.error
+    });
+    
+    // If there's an error in the response, log and handle it
+    if (response.error) {
+      devLogger.error('Dataset Preview API', 'Edge function error', response.error);
+      return { error: response.error };
+    }
+    
+    // Check for application-level errors in the response data
+    if (response.data && response.data.error) {
+      devLogger.error('Dataset Preview API', 'Application error in response', response.data.error);
+      return { error: new Error(response.data.error) };
+    }
     
     return response;
   } catch (error) {
@@ -38,6 +66,14 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
       queryLength: customQuery.length
     });
     
+    // Log the request for debugging
+    devLogger.debug('Dataset Preview API', 'Custom query request', {
+      endpoint: 'shopify-extract',
+      source_id: sourceId,
+      has_custom_query: !!customQuery,
+      query_length: customQuery.length,
+    });
+    
     const response = await supabase.functions.invoke("shopify-extract", {
       body: {
         source_id: sourceId,
@@ -46,6 +82,26 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
         limit: 10
       }
     });
+    
+    // Log the response for debugging
+    devLogger.debug('Dataset Preview API', 'Custom query response', {
+      status: response.status,
+      statusText: response.statusText,
+      hasData: !!response.data,
+      hasError: !!response.error
+    });
+    
+    // If there's an error in the response, log and handle it
+    if (response.error) {
+      devLogger.error('Dataset Preview API', 'Edge function error', response.error);
+      return { error: response.error };
+    }
+    
+    // Check for application-level errors in the response data
+    if (response.data && response.data.error) {
+      devLogger.error('Dataset Preview API', 'Application error in response', response.data.error);
+      return { error: new Error(response.data.error) };
+    }
     
     return response;
   } catch (error) {
