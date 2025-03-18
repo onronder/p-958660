@@ -19,8 +19,8 @@ export interface DevLogEntry {
   source: string;
   message: string;
   details?: LogDetails;
-  user_id?: string;
-  route?: string;
+  user_id?: string | null;
+  route?: string | null;
   stack_trace?: string;
   request_data?: any;
   response_data?: any;
@@ -30,9 +30,18 @@ export interface DevLogEntry {
 /**
  * Structure of persisted log in database
  */
-export interface PersistedLog extends DevLogEntry {
+export interface PersistedLog {
   id: string;
   timestamp: string;
+  log_level: LogLevel;
+  source: string;
+  message: string;
+  details?: LogDetails;
+  user_id?: string | null;
+  route?: string | null;
+  stack_trace?: string;
+  request_data?: any;
+  response_data?: any;
 }
 
 /**

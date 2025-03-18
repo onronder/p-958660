@@ -86,11 +86,19 @@ export class LogStorage {
         throw countError;
       }
 
-      // Map to the correct types
-      const typedLogs: PersistedLog[] = data?.map(log => ({
-        ...log,
-        // Ensure log_level is one of the allowed types
-        log_level: (log.log_level as LogLevel) || 'info'
+      // Transform the data to ensure correct typing
+      const typedLogs: PersistedLog[] = data?.map(item => ({
+        id: item.id,
+        timestamp: item.timestamp,
+        log_level: (item.log_level as LogLevel) || 'info',
+        source: item.source,
+        message: item.message,
+        details: item.details || {},
+        user_id: item.user_id,
+        route: item.route,
+        stack_trace: item.stack_trace,
+        request_data: item.request_data,
+        response_data: item.response_data
       })) || [];
 
       return {
