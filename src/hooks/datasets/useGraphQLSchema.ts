@@ -30,8 +30,14 @@ export const useGraphQLSchema = (sourceId: string) => {
         throw new Error("No authenticated session");
       }
       
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      
+      if (!supabaseUrl) {
+        throw new Error("Missing VITE_SUPABASE_URL environment variable");
+      }
+      
       // Call the Shopify schema edge function
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/shopify-schema`, {
+      const response = await fetch(`${supabaseUrl}/functions/v1/shopify-schema`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -44,8 +50,16 @@ export const useGraphQLSchema = (sourceId: string) => {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to load schema");
+        const errorText = await response.text();
+        console.error("Error response from shopify-schema:", response.status, errorText);
+        try {
+          // Try to parse as JSON if possible
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || `API error: ${response.status}`);
+        } catch (parseError) {
+          // If we can't parse as JSON, use the text directly
+          throw new Error(`Error ${response.status}: ${errorText || "Unknown error"}`);
+        }
       }
       
       const data = await response.json();

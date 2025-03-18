@@ -19,7 +19,7 @@ const CustomDatasetStep: React.FC<CustomDatasetStepProps> = ({
   query,
   onQueryChange
 }) => {
-  const { isLoading, schema, loadSchema } = useGraphQLSchema(sourceId);
+  const { isLoading, schema, error, loadSchema } = useGraphQLSchema(sourceId);
   const [isRunning, setIsRunning] = useState(false);
   const [previewData, setPreviewData] = useState<any[] | null>(null);
   
@@ -60,7 +60,7 @@ const CustomDatasetStep: React.FC<CustomDatasetStepProps> = ({
           source_id: sourceId,
           custom_query: query,
           preview_only: true,
-          limit: 5 // Limit to 5 results for preview
+          limit: l5 // Limit to 5 results for preview
         })
       });
       
@@ -145,6 +145,7 @@ const CustomDatasetStep: React.FC<CustomDatasetStepProps> = ({
         <GraphQLSchemaExplorer 
           isLoading={isLoading}
           schema={schema}
+          error={error}
         />
       </div>
     </div>

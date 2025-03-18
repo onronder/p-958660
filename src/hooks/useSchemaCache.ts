@@ -5,15 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { devLogger } from "@/utils/DevLogger";
 
-interface SchemaCacheStatus {
-  isCaching: boolean;
-  lastCached: string | null;
-  error: string | null;
-}
-
 export function useSchemaCache() {
   const [status, setStatus] = useState<Record<string, SchemaCacheStatus>>({});
   const { user } = useAuth();
+
+  interface SchemaCacheStatus {
+    isCaching: boolean;
+    lastCached: string | null;
+    error: string | null;
+  }
 
   const refreshSchema = useCallback(async (sourceId: string, forceFresh: boolean = false) => {
     if (!sourceId || !user) {
@@ -45,8 +45,14 @@ export function useSchemaCache() {
         throw new Error("No authenticated session");
       }
       
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      
+      if (!supabaseUrl) {
+        throw new Error("Missing VITE_SUPABASE_URL environment variable");
+      }
+      
       // Call the edge function to fetch and cache the schema
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/shopify-schema`, {
+      const response = await fetch(`${supabaseUrl}/functions/v1/shopify-schema`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,8 +65,16 @@ export function useSchemaCache() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to refresh schema");
+        const errorText = await response.text();
+        console.error("Error response from shopify-schema:", response.status, errorText);
+        try {
+          // Try to parse error as JSON if possible
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || "Failed to refresh schema");
+        } catch (parseError) {
+          // If parsing fails, use the raw text
+          throw new Error(`HTTP error ${response.status}: ${errorText || "Unknown error"}`);
+        }
       }
       
       const data = await response.json();
