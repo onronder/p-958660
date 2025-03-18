@@ -259,7 +259,7 @@ const CreateDatasetPage = () => {
       }
       
       // Build dataset object with the required types
-      const dataset = {
+      const dataset: Partial<Dataset> = {
         name: datasetName,
         source_id: selectedSourceId,
         user_id: session.user.id,
@@ -267,7 +267,7 @@ const CreateDatasetPage = () => {
         status: "pending",
         progress: 0,
         is_deleted: false
-      } as any; // Use 'any' temporarily to add conditional fields
+      };
       
       // Add specific fields based on dataset type
       if (datasetType === 'predefined') {
