@@ -1,11 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dataset } from '@/types/dataset';
 import { DatasetsList } from '@/components/datasets/DatasetsList';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,9 +12,8 @@ import EmptyDatasetsState from '@/components/datasets/EmptyDatasetsState';
 import LoadingState from '@/components/datasets/LoadingState';
 import CreateDatasetDialog from '@/components/datasets/CreateDatasetDialog';
 import DeletedDatasetsTable from '@/components/datasets/DeletedDatasetsTable';
-import { fetchUserDatasets, fetchDeletedDatasets } from '@/services/datasets';
+import { useDatasetsList, useDeletedDatasetsList } from '@/hooks/datasets/queries';
 import { useDatasetActions } from '@/hooks/useDatasetActions';
-import { devLogger } from '@/utils/DevLogger';
 
 // Define props interface for components that were missing them
 interface EmptyDatasetsStateProps {
@@ -39,41 +37,15 @@ interface CreateDatasetDialogProps {
 const MyDatasetsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
-  const [deletedDatasets, setDeletedDatasets] = useState<Dataset[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('active');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const datasetActions = useDatasetActions();
 
-  const loadDatasets = async () => {
-    setIsLoading(true);
-    try {
-      const fetchedDatasets = await fetchUserDatasets();
-      setDatasets(fetchedDatasets);
-      
-      // Also fetch deleted datasets if we're on the trash tab
-      if (activeTab === 'trash') {
-        const fetchedDeletedDatasets = await fetchDeletedDatasets();
-        setDeletedDatasets(fetchedDeletedDatasets);
-      }
-    } catch (error) {
-      console.error('Error loading datasets:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load datasets',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Use the new React Query hooks
+  const { data: datasets = [], isLoading: isLoadingDatasets, refetch: refetchDatasets } = useDatasetsList();
+  const { data: deletedDatasets = [], isLoading: isLoadingDeletedDatasets, refetch: refetchDeletedDatasets } = useDeletedDatasetsList();
 
-  useEffect(() => {
-    if (user) {
-      loadDatasets();
-    }
-  }, [user, activeTab]);
+  const isLoading = activeTab === 'active' ? isLoadingDatasets : isLoadingDeletedDatasets;
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -82,7 +54,8 @@ const MyDatasetsPage: React.FC = () => {
   const handleRestore = async (id: string, name: string) => {
     const success = await datasetActions.handleRestore(id, name);
     if (success) {
-      loadDatasets();
+      refetchDatasets();
+      refetchDeletedDatasets();
     }
     return success;
   };
@@ -90,7 +63,7 @@ const MyDatasetsPage: React.FC = () => {
   const handlePermanentDelete = async (id: string, name: string) => {
     const success = await datasetActions.handlePermanentDelete(id, name);
     if (success) {
-      loadDatasets();
+      refetchDeletedDatasets();
     }
     return success;
   };
@@ -129,7 +102,7 @@ const MyDatasetsPage: React.FC = () => {
             <DatasetsList 
               datasets={datasets} 
               isLoading={isLoading}
-              onRefresh={loadDatasets}
+              onRefresh={refetchDatasets}
             />
           )}
         </TabsContent>

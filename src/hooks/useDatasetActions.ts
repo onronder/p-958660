@@ -1,18 +1,17 @@
 
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { restoreDataset, deleteDataset, permanentlyDeleteDataset } from '@/services/datasets';
-import { devLogger } from '@/utils/DevLogger';
+import { useDatasetMutations } from '@/hooks/datasets/queries';
 
 export const useDatasetActions = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const mutations = useDatasetMutations();
 
   const handleDelete = async (id: string, name: string): Promise<boolean> => {
     try {
       setIsDeleting(true);
-      await deleteDataset(id);
+      await mutations.deleteDataset.mutateAsync(id);
       
       toast({
         title: 'Dataset Deleted',
@@ -35,7 +34,7 @@ export const useDatasetActions = () => {
   const handleRestore = async (id: string, name: string): Promise<boolean> => {
     try {
       setIsRestoring(true);
-      await restoreDataset(id);
+      await mutations.restoreDataset.mutateAsync(id);
       
       toast({
         title: 'Dataset Restored',
@@ -58,7 +57,7 @@ export const useDatasetActions = () => {
   const handlePermanentDelete = async (id: string, name: string): Promise<boolean> => {
     try {
       setIsDeleting(true);
-      await permanentlyDeleteDataset(id);
+      await mutations.permanentlyDeleteDataset.mutateAsync(id);
       
       toast({
         title: 'Dataset Permanently Deleted',
