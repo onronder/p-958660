@@ -38,19 +38,13 @@ export function useDevLogs() {
         .limit(limit)
         .range(offset, offset + limit - 1);
 
-      // Apply filters - completely rewritten to avoid type recursion
-      for (const [key, value] of Object.entries(filters)) {
+      // Apply filters without recreating the query each time
+      Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
-          // Don't chain, create a new query reference each time
-          query = supabase
-            .from('dev_logs')
-            .select('*')
-            .order('timestamp', { ascending: false })
-            .limit(limit)
-            .range(offset, offset + limit - 1)
-            .eq(key, value);
+          // Apply filter to existing query
+          query = query.eq(key, value);
         }
-      }
+      });
 
       const { data, error: fetchError } = await query;
 
