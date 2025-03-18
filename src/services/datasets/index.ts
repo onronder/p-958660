@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Dataset } from '@/types/dataset';
 
@@ -18,7 +19,11 @@ export const fetchUserDatasets = async (): Promise<Dataset[]> => {
     // Safely handle query_params
     let customQuery: string | undefined;
     if (item.query_params && typeof item.query_params === 'object') {
-      customQuery = item.query_params.query?.toString();
+      try {
+        customQuery = item.query_params.query ? String(item.query_params.query) : undefined;
+      } catch (e) {
+        customQuery = undefined;
+      }
     }
     
     // Safely handle result_data
@@ -66,7 +71,11 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
     // Safely handle query_params
     let customQuery: string | undefined;
     if (item.query_params && typeof item.query_params === 'object') {
-      customQuery = item.query_params.query?.toString();
+      try {
+        customQuery = item.query_params.query ? String(item.query_params.query) : undefined;
+      } catch (e) {
+        customQuery = undefined;
+      }
     }
     
     // Safely handle result_data
@@ -99,7 +108,7 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
 
 export const createDataset = async (datasetData: Partial<Dataset>): Promise<Dataset> => {
   // Convert Dataset type to DB schema
-  const dbData = {
+  const dbData: any = {
     user_id: datasetData.user_id,
     source_id: datasetData.source_id,
     name: datasetData.name,
@@ -109,7 +118,7 @@ export const createDataset = async (datasetData: Partial<Dataset>): Promise<Data
     status: datasetData.status || 'pending',
     error_message: datasetData.status_message,
     record_count: datasetData.record_count,
-    result_data: datasetData.result_data || []
+    result_data: datasetData.result_data || [],
   };
 
   const { data, error } = await supabase
@@ -127,7 +136,11 @@ export const createDataset = async (datasetData: Partial<Dataset>): Promise<Data
   // Safely handle query_params
   let customQuery: string | undefined;
   if (data.query_params && typeof data.query_params === 'object') {
-    customQuery = data.query_params.query?.toString();
+    try {
+      customQuery = data.query_params.query ? String(data.query_params.query) : undefined;
+    } catch (e) {
+      customQuery = undefined;
+    }
   }
   
   // Safely handle result_data
@@ -158,6 +171,7 @@ export const createDataset = async (datasetData: Partial<Dataset>): Promise<Data
 };
 
 export const deleteDataset = async (datasetId: string): Promise<void> => {
+  // Simply mark the dataset as deleted rather than actually deleting it
   const { error } = await supabase
     .from('user_datasets')
     .update({ is_deleted: true })
@@ -222,7 +236,11 @@ export const updateDataset = async (datasetId: string, updates: Partial<Dataset>
   // Safely handle query_params
   let customQuery: string | undefined;
   if (data.query_params && typeof data.query_params === 'object') {
-    customQuery = data.query_params.query?.toString();
+    try {
+      customQuery = data.query_params.query ? String(data.query_params.query) : undefined;
+    } catch (e) {
+      customQuery = undefined;
+    }
   }
   
   // Safely handle result_data
@@ -246,7 +264,7 @@ export const updateDataset = async (datasetId: string, updates: Partial<Dataset>
     record_count: data.record_count || 0,
     created_at: data.created_at,
     updated_at: data.last_updated,
-    is_deleted: Boolean(data.is_deleted)
+    is_deleted: data.is_deleted || false
   };
 
   return dataset;
@@ -265,8 +283,14 @@ export const fetchDatasetById = async (datasetId: string): Promise<Dataset> => {
   }
 
   // Transform the data to match Dataset type
-  const queryParams = data.query_params as Record<string, any> | null;
-  const customQuery = queryParams?.query as string | undefined;
+  let customQuery: string | undefined;
+  if (data.query_params && typeof data.query_params === 'object') {
+    try {
+      customQuery = data.query_params.query ? String(data.query_params.query) : undefined;
+    } catch (e) {
+      customQuery = undefined;
+    }
+  }
   
   // Safely handle result_data
   const resultData = Array.isArray(data.result_data) 
