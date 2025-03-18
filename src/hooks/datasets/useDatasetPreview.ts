@@ -45,7 +45,7 @@ export const useDatasetPreview = () => {
       devLogger.info('Dataset Preview', 'Testing connection to source', { sourceId });
       const testResult = await testConnection(sourceId);
       
-      // Store the connection test result using the exposed setter function
+      // Store the connection test result
       if (setConnectionTestResult) {
         setConnectionTestResult(testResult);
       }

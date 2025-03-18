@@ -37,7 +37,7 @@ const DatasetsTable: React.FC<DatasetsTableProps> = ({
           <DatasetTableRow
             key={dataset.id}
             dataset={dataset}
-            onRunDataset={onRun ? (datasetId: string) => onRun(datasetId) : undefined}
+            onRunDataset={onRun ? () => onRun(dataset.id) : undefined}
             onDelete={onDelete ? (datasetId: string, datasetName: string) => onDelete(datasetId, datasetName) : undefined}
           />
         ))}

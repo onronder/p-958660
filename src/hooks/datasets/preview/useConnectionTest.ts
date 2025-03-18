@@ -49,18 +49,28 @@ export function useConnectionTest() {
       let missingFields: string[] = [];
       
       if (sourceData.source_type.toLowerCase() === 'shopify') {
-        // For Shopify, we need access_token and store_name
-        if (!credentials.access_token) missingFields.push('access token');
-        if (!credentials.store_name) missingFields.push('store name');
+        // For Shopify, check for either access_token or api_token
+        const hasAccessToken = credentials && 'access_token' in credentials;
+        const hasApiToken = credentials && 'api_token' in credentials;
+        const hasStoreName = credentials && 'store_name' in credentials;
+        
+        if (!hasAccessToken && !hasApiToken) missingFields.push('API token');
+        if (!hasStoreName) missingFields.push('store name');
         isValid = !missingFields.length;
       } else if (sourceData.source_type.toLowerCase() === 'woocommerce') {
         // For WooCommerce, we need api_key and store_name
-        if (!credentials.api_key) missingFields.push('API key');
-        if (!credentials.store_name) missingFields.push('store name');
+        const hasApiKey = credentials && 'api_key' in credentials;
+        const hasStoreName = credentials && 'store_name' in credentials;
+        
+        if (!hasApiKey) missingFields.push('API key');
+        if (!hasStoreName) missingFields.push('store name');
         isValid = !missingFields.length;
       } else {
         // For other sources, let's assume we need at least one credential
-        isValid = !!(credentials.access_token || credentials.api_key);
+        isValid = !!(
+          (credentials && 'access_token' in credentials) || 
+          (credentials && 'api_key' in credentials)
+        );
       }
       
       if (!isValid) {

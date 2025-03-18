@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Dataset } from '@/types/dataset';
 
@@ -17,13 +16,16 @@ export const fetchUserDatasets = async (): Promise<Dataset[]> => {
   // Transform the data to match Dataset type
   const datasets: Dataset[] = (data || []).map(item => {
     // Safely handle query_params
-    const queryParams = item.query_params as Record<string, any> | null;
-    const customQuery = queryParams?.query as string | undefined;
+    let customQuery: string | undefined;
+    if (item.query_params && typeof item.query_params === 'object') {
+      customQuery = item.query_params.query?.toString();
+    }
     
     // Safely handle result_data
-    const resultData = Array.isArray(item.result_data) 
-      ? item.result_data 
-      : (item.result_data ? [item.result_data] : []);
+    let resultData: any[] = [];
+    if (item.result_data) {
+      resultData = Array.isArray(item.result_data) ? item.result_data : [item.result_data];
+    }
 
     return {
       id: item.id,
@@ -59,16 +61,19 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
     throw new Error('Failed to fetch deleted datasets');
   }
 
-  // Transform the data to match Dataset type
+  // Transform the data to match Dataset type - using the same transformation as above
   const datasets: Dataset[] = (data || []).map(item => {
     // Safely handle query_params
-    const queryParams = item.query_params as Record<string, any> | null;
-    const customQuery = queryParams?.query as string | undefined;
+    let customQuery: string | undefined;
+    if (item.query_params && typeof item.query_params === 'object') {
+      customQuery = item.query_params.query?.toString();
+    }
     
     // Safely handle result_data
-    const resultData = Array.isArray(item.result_data) 
-      ? item.result_data 
-      : (item.result_data ? [item.result_data] : []);
+    let resultData: any[] = [];
+    if (item.result_data) {
+      resultData = Array.isArray(item.result_data) ? item.result_data : [item.result_data];
+    }
 
     return {
       id: item.id,
@@ -94,7 +99,7 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
 
 export const createDataset = async (datasetData: Partial<Dataset>): Promise<Dataset> => {
   // Convert Dataset type to DB schema
-  const dbData: Record<string, any> = {
+  const dbData = {
     user_id: datasetData.user_id,
     source_id: datasetData.source_id,
     name: datasetData.name,
@@ -119,13 +124,17 @@ export const createDataset = async (datasetData: Partial<Dataset>): Promise<Data
   }
 
   // Transform the returned data to match Dataset type
-  const queryParams = data.query_params as Record<string, any> | null;
-  const customQuery = queryParams?.query as string | undefined;
+  // Safely handle query_params
+  let customQuery: string | undefined;
+  if (data.query_params && typeof data.query_params === 'object') {
+    customQuery = data.query_params.query?.toString();
+  }
   
   // Safely handle result_data
-  const resultData = Array.isArray(data.result_data) 
-    ? data.result_data 
-    : (data.result_data ? [data.result_data] : []);
+  let resultData: any[] = [];
+  if (data.result_data) {
+    resultData = Array.isArray(data.result_data) ? data.result_data : [data.result_data];
+  }
 
   const dataset: Dataset = {
     id: data.id,
@@ -210,13 +219,17 @@ export const updateDataset = async (datasetId: string, updates: Partial<Dataset>
   }
 
   // Transform the returned data to match Dataset type
-  const queryParams = data.query_params as Record<string, any> | null;
-  const customQuery = queryParams?.query as string | undefined;
+  // Safely handle query_params
+  let customQuery: string | undefined;
+  if (data.query_params && typeof data.query_params === 'object') {
+    customQuery = data.query_params.query?.toString();
+  }
   
   // Safely handle result_data
-  const resultData = Array.isArray(data.result_data) 
-    ? data.result_data 
-    : (data.result_data ? [data.result_data] : []);
+  let resultData: any[] = [];
+  if (data.result_data) {
+    resultData = Array.isArray(data.result_data) ? data.result_data : [data.result_data];
+  }
 
   const dataset: Dataset = {
     id: data.id,
@@ -233,7 +246,7 @@ export const updateDataset = async (datasetId: string, updates: Partial<Dataset>
     record_count: data.record_count || 0,
     created_at: data.created_at,
     updated_at: data.last_updated,
-    is_deleted: false
+    is_deleted: Boolean(data.is_deleted)
   };
 
   return dataset;

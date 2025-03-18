@@ -1,202 +1,76 @@
 
-import { devLogger } from './logger';
-import type { DevLoggerImpl } from './core/DevLoggerImpl';
+import { devLogger } from '@/utils/logger';
 
-/**
- * Intercept and log fetch requests
- */
-function setupFetchInterceptor(logger: typeof devLogger): void {
-  // Store the original fetch function
+// Intercept fetch calls
+export function setupFetchInterceptor() {
   const originalFetch = window.fetch;
 
-  // Replace with our intercepted version
-  window.fetch = async function interceptedFetch(input, init) {
-    // Handle different input types correctly
-    const url = (typeof input === 'string') 
-      ? input 
-      : (input instanceof Request ? input.url : input.toString());
-      
-    const method = init?.method || 
-      (typeof input !== 'string' && input instanceof Request ? input.method : 'GET');
-      
-    const startTime = performance.now();
+  window.fetch = async function(input: URL | RequestInfo, init?: RequestInit) {
+    const startTime = Date.now();
+    const url = input instanceof Request ? input.url : input.toString();
+    const method = input instanceof Request ? input.method : (init?.method || 'GET');
     
     try {
       // Log the request
-      logger.debug('Fetch', `${method} request to ${url}`, {
-        url,
+      devLogger.debug('Fetch Request', `${method} ${url}`, {
         method,
-        headers: init?.headers,
-        body: init?.body ? getSafeBody(init.body) : undefined
+        url,
+        headers: init?.headers || {},
+        body: init?.body,
       });
-      
-      // Execute the original fetch
+
+      // Perform the actual fetch
       const response = await originalFetch.apply(window, [input, init]);
       
-      // Clone the response so we can read the body
-      const clonedResponse = response.clone();
+      // Calculate request duration
+      const duration = Date.now() - startTime;
       
+      // Clone the response to be able to read the body
+      const responseClone = response.clone();
+      
+      // Log the response
       try {
-        // Try to get the response body as JSON
-        const responseData = await getResponseData(clonedResponse);
-        const duration = performance.now() - startTime;
+        const responseBody = await responseClone.text();
+        const contentType = response.headers.get('content-type');
         
-        // Log the successful response
-        logger.debug('Fetch', `${method} response from ${url}`, {
-          url,
-          method,
+        let parsedBody;
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            parsedBody = JSON.parse(responseBody);
+          } else {
+            parsedBody = responseBody.substring(0, 500) + (responseBody.length > 500 ? '...' : '');
+          }
+        } catch (error) {
+          parsedBody = responseBody.substring(0, 500) + (responseBody.length > 500 ? '...' : '');
+        }
+        
+        devLogger.debug('Fetch Response', `${method} ${url} - ${response.status} (${duration}ms)`, {
           status: response.status,
-          statusText: response.statusText,
+          duration,
+          size: responseBody.length,
           headers: Object.fromEntries(response.headers.entries()),
-          responseData,
-          duration: `${duration.toFixed(2)}ms`
+          body: parsedBody,
         });
-      } catch (parseError) {
-        // If we can't parse the response, just log without body
-        const duration = performance.now() - startTime;
-        logger.debug('Fetch', `${method} response from ${url} (unparseable body)`, {
-          url,
-          method,
+      } catch (error) {
+        // We can't log the response body, but we can still log other stuff
+        devLogger.debug('Fetch Response', `${method} ${url} - ${response.status} (${duration}ms)`, {
           status: response.status,
-          statusText: response.statusText,
-          duration: `${duration.toFixed(2)}ms`
+          duration,
+          headers: Object.fromEntries(response.headers.entries()),
+          error: 'Could not parse response body',
         });
       }
       
       return response;
-    } catch (error: any) {
-      // Log fetch errors
-      const duration = performance.now() - startTime;
-      logger.error('Fetch', `${method} request to ${url} failed`, error, {
-        url,
-        method,
-        duration: `${duration.toFixed(2)}ms`
-      });
-      
+    } catch (error) {
+      // Log the error
+      devLogger.error('Fetch Error', `${method} ${url}`, error);
       throw error;
     }
   };
-}
-
-/**
- * Intercept and log XMLHttpRequest requests
- */
-function setupXhrInterceptor(logger: typeof devLogger): void {
-  const originalOpen = XMLHttpRequest.prototype.open;
-  const originalSend = XMLHttpRequest.prototype.send;
   
-  XMLHttpRequest.prototype.open = function interceptedOpen(method, url, ...rest) {
-    // Store request details for later logging
-    this._devLoggerRequestInfo = {
-      method,
-      url: url?.toString() || 'unknown',
-      startTime: 0
-    };
-    
-    // Call original method
-    return originalOpen.apply(this, [method, url, ...rest]);
+  // Return a function to restore the original fetch
+  return () => {
+    window.fetch = originalFetch;
   };
-  
-  XMLHttpRequest.prototype.send = function interceptedSend(body) {
-    if (this._devLoggerRequestInfo) {
-      this._devLoggerRequestInfo.startTime = performance.now();
-      
-      // Log the request
-      logger.debug('XMLHttpRequest', `${this._devLoggerRequestInfo.method} request to ${this._devLoggerRequestInfo.url}`, {
-        method: this._devLoggerRequestInfo.method,
-        url: this._devLoggerRequestInfo.url,
-        body: body ? getSafeBody(body) : undefined
-      });
-      
-      // Set up response handler
-      this.addEventListener('loadend', function() {
-        const duration = performance.now() - this._devLoggerRequestInfo.startTime;
-        
-        if (this.status >= 200 && this.status < 400) {
-          // Success response
-          logger.debug('XMLHttpRequest', `${this._devLoggerRequestInfo.method} response from ${this._devLoggerRequestInfo.url}`, {
-            method: this._devLoggerRequestInfo.method,
-            url: this._devLoggerRequestInfo.url,
-            status: this.status,
-            statusText: this.statusText,
-            responseType: this.responseType,
-            responseSize: this.responseText?.length || 0,
-            duration: `${duration.toFixed(2)}ms`
-          });
-        } else if (this.status > 0) {
-          // Error response
-          logger.warn('XMLHttpRequest', `${this._devLoggerRequestInfo.method} request to ${this._devLoggerRequestInfo.url} failed`, {
-            method: this._devLoggerRequestInfo.method,
-            url: this._devLoggerRequestInfo.url,
-            status: this.status,
-            statusText: this.statusText,
-            responseType: this.responseType,
-            responseSize: this.responseText?.length || 0,
-            duration: `${duration.toFixed(2)}ms`
-          });
-        }
-      });
-    }
-    
-    // Call original method
-    return originalSend.apply(this, [body]);
-  };
-}
-
-/**
- * Try to get response data in a safe way
- */
-async function getResponseData(response: Response): Promise<any> {
-  const contentType = response.headers.get('content-type');
-  
-  if (contentType?.includes('application/json')) {
-    return await response.json();
-  } else if (contentType?.includes('text/')) {
-    return await response.text();
-  }
-  
-  return '[Binary data]';
-}
-
-/**
- * Get safe representation of request body for logging
- */
-function getSafeBody(body: any): any {
-  if (!body) return undefined;
-  
-  if (typeof body === 'string') {
-    // Try to parse as JSON if it looks like JSON
-    if (body.trim().startsWith('{') || body.trim().startsWith('[')) {
-      try {
-        return JSON.parse(body);
-      } catch (e) {
-        return body.length > 500 ? `${body.substring(0, 500)}... [truncated]` : body;
-      }
-    }
-    return body.length > 500 ? `${body.substring(0, 500)}... [truncated]` : body;
-  }
-  
-  // Handle FormData
-  if (body instanceof FormData) {
-    const formDataObj: Record<string, any> = {};
-    body.forEach((value, key) => {
-      formDataObj[key] = value;
-    });
-    return formDataObj;
-  }
-  
-  return body;
-}
-
-/**
- * Set up all interceptors
- */
-export function setupInterceptors(logger: typeof devLogger): void {
-  try {
-    setupFetchInterceptor(logger);
-    setupXhrInterceptor(logger);
-    console.log('DevLogger interceptors configured');
-  } catch (error) {
-    console.error('Failed to set up DevLogger interceptors:', error);
-  }
 }
