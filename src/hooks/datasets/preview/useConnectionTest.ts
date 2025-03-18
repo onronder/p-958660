@@ -37,41 +37,52 @@ export function useConnectionTest() {
       }
       
       // Check if we have the credentials in the source
-      let credentials: Record<string, any> = {};
-      
-      if (sourceData.credentials && typeof sourceData.credentials === 'object') {
-        // Safely cast credentials to Record<string, any>
-        credentials = sourceData.credentials as Record<string, any>;
-      }
+      const credentials = sourceData.credentials || {};
       
       // Check if we have the minimum required credentials based on source type
       let isValid = false;
       let missingFields: string[] = [];
       
-      if (sourceData.source_type.toLowerCase() === 'shopify') {
+      if (sourceData.source_type === 'Shopify') {
         // For Shopify, check for either access_token or api_token
         const hasAccessToken = credentials && 'access_token' in credentials;
         const hasApiToken = credentials && 'api_token' in credentials;
-        const hasStoreName = credentials && 'store_name' in credentials;
         
-        if (!hasAccessToken && !hasApiToken) missingFields.push('API token');
-        if (!hasStoreName) missingFields.push('store name');
-        isValid = !missingFields.length;
-      } else if (sourceData.source_type.toLowerCase() === 'woocommerce') {
+        if (!hasAccessToken && !hasApiToken) {
+          missingFields.push('access token');
+        }
+        
+        isValid = missingFields.length === 0;
+      } else if (sourceData.source_type === 'WooCommerce') {
         // For WooCommerce, we need api_key and store_name
         const hasApiKey = credentials && 'api_key' in credentials;
-        const hasStoreName = credentials && 'store_name' in credentials;
+        const hasStoreName = sourceData.url && sourceData.url.length > 0;
         
         if (!hasApiKey) missingFields.push('API key');
-        if (!hasStoreName) missingFields.push('store name');
-        isValid = !missingFields.length;
+        if (!hasStoreName) missingFields.push('store URL');
+        
+        isValid = missingFields.length === 0;
       } else {
         // For other sources, let's assume we need at least one credential
         isValid = !!(
           (credentials && 'access_token' in credentials) || 
-          (credentials && 'api_key' in credentials)
+          (credentials && 'api_key' in credentials) ||
+          (credentials && 'api_token' in credentials)
         );
+        
+        if (!isValid) {
+          missingFields.push('valid credentials');
+        }
       }
+      
+      // Log the validation result for debugging
+      console.log('Connection test validation:', {
+        sourceId,
+        sourceType: sourceData.source_type,
+        isValid,
+        missingFields,
+        credentials: Object.keys(credentials) // Only log keys for security
+      });
       
       if (!isValid) {
         const result = { 
@@ -84,21 +95,12 @@ export function useConnectionTest() {
       
       // If we have valid credentials, let's simulate a connection test
       // In a real app, you would make an API call to test the connection
-      
-      // Success simulation (in production, this would be an actual API call)
-      const successTest = true;
-      
-      if (successTest) {
-        const result = { 
-          success: true, 
-          message: `Successfully connected to ${sourceData.source_type} source` 
-        };
-        setConnectionTestResult(result);
-        return result;
-      } else {
-        throw new Error('Connection test failed');
-      }
-      
+      const result = { 
+        success: true, 
+        message: `Successfully connected to ${sourceData.source_type} source` 
+      };
+      setConnectionTestResult(result);
+      return result;
     } catch (error) {
       devLogger.error('useConnectionTest', 'Connection test error', error);
       
@@ -116,6 +118,6 @@ export function useConnectionTest() {
     connectionTestResult,
     testConnection,
     clearConnectionTestResult: () => setConnectionTestResult(null),
-    setConnectionTestResult // Expose this function to fix the error
+    setConnectionTestResult
   };
 }

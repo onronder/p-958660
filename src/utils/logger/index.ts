@@ -1,4 +1,4 @@
 
 export * from './logger';
 export * from './storage';
-export { setupFetchInterceptor } from './interceptors';
+export { default as setupFetchInterceptor } from './interceptors';
