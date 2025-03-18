@@ -23,13 +23,6 @@ import Storage from "@/pages/Storage";
 import Insights from "@/pages/Insights";
 import Notifications from "@/pages/Notifications";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import MyDatasets from "@/pages/MyDatasets";
-import CreateDatasetPage from "@/pages/CreateDatasetPage";
-import DatasetSourceSelect from "@/pages/dataset-create/DatasetSourceSelect";
-import DatasetTypeSelect from "@/pages/dataset-create/DatasetTypeSelect";
-import DatasetDetails from "@/pages/dataset-create/DatasetDetails";
-import DatasetPreview from "@/pages/dataset-create/DatasetPreview";
-import DatasetConfiguration from "@/pages/dataset-create/DatasetConfiguration";
 import AppLayout from "@/components/AppLayout";
 
 export function AppRoutes() {
@@ -58,18 +51,6 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/sources" element={<Sources />} />
-          <Route path="/my-datasets" element={<MyDatasets />} />
-          
-          {/* Dataset creation flow */}
-          <Route path="/create-dataset" element={<CreateDatasetPage />}>
-            <Route path="source" element={<DatasetSourceSelect />} />
-            <Route path="type" element={<DatasetTypeSelect />} />
-            <Route path="details" element={<DatasetDetails />} />
-            <Route path="preview" element={<DatasetPreview />} />
-            <Route path="configure" element={<DatasetConfiguration />} />
-            <Route index element={<Navigate to="source" replace />} />
-          </Route>
-          
           <Route path="/transform" element={<Transformations />} />
           <Route path="/destinations" element={<Destinations />} />
           <Route path="/jobs" element={<Jobs />} />
