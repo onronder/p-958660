@@ -18,15 +18,10 @@ export const fetchDatasets = async (): Promise<Dataset[]> => {
     }
 
     // Type assertion with type checking for the is_deleted property
-    return (data || []).map(item => {
-      // Make sure we have the is_deleted property
-      const dataset = {
-        ...item,
-        is_deleted: typeof item.is_deleted === 'boolean' ? item.is_deleted : false
-      } as Dataset;
-      
-      return dataset;
-    });
+    return (data || []).map(item => ({
+      ...item,
+      is_deleted: typeof item.is_deleted === 'boolean' ? item.is_deleted : false
+    } as Dataset));
   } catch (error) {
     console.error("Error in fetchDatasets:", error);
     return [];
@@ -49,15 +44,10 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
     }
 
     // Type assertion with type checking for the is_deleted property
-    return (data || []).map(item => {
-      // Make sure we have the is_deleted property
-      const dataset = {
-        ...item,
-        is_deleted: typeof item.is_deleted === 'boolean' ? item.is_deleted : true
-      } as Dataset;
-      
-      return dataset;
-    });
+    return (data || []).map(item => ({
+      ...item,
+      is_deleted: typeof item.is_deleted === 'boolean' ? item.is_deleted : true
+    } as Dataset));
   } catch (error) {
     console.error("Error in fetchDeletedDatasets:", error);
     return [];
@@ -109,12 +99,10 @@ export const restoreDataset = async (datasetId: string): Promise<Dataset | null>
     }
 
     // Type assertion with type checking for the is_deleted property
-    const dataset = {
+    return {
       ...data,
       is_deleted: false
     } as Dataset;
-    
-    return dataset;
   } catch (error) {
     console.error("Error in restoreDataset:", error);
     return null;

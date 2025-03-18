@@ -25,7 +25,7 @@ const DatasetTypeStep: React.FC<DatasetTypeStepProps> = ({
       </p>
       
       {!isShopifySource && (
-        <Alert variant="warning" className="my-4">
+        <Alert variant="default" className="my-4 border-yellow-200 bg-yellow-50 text-yellow-800">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             Predefined and Dependent datasets are only available for Shopify data sources. You can only create custom datasets for this source type.

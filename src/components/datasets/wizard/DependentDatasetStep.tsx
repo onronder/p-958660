@@ -2,7 +2,7 @@
 import React from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Users, ShoppingCart, Tags } from "lucide-react";
+import { Users, Tags } from "lucide-react";
 
 interface DependentDatasetStepProps {
   selectedTemplate: string;
