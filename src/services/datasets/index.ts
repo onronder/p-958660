@@ -115,7 +115,7 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
       created_at: item.created_at,
       updated_at: item.last_updated,
       is_deleted: true,
-      deletion_marked_at: item.deleted_at,
+      deletion_marked_at: item.deleted_at || undefined,
     }));
   } catch (error) {
     console.error("Error in fetchDeletedDatasets:", error);
@@ -175,7 +175,7 @@ export const restoreDataset = async (datasetId: string): Promise<Dataset | null>
       extraction_type: data.dataset_type as "predefined" | "dependent" | "custom",
       template_name: data.description || undefined,
       custom_query: data.query_params && typeof data.query_params === 'object' ? 
-                   (data.query_params as any).custom_query : undefined,
+                  (data.query_params as any).custom_query : undefined,
       status: "completed", // Restored datasets are considered completed
       progress: 100, // Restored datasets are at 100%
       result_data: ensureArrayData(data.result_data),
