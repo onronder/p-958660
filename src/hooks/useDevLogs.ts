@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { devLogger } from '@/utils/DevLogger';
@@ -26,7 +26,7 @@ export function useDevLogs() {
   const { user } = useAuth();
 
   // Function to load logs
-  const loadLogs = async (
+  const loadLogs = useCallback(async (
     limit: number = 100,
     offset: number = 0,
     filters: Record<string, any> = {}
@@ -75,10 +75,10 @@ export function useDevLogs() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Function to clear logs
-  const clearLogs = async () => {
+  const clearLogs = useCallback(async () => {
     try {
       setIsLoading(true);
       await devLogger.clearAllLogs();
@@ -89,19 +89,19 @@ export function useDevLogs() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [loadLogs]);
 
   // Enable/disable logging
-  const toggleLogging = (enabled: boolean) => {
+  const toggleLogging = useCallback((enabled: boolean) => {
     devLogger.setEnabled(enabled);
-  };
+  }, []);
 
   // Initial load
   useEffect(() => {
     if (user) {
       loadLogs();
     }
-  }, [user]);
+  }, [user, loadLogs]);
 
   return {
     logs,

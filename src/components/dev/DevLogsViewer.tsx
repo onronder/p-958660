@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDevLogs, DevLog } from '@/hooks/useDevLogs';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,16 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp, RefreshCw, Trash2, Search } from "lucide-react";
+import { debounce } from 'lodash';
 
-export function DevLogsViewer() {
+interface DevLogsViewerProps {
+  logLevelFilters?: string[];
+}
+
+export function DevLogsViewer({ logLevelFilters = ['debug', 'info', 'warn', 'error', 'critical'] }: DevLogsViewerProps) {
   const { logs, isLoading, error, logCount, loadLogs, clearLogs, toggleLogging } = useDevLogs();
   const [isLoggingEnabled, setIsLoggingEnabled] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [logLevel, setLogLevel] = useState('all');
   const [expandedLogs, setExpandedLogs] = useState<Record<string, boolean>>({});
 
   // Handle filtering
@@ -26,10 +30,33 @@ export function DevLogsViewer() {
       log.message.toLowerCase().includes(searchTerm.toLowerCase()) || 
       log.source.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesLevel = logLevel === 'all' || log.log_level === logLevel;
+    const matchesLevel = logLevelFilters.includes(log.log_level);
     
     return matchesSearch && matchesLevel;
   });
+
+  // Load logs with filter support
+  const loadFilteredLogs = useCallback(() => {
+    loadLogs(100, 0, {});
+  }, [loadLogs]);
+
+  // Initial load
+  useEffect(() => {
+    loadFilteredLogs();
+  }, [loadFilteredLogs]);
+
+  // Refetch when filters change
+  useEffect(() => {
+    loadFilteredLogs();
+  }, [logLevelFilters, loadFilteredLogs]);
+
+  // Handle search with debounce
+  const debouncedSearch = useCallback(
+    debounce((term: string) => {
+      setSearchTerm(term);
+    }, 300),
+    []
+  );
 
   // Handle toggling individual log details
   const toggleLogExpand = (logId: string) => {
@@ -87,23 +114,11 @@ export function DevLogsViewer() {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => loadLogs()} 
+              onClick={() => loadFilteredLogs()} 
               disabled={isLoading}
             >
               <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
-            </Button>
-            <Button 
-              variant="destructive" 
-              size="sm" 
-              onClick={() => {
-                if (window.confirm('Are you sure you want to clear all logs?')) {
-                  clearLogs();
-                }
-              }}
-            >
-              <Trash2 className="h-4 w-4 mr-1" />
-              Clear Logs
             </Button>
           </div>
         </CardTitle>
@@ -119,27 +134,11 @@ export function DevLogsViewer() {
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search logs..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => debouncedSearch(e.target.value)}
                   className="pl-8"
                 />
               </div>
             </div>
-            <Select value={logLevel} onValueChange={setLogLevel}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by level" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="debug">Debug</SelectItem>
-                  <SelectItem value="info">Info</SelectItem>
-                  <SelectItem value="warn">Warning</SelectItem>
-                  <SelectItem value="error">Error</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
             <div className="flex items-center space-x-2">
               <Switch
                 id="logging-enabled"

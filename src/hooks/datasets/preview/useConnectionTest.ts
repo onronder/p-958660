@@ -25,10 +25,10 @@ export function useConnectionTest() {
     try {
       devLogger.debug('useConnectionTest', 'Testing connection for source', { sourceId });
       
-      // First, let's fetch the source details to get its type
+      // First, let's fetch the source details
       const { data: sourceData, error: sourceError } = await supabase
         .from('sources')
-        .select('source_type, access_token, api_key, store_name, credentials_id')
+        .select('*')
         .eq('id', sourceId)
         .single();
       
@@ -36,29 +36,16 @@ export function useConnectionTest() {
         throw new Error(`Failed to fetch source details: ${sourceError.message}`);
       }
       
-      // Check if we have the credentials directly in the source
+      // Check if we have the credentials in the source
       let credentials = null;
       
-      if (sourceData.access_token || sourceData.api_key) {
-        // We have direct credentials
+      if (sourceData.credentials) {
+        // Extract credentials from the credentials JSON object
         credentials = {
-          access_token: sourceData.access_token,
-          api_key: sourceData.api_key,
-          store_name: sourceData.store_name
+          access_token: sourceData.credentials.access_token,
+          api_key: sourceData.credentials.api_key,
+          store_name: sourceData.credentials.store_name
         };
-      } else if (sourceData.credentials_id) {
-        // We need to fetch credentials from another table
-        const { data: credentialsData, error: credentialsError } = await supabase
-          .from(`${sourceData.source_type.toLowerCase()}_credentials`)
-          .select('access_token, api_key, store_name')
-          .eq('id', sourceData.credentials_id)
-          .single();
-        
-        if (credentialsError) {
-          throw new Error(`Failed to fetch credentials: ${credentialsError.message}`);
-        }
-        
-        credentials = credentialsData;
       }
       
       if (!credentials) {
@@ -111,7 +98,7 @@ export function useConnectionTest() {
       }
       
     } catch (error) {
-      devLogger.error('useConnectionTest', 'Connection test error', { error });
+      devLogger.error('useConnectionTest', 'Connection test error', error);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       const result = { success: false, message: errorMessage };
