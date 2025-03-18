@@ -17,7 +17,16 @@ export const fetchDatasets = async (): Promise<Dataset[]> => {
       return [];
     }
 
-    return (data as unknown as Dataset[]) || [];
+    // Type assertion with type checking for the is_deleted property
+    return (data || []).map(item => {
+      // Make sure we have the is_deleted property
+      const dataset = {
+        ...item,
+        is_deleted: typeof item.is_deleted === 'boolean' ? item.is_deleted : false
+      } as Dataset;
+      
+      return dataset;
+    });
   } catch (error) {
     console.error("Error in fetchDatasets:", error);
     return [];
@@ -39,7 +48,16 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
       return [];
     }
 
-    return (data as unknown as Dataset[]) || [];
+    // Type assertion with type checking for the is_deleted property
+    return (data || []).map(item => {
+      // Make sure we have the is_deleted property
+      const dataset = {
+        ...item,
+        is_deleted: typeof item.is_deleted === 'boolean' ? item.is_deleted : true
+      } as Dataset;
+      
+      return dataset;
+    });
   } catch (error) {
     console.error("Error in fetchDeletedDatasets:", error);
     return [];
@@ -75,14 +93,12 @@ export const deleteDataset = async (datasetId: string): Promise<boolean> => {
 // Restore a deleted dataset
 export const restoreDataset = async (datasetId: string): Promise<Dataset | null> => {
   try {
-    const updateData = {
-      is_deleted: false,
-      deletion_marked_at: null
-    };
-
     const { data, error } = await supabase
       .from("extractions")
-      .update(updateData)
+      .update({
+        is_deleted: false,
+        deletion_marked_at: null
+      })
       .eq("id", datasetId)
       .select()
       .single();
@@ -92,7 +108,13 @@ export const restoreDataset = async (datasetId: string): Promise<Dataset | null>
       return null;
     }
 
-    return data as unknown as Dataset;
+    // Type assertion with type checking for the is_deleted property
+    const dataset = {
+      ...data,
+      is_deleted: false
+    } as Dataset;
+    
+    return dataset;
   } catch (error) {
     console.error("Error in restoreDataset:", error);
     return null;

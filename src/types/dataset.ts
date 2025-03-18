@@ -22,4 +22,7 @@ export interface Dataset {
   updated_at: string;
   is_deleted: boolean;
   deletion_marked_at?: string;
+  next_run?: string;
+  last_run?: string;
+  schedule?: string;
 }

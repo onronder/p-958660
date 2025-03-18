@@ -16,19 +16,21 @@ import DataPreviewStep from '@/components/datasets/wizard/DataPreviewStep';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Dataset } from '@/types/dataset';
+import SourceSelectionStep from '@/components/sources/SourceSelectionStep';
 
 // Step types
-type StepType = 'type' | 'configuration' | 'templates' | 'preview';
+type StepType = 'source' | 'type' | 'configuration' | 'templates' | 'preview';
 
 const CreateDatasetPage = () => {
   const navigate = useNavigate();
   const { sources, isLoading: sourcesLoading } = useSources();
   
   // Wizard state
-  const [currentStep, setCurrentStep] = useState<StepType>('type');
+  const [currentStep, setCurrentStep] = useState<StepType>('source');
   const [datasetType, setDatasetType] = useState<'predefined' | 'dependent' | 'custom'>('predefined');
   const [selectedSourceId, setSelectedSourceId] = useState<string>('');
   const [selectedSourceName, setSelectedSourceName] = useState<string>('');
+  const [selectedSourceType, setSelectedSourceType] = useState<string>('');
   const [datasetName, setDatasetName] = useState<string>('');
   
   // Templates state
@@ -54,12 +56,13 @@ const CreateDatasetPage = () => {
     }
   }, [sources, sourcesLoading, navigate]);
   
-  // Update source name when source ID changes
+  // Update source name and type when source ID changes
   useEffect(() => {
     if (selectedSourceId && sources) {
       const source = sources.find(s => s.id === selectedSourceId);
       if (source) {
         setSelectedSourceName(source.name);
+        setSelectedSourceType(source.source_type);
       }
     }
   }, [selectedSourceId, sources]);
@@ -259,7 +262,17 @@ const CreateDatasetPage = () => {
       }
       
       // Build dataset object with the required types
-      const dataset: Partial<Dataset> = {
+      const dataset: {
+        name: string;
+        source_id: string;
+        user_id: string;
+        extraction_type: "predefined" | "dependent" | "custom";
+        status: string;
+        progress: number;
+        is_deleted: boolean;
+        template_name?: string;
+        custom_query?: string;
+      } = {
         name: datasetName,
         source_id: selectedSourceId,
         user_id: session.user.id,
@@ -309,10 +322,25 @@ const CreateDatasetPage = () => {
       });
     }
   };
+
+  // Handle source selection with source name
+  const handleSourceSelection = (id: string, name: string) => {
+    setSelectedSourceId(id);
+    setSelectedSourceName(name);
+  };
+  
+  // Test source connection
+  const handleTestConnection = () => {
+    toast({
+      title: "Testing Connection",
+      description: "Testing connection to the selected source...",
+    });
+    // Implement actual connection test logic here if needed
+  };
   
   // Navigation helpers
   const goToNext = () => {
-    const steps: StepType[] = ['type', 'configuration', 'templates', 'preview'];
+    const steps: StepType[] = ['source', 'type', 'configuration', 'templates', 'preview'];
     const currentIndex = steps.indexOf(currentStep);
     
     if (currentIndex < steps.length - 1) {
@@ -321,7 +349,7 @@ const CreateDatasetPage = () => {
   };
   
   const goToPrevious = () => {
-    const steps: StepType[] = ['type', 'configuration', 'templates', 'preview'];
+    const steps: StepType[] = ['source', 'type', 'configuration', 'templates', 'preview'];
     const currentIndex = steps.indexOf(currentStep);
     
     if (currentIndex > 0) {
@@ -333,6 +361,9 @@ const CreateDatasetPage = () => {
   const handleSetCurrentStep = (step: string) => {
     setCurrentStep(step as StepType);
   };
+  
+  // Check if the selected source is Shopify
+  const isShopifySource = selectedSourceType.toLowerCase() === 'shopify';
   
   // Rendering helpers
   const renderTemplateStep = () => {
@@ -363,11 +394,21 @@ const CreateDatasetPage = () => {
   
   const renderStepContent = () => {
     switch (currentStep) {
+      case 'source':
+        return (
+          <SourceSelectionStep
+            sources={sources || []}
+            selectedSourceId={selectedSourceId}
+            onSelectSource={handleSourceSelection}
+            onTestConnection={handleTestConnection}
+          />
+        );
       case 'type':
         return (
           <DatasetTypeStep
             selectedType={datasetType}
             onSelectType={setDatasetType}
+            isShopifySource={isShopifySource}
           />
         );
       case 'configuration':
@@ -401,6 +442,25 @@ const CreateDatasetPage = () => {
         return null;
     }
   };
+
+  // Check if we can proceed to the next step
+  const canProceedToNext = () => {
+    switch (currentStep) {
+      case 'source':
+        return !!selectedSourceId;
+      case 'type':
+        return !!datasetType;
+      case 'configuration':
+        return !!datasetName;
+      case 'templates':
+        if (datasetType === 'predefined') return !!selectedTemplate;
+        if (datasetType === 'dependent') return !!selectedDependentTemplate;
+        if (datasetType === 'custom') return !!customQuery;
+        return false;
+      default:
+        return true;
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -425,10 +485,11 @@ const CreateDatasetPage = () => {
         </div>
         
         <p className="text-muted-foreground ml-10">
-          {currentStep === 'type' && "Step 1: Select dataset type"}
-          {currentStep === 'configuration' && "Step 2: Configure dataset details"}
-          {currentStep === 'templates' && "Step 3: Choose data to extract"}
-          {currentStep === 'preview' && "Step 4: Preview and create dataset"}
+          {currentStep === 'source' && "Step 1: Select data source"}
+          {currentStep === 'type' && "Step 2: Select dataset type"}
+          {currentStep === 'configuration' && "Step 3: Configure dataset details"}
+          {currentStep === 'templates' && "Step 4: Choose data to extract"}
+          {currentStep === 'preview' && "Step 5: Preview and create dataset"}
         </p>
       </div>
       
@@ -436,6 +497,7 @@ const CreateDatasetPage = () => {
         currentStep={currentStep}
         setCurrentStep={handleSetCurrentStep}
         steps={[
+          { id: 'source', label: 'Source' },
           { id: 'type', label: 'Type' },
           { id: 'configuration', label: 'Config' },
           { id: 'templates', label: 'Data Selection' },
@@ -449,9 +511,9 @@ const CreateDatasetPage = () => {
         <div className="flex justify-between mt-8">
           <Button
             variant="outline"
-            onClick={currentStep === 'type' ? () => navigate("/datasets") : goToPrevious}
+            onClick={currentStep === 'source' ? () => navigate("/datasets") : goToPrevious}
           >
-            {currentStep === 'type' ? 'Cancel' : 'Previous'}
+            {currentStep === 'source' ? 'Cancel' : 'Previous'}
           </Button>
           
           {currentStep === 'preview' ? (
@@ -469,7 +531,10 @@ const CreateDatasetPage = () => {
               </Button>
             </div>
           ) : (
-            <Button onClick={goToNext}>
+            <Button 
+              onClick={goToNext}
+              disabled={!canProceedToNext()}
+            >
               Next
             </Button>
           )}

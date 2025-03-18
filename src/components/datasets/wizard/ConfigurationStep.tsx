@@ -3,7 +3,6 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Source } from "@/types/source";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ConfigurationStepProps {
   name: string;
@@ -19,13 +18,27 @@ interface ConfigurationStepProps {
 const ConfigurationStep: React.FC<ConfigurationStepProps> = ({
   name,
   onNameChange,
-  sourceId,
-  onSourceChange,
-  sources,
-  isLoading,
   datasetType,
   templateName
 }) => {
+  // Generate a suggested name if template is selected
+  React.useEffect(() => {
+    if (templateName && !name) {
+      // Only suggest a name if the user hasn't entered one yet
+      let suggestedName = "";
+      
+      if (datasetType === "predefined") {
+        suggestedName = `${templateName} Dataset`;
+      } else if (datasetType === "dependent") {
+        suggestedName = `${templateName} Related Data`;
+      } else {
+        suggestedName = "Custom Dataset";
+      }
+      
+      onNameChange(suggestedName);
+    }
+  }, [templateName, datasetType, name, onNameChange]);
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Dataset Configuration</h2>
@@ -47,31 +60,29 @@ const ConfigurationStep: React.FC<ConfigurationStepProps> = ({
           </p>
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="source-select">Data Source</Label>
-          <Select 
-            value={sourceId} 
-            onValueChange={onSourceChange}
-            disabled={isLoading}
-          >
-            <SelectTrigger id="source-select">
-              <SelectValue placeholder="Select a data source" />
-            </SelectTrigger>
-            <SelectContent>
-              {sources.map((source) => (
-                <SelectItem key={source.id} value={source.id}>
-                  {source.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            Choose the source from which to extract data.
-          </p>
+        <div className="p-4 bg-muted/50 rounded-lg border border-muted mt-4">
+          <h3 className="text-sm font-medium mb-2">About Dataset Configuration</h3>
+          {datasetType === "predefined" && (
+            <p className="text-sm text-muted-foreground">
+              You're creating a predefined dataset{templateName ? ` based on the "${templateName}" template` : ""}.
+              This will extract standard data using pre-built queries.
+            </p>
+          )}
+          
+          {datasetType === "dependent" && (
+            <p className="text-sm text-muted-foreground">
+              You're creating a dependent dataset{templateName ? ` for "${templateName}"` : ""}.
+              This will extract related data that requires multiple connected queries.
+            </p>
+          )}
+          
+          {datasetType === "custom" && (
+            <p className="text-sm text-muted-foreground">
+              You're creating a custom dataset with your own GraphQL query.
+              This gives you complete control over what data is extracted.
+            </p>
+          )}
         </div>
-        
-        {/* Additional configuration options could be added here in the future */}
-        {/* For example: schedule, export options, etc. */}
       </div>
     </div>
   );

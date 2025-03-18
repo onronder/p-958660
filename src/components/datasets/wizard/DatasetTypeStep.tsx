@@ -2,17 +2,20 @@
 import React from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { FileIcon, FileLineChart, FileEdit } from "lucide-react";
+import { FileIcon, FileLineChart, FileEdit, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DatasetTypeStepProps {
   selectedType: string;
   onSelectType: (type: "predefined" | "dependent" | "custom") => void;
+  isShopifySource?: boolean;
 }
 
 const DatasetTypeStep: React.FC<DatasetTypeStepProps> = ({
   selectedType,
-  onSelectType
+  onSelectType,
+  isShopifySource = false
 }) => {
   return (
     <div className="space-y-4">
@@ -20,6 +23,15 @@ const DatasetTypeStep: React.FC<DatasetTypeStepProps> = ({
       <p className="text-muted-foreground">
         Choose how you want to extract your data.
       </p>
+      
+      {!isShopifySource && (
+        <Alert variant="warning" className="my-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Predefined and Dependent datasets are only available for Shopify data sources. You can only create custom datasets for this source type.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <RadioGroup 
         value={selectedType}
@@ -31,10 +43,11 @@ const DatasetTypeStep: React.FC<DatasetTypeStepProps> = ({
             value="predefined"
             id="predefined"
             className="peer sr-only"
+            disabled={!isShopifySource}
           />
           <Label
             htmlFor="predefined"
-            className="peer-data-[state=checked]:border-primary flex flex-col items-start cursor-pointer rounded-lg border p-4 hover:bg-muted/50 peer-data-[state=checked]:bg-muted"
+            className={`peer-data-[state=checked]:border-primary flex flex-col items-start cursor-pointer rounded-lg border p-4 hover:bg-muted/50 peer-data-[state=checked]:bg-muted ${!isShopifySource ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <div className="flex flex-col gap-1 w-full">
               <div className="flex items-center justify-between w-full">
@@ -56,10 +69,11 @@ const DatasetTypeStep: React.FC<DatasetTypeStepProps> = ({
             value="dependent"
             id="dependent"
             className="peer sr-only"
+            disabled={!isShopifySource}
           />
           <Label
             htmlFor="dependent"
-            className="peer-data-[state=checked]:border-primary flex flex-col items-start cursor-pointer rounded-lg border p-4 hover:bg-muted/50 peer-data-[state=checked]:bg-muted"
+            className={`peer-data-[state=checked]:border-primary flex flex-col items-start cursor-pointer rounded-lg border p-4 hover:bg-muted/50 peer-data-[state=checked]:bg-muted ${!isShopifySource ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <div className="flex flex-col gap-1 w-full">
               <div className="flex items-center justify-between w-full">
@@ -106,10 +120,10 @@ const DatasetTypeStep: React.FC<DatasetTypeStepProps> = ({
         <h3 className="text-sm font-medium mb-2">About Dataset Types</h3>
         <p className="text-sm text-muted-foreground">
           {selectedType === "predefined" && 
-            "Predefined datasets are the easiest way to get started. They provide ready-to-use templates for common data needs without any complex setup."
+            "Predefined datasets are the easiest way to get started. They provide ready-to-use templates for common Shopify data needs without any complex setup."
           }
           {selectedType === "dependent" && 
-            "Dependent queries allow you to extract related data across multiple resources, like orders with their line items or products with their variants and inventory."
+            "Dependent queries allow you to extract related Shopify data across multiple resources, like orders with their line items or products with their variants and inventory."
           }
           {selectedType === "custom" && 
             "Custom datasets give you complete control over your data extraction by writing your own GraphQL queries. Best for specific requirements."
