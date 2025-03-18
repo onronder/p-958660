@@ -14,6 +14,7 @@ interface PreviewStepProps {
     message: string;
   } | null;
   previewSample?: string | null;
+  retryCount?: number;
 }
 
 const PreviewStep: React.FC<PreviewStepProps> = ({
@@ -24,7 +25,8 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
   onSaveDataset,
   sourceId,
   connectionTestResult,
-  previewSample
+  previewSample,
+  retryCount
 }) => {
   return (
     <DataPreviewStep
@@ -36,6 +38,7 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
       sourceId={sourceId}
       connectionTestResult={connectionTestResult}
       previewSample={previewSample}
+      retryCount={retryCount}
     />
   );
 };

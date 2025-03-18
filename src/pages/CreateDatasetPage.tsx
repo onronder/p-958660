@@ -38,6 +38,7 @@ const CreateDatasetPage = () => {
       isCreating={isCreating}
       progress={progress}
       previewSample={previewHook.previewSample}
+      retryCount={previewHook.retryCount}
       
       // Handlers
       onSetCurrentStep={handleSetCurrentStep}

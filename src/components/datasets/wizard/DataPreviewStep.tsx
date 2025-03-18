@@ -18,6 +18,7 @@ interface DataPreviewStepProps {
     message: string;
   } | null;
   previewSample?: string | null;
+  retryCount?: number;
 }
 
 const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
@@ -28,7 +29,8 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
   onRegeneratePreview,
   onSaveDataset,
   sourceId,
-  connectionTestResult
+  connectionTestResult,
+  retryCount = 0
 }) => {
   // Log component render
   React.useEffect(() => {
@@ -36,9 +38,10 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
       hasSourceId: !!sourceId,
       hasPreviewData: previewData?.length > 0,
       hasError: !!error,
-      connectionTestSuccess: connectionTestResult?.success
+      connectionTestSuccess: connectionTestResult?.success,
+      retryCount
     });
-  }, [sourceId, previewData, error, connectionTestResult]);
+  }, [sourceId, previewData, error, connectionTestResult, retryCount]);
 
   // Handle refresh preview
   const handleRefreshPreview = () => {
@@ -86,7 +89,7 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
             ) : (
               <RefreshCw className="h-4 w-4 mr-2" />
             )}
-            Refresh Preview
+            {retryCount > 0 ? `Retry (${retryCount})` : 'Refresh Preview'}
           </Button>
           
           {previewData.length > 0 && onSaveDataset && (
@@ -134,14 +137,26 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
           <AlertDescription>
             {error}
             {error.includes('Edge Function') && (
-              <div className="mt-2 text-sm bg-red-50 p-2 rounded">
-                <p className="font-semibold">Troubleshooting tips:</p>
-                <ul className="list-disc list-inside mt-1">
+              <div className="mt-2 text-sm bg-red-50 p-3 rounded-md border border-red-200">
+                <p className="font-semibold mb-2">Troubleshooting tips:</p>
+                <ul className="list-disc list-inside space-y-1">
                   <li>Check the Edge Function logs in the dev_logs table</li>
                   <li>Verify your Shopify credentials are correct</li>
                   <li>Ensure your GraphQL query syntax is valid</li>
                   <li>Try refreshing the preview</li>
                 </ul>
+                <div className="mt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefreshPreview}
+                    disabled={isLoading}
+                    className="w-full"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Retry Connection
+                  </Button>
+                </div>
               </div>
             )}
           </AlertDescription>

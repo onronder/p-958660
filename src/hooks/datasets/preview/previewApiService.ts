@@ -20,7 +20,13 @@ export const executePredefinedDataset = async (templateKey: string, sourceId: st
       limit: 10
     });
     
-    const response = await supabase.functions.invoke("shopify-extract", {
+    // Add a timeout to the promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out')), 30000); // 30 second timeout
+    });
+    
+    // Create the actual request promise
+    const requestPromise = supabase.functions.invoke("shopify-extract", {
       body: {
         source_id: sourceId,
         template_key: templateKey,
@@ -28,6 +34,9 @@ export const executePredefinedDataset = async (templateKey: string, sourceId: st
         limit: 10
       }
     });
+    
+    // Race between the request and the timeout
+    const response = await Promise.race([requestPromise, timeoutPromise]) as any;
     
     // Log the response for debugging
     devLogger.debug('Dataset Preview API', 'Edge function response', {
@@ -48,9 +57,9 @@ export const executePredefinedDataset = async (templateKey: string, sourceId: st
     }
     
     return response;
-  } catch (error) {
+  } catch (error: any) {
     devLogger.error('Dataset Preview API', 'Error executing predefined dataset', error);
-    throw error;
+    return { error };
   }
 };
 
@@ -72,7 +81,13 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
       query_length: customQuery.length,
     });
     
-    const response = await supabase.functions.invoke("shopify-extract", {
+    // Add a timeout to the promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out')), 30000); // 30 second timeout
+    });
+    
+    // Create the actual request promise
+    const requestPromise = supabase.functions.invoke("shopify-extract", {
       body: {
         source_id: sourceId,
         custom_query: customQuery,
@@ -80,6 +95,9 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
         limit: 10
       }
     });
+    
+    // Race between the request and the timeout
+    const response = await Promise.race([requestPromise, timeoutPromise]) as any;
     
     // Log the response for debugging
     devLogger.debug('Dataset Preview API', 'Custom query response', {
@@ -100,9 +118,9 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
     }
     
     return response;
-  } catch (error) {
+  } catch (error: any) {
     devLogger.error('Dataset Preview API', 'Error executing custom query', error);
-    throw error;
+    return { error };
   }
 };
 
