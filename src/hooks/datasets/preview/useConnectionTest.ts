@@ -64,7 +64,8 @@ export function useConnectionTest() {
         toast({
           title: 'Connection Warning',
           description: `Source "${sourceData.name}" previously had connection issues. Testing again...`,
-          variant: 'warning',
+          // Changed from 'warning' to 'default' to fix TS error
+          variant: 'default',
         });
       }
       

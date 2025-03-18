@@ -26,9 +26,11 @@ interface CreateDatasetWizardProps {
   previewError: string | null;
   isPreviewLoading: boolean;
   connectionTestResult?: { success: boolean; message: string };
+  isTestingConnection?: boolean; // Added this prop to fix TypeScript error
   sources: Source[];
   isCreating: boolean;
   progress: number;
+  previewSample?: string | null;
   
   // Handlers
   onSetCurrentStep: (step: string) => void;
@@ -61,9 +63,11 @@ const CreateDatasetWizard: React.FC<CreateDatasetWizardProps> = ({
   previewError,
   isPreviewLoading,
   connectionTestResult,
+  isTestingConnection, // Added to component props
   sources,
   isCreating,
   progress,
+  previewSample,
   
   // Handlers
   onSetCurrentStep,
@@ -125,7 +129,8 @@ const CreateDatasetWizard: React.FC<CreateDatasetWizardProps> = ({
           previewData={previewData}
           previewError={previewError}
           connectionTestResult={connectionTestResult}
-          previewSample={null}
+          previewSample={previewSample}
+          isTestingConnection={isTestingConnection} // Pass the prop to WizardStepContent
           
           onSourceSelection={onSourceSelection}
           onTestConnection={onTestConnection}
