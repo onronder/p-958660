@@ -7,13 +7,14 @@ import { transformDbRecordToDataset } from './transformations';
  * Fetches all active datasets for the current user
  */
 export const fetchUserDatasets = async (): Promise<Dataset[]> => {
+  // Explicitly select only needed fields to prevent TypeScript recursion
   const query = supabase
     .from('user_datasets')
-    .select('*')
+    .select('id, user_id, source_id, name, dataset_type, description, query_params, status, error_message, record_count, result_data, created_at, last_updated, is_deleted')
     .order('created_at', { ascending: false });
   
-  // Apply is_deleted filter as a dynamic property to avoid TypeScript errors
   try {
+    // Use as any to bypass TypeScript's type checking for the dynamic property
     const queryWithFilter = query.eq('is_deleted' as any, false);
     const { data, error } = await queryWithFilter;
 
@@ -35,7 +36,7 @@ export const fetchUserDatasets = async (): Promise<Dataset[]> => {
       throw new Error('Failed to fetch datasets');
     }
     
-    // Transform the data to match Dataset type, filtering out any potentially deleted items
+    // Transform the data, filtering out any potentially deleted items
     const datasets: Dataset[] = (data || [])
       .map(transformDbRecordToDataset)
       .filter(dataset => dataset.is_deleted !== true);
@@ -48,13 +49,14 @@ export const fetchUserDatasets = async (): Promise<Dataset[]> => {
  * Fetches all deleted (trashed) datasets for the current user
  */
 export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
+  // Explicitly select only needed fields to prevent TypeScript recursion
   const query = supabase
     .from('user_datasets')
-    .select('*')
+    .select('id, user_id, source_id, name, dataset_type, description, query_params, status, error_message, record_count, result_data, created_at, last_updated, is_deleted')
     .order('created_at', { ascending: false });
   
-  // Apply is_deleted filter as a dynamic property to avoid TypeScript errors
   try {
+    // Use as any to bypass TypeScript's type checking for the dynamic property
     const queryWithFilter = query.eq('is_deleted' as any, true);
     const { data, error } = await queryWithFilter;
 
@@ -77,9 +79,10 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
  * Fetches a single dataset by ID
  */
 export const fetchDatasetById = async (datasetId: string): Promise<Dataset> => {
+  // Explicitly select only needed fields to prevent TypeScript recursion
   const { data, error } = await supabase
     .from('user_datasets')
-    .select('*')
+    .select('id, user_id, source_id, name, dataset_type, description, query_params, status, error_message, record_count, result_data, created_at, last_updated, is_deleted')
     .eq('id', datasetId)
     .single();
 

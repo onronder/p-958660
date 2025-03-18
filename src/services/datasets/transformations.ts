@@ -17,7 +17,7 @@ export const transformDbRecordToDataset = (dbRecord: any): Dataset => {
     }
   }
   
-  // Safely handle result_data
+  // Safely handle result_data - always ensure it's an array
   let resultData: any[] = [];
   if (dbRecord.result_data) {
     resultData = Array.isArray(dbRecord.result_data) ? dbRecord.result_data : [dbRecord.result_data];
