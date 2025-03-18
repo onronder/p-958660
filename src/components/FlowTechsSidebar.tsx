@@ -57,12 +57,12 @@ export function FlowTechsSidebar({ onLogout, className }: FlowTechsSidebarProps)
     },
     {
       title: "My Datasets",
-      href: "/my-datasets",
+      href: "/datasets",
       icon: <FileText className="h-5 w-5" />
     },
     {
       title: "Transformations",
-      href: "/transform",
+      href: "/transformations",
       icon: <Waves className="h-5 w-5" />
     },
     {

@@ -9,6 +9,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import MyDatasets from "@/pages/MyDatasets";
 import CreateDatasetPage from "@/pages/CreateDatasetPage";
 import DashboardLoadingSkeleton from "./DashboardLoadingSkeleton";
+import AppLayout from "./AppLayout";
 
 // Lazy-loaded components
 const AddSource = lazy(() => import("@/pages/AddSource"));
@@ -74,78 +75,80 @@ const AppRoutes = () => {
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/sources" element={<Sources />} />
-        <Route path="/add-source" element={
-          <Suspense fallback={<DashboardLoadingSkeleton />}>
-            <AddSource />
-          </Suspense>
-        } />
-        <Route path="/jobs" element={<Jobs />} />
-        <Route path="/datasets" element={<MyDatasets />} />
-        <Route path="/create-dataset" element={<CreateDatasetPage />} />
-        <Route path="/transformations" element={
-          <Suspense fallback={<DashboardLoadingSkeleton />}>
-            <Transformations />
-          </Suspense>
-        } />
-        <Route path="/transform/:id" element={
-          <Suspense fallback={<DashboardLoadingSkeleton />}>
-            <Transform />
-          </Suspense>
-        } />
-        <Route path="/destinations" element={
-          <Suspense fallback={<DashboardLoadingSkeleton />}>
-            <Destinations />
-          </Suspense>
-        } />
-        <Route path="/analytics" element={
-          <Suspense fallback={<DashboardLoadingSkeleton />}>
-            <Analytics />
-          </Suspense>
-        } />
-        <Route path="/notifications" element={
-          <Suspense fallback={<DashboardLoadingSkeleton />}>
-            <Notifications />
-          </Suspense>
-        } />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/settings" element={
-          <Suspense fallback={<DashboardLoadingSkeleton />}>
-            <Settings />
-          </Suspense>
-        } />
-        <Route path="/settings/profile" element={
-          <Suspense fallback={<DashboardLoadingSkeleton />}>
-            <ProfileSettings />
-          </Suspense>
-        } />
-        <Route path="/settings/api-keys" element={
-          <Suspense fallback={<DashboardLoadingSkeleton />}>
-            <ApiKeys />
-          </Suspense>
-        } />
-        <Route path="/settings/webhooks" element={
-          <Suspense fallback={<DashboardLoadingSkeleton />}>
-            <Webhooks />
-          </Suspense>
-        } />
-        <Route path="/settings/users" element={
-          <Suspense fallback={<DashboardLoadingSkeleton />}>
-            <Users />
-          </Suspense>
-        } />
-        <Route path="/help" element={
-          <Suspense fallback={<DashboardLoadingSkeleton />}>
-            <Help />
-          </Suspense>
-        } />
-        <Route path="/dev/logs" element={
-          <Suspense fallback={<DashboardLoadingSkeleton />}>
-            <DevLogs />
-          </Suspense>
-        } />
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/sources" element={<Sources />} />
+          <Route path="/add-source" element={
+            <Suspense fallback={<DashboardLoadingSkeleton />}>
+              <AddSource />
+            </Suspense>
+          } />
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/datasets" element={<MyDatasets />} />
+          <Route path="/create-dataset" element={<CreateDatasetPage />} />
+          <Route path="/transformations" element={
+            <Suspense fallback={<DashboardLoadingSkeleton />}>
+              <Transformations />
+            </Suspense>
+          } />
+          <Route path="/transform/:id" element={
+            <Suspense fallback={<DashboardLoadingSkeleton />}>
+              <Transform />
+            </Suspense>
+          } />
+          <Route path="/destinations" element={
+            <Suspense fallback={<DashboardLoadingSkeleton />}>
+              <Destinations />
+            </Suspense>
+          } />
+          <Route path="/analytics" element={
+            <Suspense fallback={<DashboardLoadingSkeleton />}>
+              <Analytics />
+            </Suspense>
+          } />
+          <Route path="/notifications" element={
+            <Suspense fallback={<DashboardLoadingSkeleton />}>
+              <Notifications />
+            </Suspense>
+          } />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={
+            <Suspense fallback={<DashboardLoadingSkeleton />}>
+              <Settings />
+            </Suspense>
+          } />
+          <Route path="/settings/profile" element={
+            <Suspense fallback={<DashboardLoadingSkeleton />}>
+              <ProfileSettings />
+            </Suspense>
+          } />
+          <Route path="/settings/api-keys" element={
+            <Suspense fallback={<DashboardLoadingSkeleton />}>
+              <ApiKeys />
+            </Suspense>
+          } />
+          <Route path="/settings/webhooks" element={
+            <Suspense fallback={<DashboardLoadingSkeleton />}>
+              <Webhooks />
+            </Suspense>
+          } />
+          <Route path="/settings/users" element={
+            <Suspense fallback={<DashboardLoadingSkeleton />}>
+              <Users />
+            </Suspense>
+          } />
+          <Route path="/help" element={
+            <Suspense fallback={<DashboardLoadingSkeleton />}>
+              <Help />
+            </Suspense>
+          } />
+          <Route path="/dev/logs" element={
+            <Suspense fallback={<DashboardLoadingSkeleton />}>
+              <DevLogs />
+            </Suspense>
+          } />
+        </Route>
       </Route>
 
       {/* Fallback route */}

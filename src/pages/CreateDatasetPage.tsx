@@ -258,8 +258,8 @@ const CreateDatasetPage = () => {
         throw new Error("No authenticated session");
       }
       
-      // Build dataset object
-      const dataset: Partial<Dataset> = {
+      // Build dataset object with the required types
+      const dataset = {
         name: datasetName,
         source_id: selectedSourceId,
         user_id: session.user.id,
@@ -267,7 +267,7 @@ const CreateDatasetPage = () => {
         status: "pending",
         progress: 0,
         is_deleted: false
-      };
+      } as any; // Use 'any' temporarily to add conditional fields
       
       // Add specific fields based on dataset type
       if (datasetType === 'predefined') {
@@ -373,10 +373,10 @@ const CreateDatasetPage = () => {
       case 'configuration':
         return (
           <ConfigurationStep
-            sourceId={selectedSourceId}
-            onSourceChange={setSelectedSourceId}
             name={datasetName}
             onNameChange={setDatasetName}
+            sourceId={selectedSourceId}
+            onSourceChange={setSelectedSourceId}
             sources={sources || []}
             isLoading={sourcesLoading}
             datasetType={datasetType}

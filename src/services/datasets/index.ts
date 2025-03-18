@@ -15,7 +15,7 @@ export const fetchDatasets = async (): Promise<Dataset[]> => {
     throw new Error(`Failed to fetch datasets: ${error.message}`);
   }
 
-  return (data as Dataset[]) || [];
+  return (data as unknown as Dataset[]) || [];
 };
 
 // Fetch all deleted datasets
@@ -31,18 +31,20 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
     throw new Error(`Failed to fetch deleted datasets: ${error.message}`);
   }
 
-  return (data as Dataset[]) || [];
+  return (data as unknown as Dataset[]) || [];
 };
 
 // Delete a dataset (soft delete)
 export const deleteDataset = async (datasetId: string): Promise<boolean> => {
+  const updateData = {
+    is_deleted: true,
+    deletion_marked_at: new Date().toISOString(),
+    status: "pending"
+  };
+
   const { error } = await supabase
     .from("extractions")
-    .update({
-      is_deleted: true,
-      deletion_marked_at: new Date().toISOString(),
-      status: "pending"
-    })
+    .update(updateData)
     .eq("id", datasetId);
 
   if (error) {
@@ -55,12 +57,14 @@ export const deleteDataset = async (datasetId: string): Promise<boolean> => {
 
 // Restore a deleted dataset
 export const restoreDataset = async (datasetId: string): Promise<Dataset | null> => {
+  const updateData = {
+    is_deleted: false,
+    deletion_marked_at: null
+  };
+
   const { data, error } = await supabase
     .from("extractions")
-    .update({
-      is_deleted: false,
-      deletion_marked_at: null
-    })
+    .update(updateData)
     .eq("id", datasetId)
     .select()
     .single();
@@ -70,7 +74,7 @@ export const restoreDataset = async (datasetId: string): Promise<Dataset | null>
     throw new Error(`Failed to restore dataset: ${error.message}`);
   }
 
-  return data as Dataset;
+  return data as unknown as Dataset;
 };
 
 // Permanently delete a dataset
