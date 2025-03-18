@@ -60,7 +60,7 @@ const CustomDatasetStep: React.FC<CustomDatasetStepProps> = ({
           source_id: sourceId,
           custom_query: query,
           preview_only: true,
-          limit: l5 // Limit to 5 results for preview
+          limit: 5 // Fixed: changed from 'l5' to 5
         })
       });
       
