@@ -185,6 +185,48 @@ export type Database = {
         }
         Relationships: []
       }
+      dev_logs: {
+        Row: {
+          details: Json | null
+          id: string
+          log_level: string
+          message: string
+          request_data: Json | null
+          response_data: Json | null
+          route: string | null
+          source: string
+          stack_trace: string | null
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          details?: Json | null
+          id?: string
+          log_level: string
+          message: string
+          request_data?: Json | null
+          response_data?: Json | null
+          route?: string | null
+          source: string
+          stack_trace?: string | null
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          details?: Json | null
+          id?: string
+          log_level?: string
+          message?: string
+          request_data?: Json | null
+          response_data?: Json | null
+          route?: string | null
+          source?: string
+          stack_trace?: string | null
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       export_logs: {
         Row: {
           destination_id: string | null
