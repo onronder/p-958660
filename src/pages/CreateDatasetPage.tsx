@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useSources } from '@/hooks/useSources';
 import StepSelector from '@/components/datasets/wizard/StepSelector';
@@ -14,6 +14,7 @@ import DependentDatasetStep from '@/components/datasets/wizard/DependentDatasetS
 import CustomDatasetStep from '@/components/datasets/wizard/CustomDatasetStep';
 import DataPreviewStep from '@/components/datasets/wizard/DataPreviewStep';
 import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
 
 // Step types
 type StepType = 'type' | 'configuration' | 'templates' | 'preview';
@@ -26,6 +27,7 @@ const CreateDatasetPage = () => {
   const [currentStep, setCurrentStep] = useState<StepType>('type');
   const [datasetType, setDatasetType] = useState<'predefined' | 'dependent' | 'custom'>('predefined');
   const [selectedSourceId, setSelectedSourceId] = useState<string>('');
+  const [selectedSourceName, setSelectedSourceName] = useState<string>('');
   const [datasetName, setDatasetName] = useState<string>('');
   
   // Templates state
@@ -51,10 +53,21 @@ const CreateDatasetPage = () => {
     }
   }, [sources, sourcesLoading, navigate]);
   
+  // Update source name when source ID changes
+  useEffect(() => {
+    if (selectedSourceId && sources) {
+      const source = sources.find(s => s.id === selectedSourceId);
+      if (source) {
+        setSelectedSourceName(source.name);
+      }
+    }
+  }, [selectedSourceId, sources]);
+  
   // Parse saved state from sessionStorage on component mount
   useEffect(() => {
     try {
       const savedState = sessionStorage.getItem('createDatasetState');
+      
       if (savedState) {
         const parsedState = JSON.parse(savedState);
         
@@ -237,10 +250,18 @@ const CreateDatasetPage = () => {
         return;
       }
       
+      // Get the user id from the session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session || !session.user) {
+        throw new Error("No authenticated session");
+      }
+      
       // Build dataset object
       const dataset = {
         name: datasetName,
         source_id: selectedSourceId,
+        user_id: session.user.id,
         extraction_type: datasetType,
         status: "pending",
         progress: 0,
@@ -248,8 +269,10 @@ const CreateDatasetPage = () => {
       };
       
       // Add specific fields based on dataset type
-      if (datasetType === 'predefined' || datasetType === 'dependent') {
-        dataset.template_name = datasetType === 'predefined' ? selectedTemplate : selectedDependentTemplate;
+      if (datasetType === 'predefined') {
+        dataset.template_name = selectedTemplate;
+      } else if (datasetType === 'dependent') {
+        dataset.template_name = selectedDependentTemplate;
       } else if (datasetType === 'custom') {
         dataset.custom_query = customQuery;
       }
@@ -310,7 +333,6 @@ const CreateDatasetPage = () => {
     if (datasetType === 'predefined') {
       return (
         <PredefinedDatasetStep
-          sourceId={selectedSourceId}
           selectedTemplate={selectedTemplate}
           onTemplateSelect={setSelectedTemplate}
         />
@@ -318,7 +340,6 @@ const CreateDatasetPage = () => {
     } else if (datasetType === 'dependent') {
       return (
         <DependentDatasetStep
-          sourceId={selectedSourceId}
           selectedTemplate={selectedDependentTemplate}
           onTemplateSelect={setSelectedDependentTemplate}
         />
@@ -339,18 +360,18 @@ const CreateDatasetPage = () => {
       case 'type':
         return (
           <DatasetTypeStep
-            selected={datasetType}
-            onChange={setDatasetType}
+            selectedType={datasetType}
+            onSelectType={setDatasetType}
           />
         );
       case 'configuration':
         return (
           <ConfigurationStep
-            datasetName={datasetName}
-            onDatasetNameChange={setDatasetName}
-            selectedSourceId={selectedSourceId}
-            onSourceSelect={setSelectedSourceId}
-            sources={sources}
+            sourceId={selectedSourceId}
+            onSourceChange={setSelectedSourceId}
+            name={datasetName}
+            onNameChange={setDatasetName}
+            sources={sources || []}
             isLoading={sourcesLoading}
           />
         );
@@ -374,25 +395,42 @@ const CreateDatasetPage = () => {
   
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => navigate("/datasets")}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-3xl font-bold text-primary">Create Dataset</h1>
+      <div className="flex flex-col space-y-2">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate("/datasets")}
+            className="h-8 w-8"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-2xl font-bold">Create New Dataset</h1>
+          
+          {selectedSourceName && (
+            <Badge variant="outline" className="ml-auto flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">Source:</span> 
+              <span className="font-medium">{selectedSourceName}</span>
+            </Badge>
+          )}
+        </div>
+        
+        <p className="text-muted-foreground ml-10">
+          {currentStep === 'type' && "Step 1: Select dataset type"}
+          {currentStep === 'configuration' && "Step 2: Configure dataset details"}
+          {currentStep === 'templates' && "Step 3: Choose data to extract"}
+          {currentStep === 'preview' && "Step 4: Preview and create dataset"}
+        </p>
       </div>
       
       <StepSelector
         currentStep={currentStep}
         setCurrentStep={setCurrentStep}
         steps={[
-          { id: 'type', label: 'Dataset Type' },
-          { id: 'configuration', label: 'Configuration' },
+          { id: 'type', label: 'Type' },
+          { id: 'configuration', label: 'Config' },
           { id: 'templates', label: 'Data Selection' },
-          { id: 'preview', label: 'Preview & Create' }
+          { id: 'preview', label: 'Preview' }
         ]}
       />
       
@@ -416,7 +454,8 @@ const CreateDatasetPage = () => {
               >
                 Generate Preview
               </Button>
-              <Button onClick={handleCreateDataset}>
+              <Button onClick={handleCreateDataset} className="gap-1">
+                <CheckCircle className="h-4 w-4" />
                 Create Dataset
               </Button>
             </div>

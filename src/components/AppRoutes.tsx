@@ -2,7 +2,7 @@
 import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "@/pages/Dashboard";
-import Sources from "@/Sources";
+import Sources from "@/pages/Sources";
 import Jobs from "@/pages/Jobs";
 import Profile from "@/pages/Profile";
 import ProtectedRoute from "./ProtectedRoute";
