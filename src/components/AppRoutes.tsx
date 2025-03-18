@@ -1,76 +1,147 @@
 
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import Index from "@/pages/Index";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import ForgotPassword from "@/pages/ForgotPassword";
-import ResetPassword from "@/pages/ResetPassword";
-import AuthCallback from "@/pages/AuthCallback";
 import Dashboard from "@/pages/Dashboard";
-import Sources from "@/pages/Sources";
-import Transformations from "@/pages/Transformations";
-import Destinations from "@/pages/Destinations";
+import Sources from "@/Sources";
 import Jobs from "@/pages/Jobs";
-import Analytics from "@/pages/Analytics";
-import Settings from "@/pages/Settings";
-import Profile from "@/pages/settings/Profile";
-import ApiKeys from "@/pages/settings/ApiKeys";
-import Users from "@/pages/settings/Users";
-import Webhooks from "@/pages/settings/Webhooks";
-import Help from "@/pages/Help";
-import Storage from "@/pages/Storage";
-import Insights from "@/pages/Insights";
-import Notifications from "@/pages/Notifications";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import AppLayout from "@/components/AppLayout";
+import Profile from "@/pages/Profile";
+import ProtectedRoute from "./ProtectedRoute";
 import MyDatasets from "@/pages/MyDatasets";
+import CreateDatasetPage from "@/pages/CreateDatasetPage";
+import DashboardLoadingSkeleton from "./DashboardLoadingSkeleton";
 
-export function AppRoutes() {
-  const handleLogin = () => {
-    console.log("Login successful");
-    // Any additional login handling logic
-  };
+// Lazy-loaded components
+const AddSource = lazy(() => import("@/pages/AddSource"));
+const Transformations = lazy(() => import("@/pages/Transformations"));
+const Transform = lazy(() => import("@/pages/Transform"));
+const Destinations = lazy(() => import("@/pages/Destinations"));
+const Analytics = lazy(() => import("@/pages/Analytics"));
+const Notifications = lazy(() => import("@/pages/Notifications"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const ProfileSettings = lazy(() => import("@/pages/settings/Profile"));
+const ApiKeys = lazy(() => import("@/pages/settings/ApiKeys"));
+const Webhooks = lazy(() => import("@/pages/settings/Webhooks"));
+const Users = lazy(() => import("@/pages/settings/Users"));
+const Help = lazy(() => import("@/pages/Help"));
+const DevLogs = lazy(() => import("@/pages/dev/logs"));
 
-  const handleRegister = () => {
-    console.log("Registration successful");
-    // Any additional registration handling logic
-  };
+// Auth pages
+const Login = lazy(() => import("@/pages/Login"));
+const Register = lazy(() => import("@/pages/Register"));
+const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
 
+const AppRoutes = () => {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={<Index />} />
-      <Route path="/login" element={<Login onLogin={handleLogin} />} />
-      <Route path="/register" element={<Register onRegister={handleRegister} />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/auth/callback" element={<AuthCallback />} />
-      
-      {/* Protected routes wrapped in AppLayout */}
+      <Route path="/login" element={
+        <Suspense fallback={<div className="p-8">Loading...</div>}>
+          <Login />
+        </Suspense>
+      } />
+      <Route path="/register" element={
+        <Suspense fallback={<div className="p-8">Loading...</div>}>
+          <Register />
+        </Suspense>
+      } />
+      <Route path="/forgot-password" element={
+        <Suspense fallback={<div className="p-8">Loading...</div>}>
+          <ForgotPassword />
+        </Suspense>
+      } />
+      <Route path="/reset-password" element={
+        <Suspense fallback={<div className="p-8">Loading...</div>}>
+          <ResetPassword />
+        </Suspense>
+      } />
+      <Route path="/auth/callback" element={
+        <Suspense fallback={<div className="p-8">Loading...</div>}>
+          <AuthCallback />
+        </Suspense>
+      } />
+
+      {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/sources" element={<Sources />} />
-          <Route path="/my-datasets" element={<MyDatasets />} />
-          <Route path="/transform" element={<Transformations />} />
-          <Route path="/destinations" element={<Destinations />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/insights" element={<Insights />} />
-          <Route path="/storage" element={<Storage />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/settings/profile" element={<Profile />} />
-          <Route path="/settings/api-keys" element={<ApiKeys />} />
-          <Route path="/settings/users" element={<Users />} />
-          <Route path="/settings/webhooks" element={<Webhooks />} />
-          <Route path="/help" element={<Help />} />
-          <Route path="/notifications" element={<Notifications />} />
-        </Route>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/sources" element={<Sources />} />
+        <Route path="/add-source" element={
+          <Suspense fallback={<DashboardLoadingSkeleton />}>
+            <AddSource />
+          </Suspense>
+        } />
+        <Route path="/jobs" element={<Jobs />} />
+        <Route path="/datasets" element={<MyDatasets />} />
+        <Route path="/create-dataset" element={<CreateDatasetPage />} />
+        <Route path="/transformations" element={
+          <Suspense fallback={<DashboardLoadingSkeleton />}>
+            <Transformations />
+          </Suspense>
+        } />
+        <Route path="/transform/:id" element={
+          <Suspense fallback={<DashboardLoadingSkeleton />}>
+            <Transform />
+          </Suspense>
+        } />
+        <Route path="/destinations" element={
+          <Suspense fallback={<DashboardLoadingSkeleton />}>
+            <Destinations />
+          </Suspense>
+        } />
+        <Route path="/analytics" element={
+          <Suspense fallback={<DashboardLoadingSkeleton />}>
+            <Analytics />
+          </Suspense>
+        } />
+        <Route path="/notifications" element={
+          <Suspense fallback={<DashboardLoadingSkeleton />}>
+            <Notifications />
+          </Suspense>
+        } />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={
+          <Suspense fallback={<DashboardLoadingSkeleton />}>
+            <Settings />
+          </Suspense>
+        } />
+        <Route path="/settings/profile" element={
+          <Suspense fallback={<DashboardLoadingSkeleton />}>
+            <ProfileSettings />
+          </Suspense>
+        } />
+        <Route path="/settings/api-keys" element={
+          <Suspense fallback={<DashboardLoadingSkeleton />}>
+            <ApiKeys />
+          </Suspense>
+        } />
+        <Route path="/settings/webhooks" element={
+          <Suspense fallback={<DashboardLoadingSkeleton />}>
+            <Webhooks />
+          </Suspense>
+        } />
+        <Route path="/settings/users" element={
+          <Suspense fallback={<DashboardLoadingSkeleton />}>
+            <Users />
+          </Suspense>
+        } />
+        <Route path="/help" element={
+          <Suspense fallback={<DashboardLoadingSkeleton />}>
+            <Help />
+          </Suspense>
+        } />
+        <Route path="/dev/logs" element={
+          <Suspense fallback={<DashboardLoadingSkeleton />}>
+            <DevLogs />
+          </Suspense>
+        } />
       </Route>
-      
+
       {/* Fallback route */}
-      <Route path="*" element={<Navigate to="/" />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
-}
+};
+
+export default AppRoutes;

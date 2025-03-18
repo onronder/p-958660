@@ -54,8 +54,7 @@ const CreateDatasetDialog = ({ sources, onDatasetCreated, isOpen, onOpenChange }
   };
 
   const handleCreateDataset = () => {
-    // For now, we'll just navigate to a future dataset creation page
-    // In the future, this will be replaced with a proper form/wizard
+    // Navigate to the CreateDatasetPage
     handleDialogOpenChange(false);
     navigate("/create-dataset");
   };
