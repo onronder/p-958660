@@ -38,15 +38,18 @@ export function useDevLogs() {
       // Define the expected return type explicitly
       let query = supabase
         .from('dev_logs')
-        .select('id, timestamp, log_level, source, message, details, user_id, route, stack_trace, request_data, response_data') // Explicit selection to avoid deep type inference
-        .order('timestamp', { ascending: false })
-        .limit(limit)
-        .range(offset, offset + limit - 1);
+        .select('id, timestamp, log_level, source, message, details, user_id, route, stack_trace, request_data, response_data');
+      
+      // Add ordering, limits and range separately to avoid type recursion
+      query = query.order('timestamp', { ascending: false });
+      query = query.limit(limit);
+      query = query.range(offset, offset + limit - 1);
 
       // Apply filters dynamically
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
-          query = query.eq(key, value); // Modify existing query
+          // Using any to bypass TypeScript's recursive type inference
+          query = (query as any).eq(key, value);
         }
       });
 
