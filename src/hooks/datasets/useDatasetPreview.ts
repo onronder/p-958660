@@ -88,8 +88,8 @@ export const useDatasetPreview = () => {
             throw new Error(response.error.message || 'Failed to generate preview');
           }
           
-          // Check if we received the expected data structure
-          if (!response.data || !response.data.results) {
+          // Type guard to check if response has data property
+          if (!('data' in response) || !response.data || !response.data.results) {
             throw new Error('Invalid response format from the Edge Function');
           }
           
@@ -138,8 +138,8 @@ export const useDatasetPreview = () => {
             throw new Error(response.error.message || 'Failed to execute custom query');
           }
           
-          // Type guard to check if response.data exists before accessing it
-          if (!response.data || !response.data.results) {
+          // Type guard to check if response has data property
+          if (!('data' in response) || !response.data || !response.data.results) {
             throw new Error('Invalid response format from the Edge Function');
           }
           
