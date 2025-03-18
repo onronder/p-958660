@@ -12,7 +12,8 @@ import {
   User,
   Box,
   Waves,
-  LogOut
+  LogOut,
+  Bug
 } from "lucide-react"
 
 import { NavLink } from "react-router-dom"
@@ -96,6 +97,11 @@ export function FlowTechsSidebar({ onLogout, className }: FlowTechsSidebarProps)
       title: "Settings",
       href: "/settings",
       icon: <Settings className="h-5 w-5" />
+    },
+    {
+      title: "Dev Logs",
+      href: "/dev/logs",
+      icon: <Bug className="h-5 w-5" />
     }
   ];
 
