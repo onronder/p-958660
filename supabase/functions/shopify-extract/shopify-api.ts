@@ -12,8 +12,8 @@ export async function executeShopifyQuery({
   try {
     // Ensure we have a valid API version
     if (!apiVersion) {
-      console.warn("No API version provided, falling back to default 2023-10");
-      apiVersion = "2023-10";
+      console.warn("No API version provided, falling back to default 2025-01");
+      apiVersion = "2025-01"; // Update to the latest known version
     }
     
     const endpoint = `https://${shopName}.myshopify.com/admin/api/${apiVersion}/graphql.json`;

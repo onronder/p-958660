@@ -85,58 +85,39 @@ serve(async (req) => {
       ? storeUrl.replace(/^https?:\/\//, '') 
       : `${storeUrl}.myshopify.com`;
 
-    // Determine the latest API version
-    // First, check if we have it cached
-    let cachedVersion;
+    // Always detect the current API version (due to Shopify's quarterly updates)
     let apiVersion;
-
-    const { data: latestVersion } = await supabase
-      .from('schema_cache')
-      .select('api_version')
-      .eq('source_id', source_id)
-      .order('cached_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (latestVersion && latestVersion.api_version && !force_refresh) {
-      cachedVersion = latestVersion.api_version;
-      console.log("Using cached API version:", cachedVersion);
-      apiVersion = cachedVersion;
-    } 
     
-    // If no cached version or force refresh, we'll need to detect the current version
-    if (!apiVersion || force_refresh) {
-      try {
-        console.log("Detecting current Shopify API version...");
-        // Make a request to determine the current API version
-        const versionResponse = await fetch(`https://${formattedStoreUrl}/admin/api.json`, {
-          method: 'GET',
-          headers: {
-            'X-Shopify-Access-Token': accessToken
-          }
-        });
-        
-        if (!versionResponse.ok) {
-          console.warn("Failed to detect API version, fallback to 2023-10");
-          apiVersion = "2023-10";  // Default fallback
-        } else {
-          const versionData = await versionResponse.json();
-          
-          if (versionData && versionData.supported_versions && versionData.supported_versions.length > 0) {
-            // Get the latest stable version (first in the list is usually the latest)
-            const latestVersion = versionData.supported_versions.find(v => v.status === "stable") || 
-                                 versionData.supported_versions[0];
-            apiVersion = latestVersion.version;
-            console.log("Detected latest Shopify API version:", apiVersion);
-          } else {
-            console.warn("Unable to parse API version response, using fallback");
-            apiVersion = "2023-10";  // Default fallback
-          }
+    try {
+      console.log("Detecting current Shopify API version...");
+      // Make a request to determine the current API version
+      const versionResponse = await fetch(`https://${formattedStoreUrl}/admin/api.json`, {
+        method: 'GET',
+        headers: {
+          'X-Shopify-Access-Token': accessToken
         }
-      } catch (versionError) {
-        console.error("Error detecting API version:", versionError);
-        apiVersion = "2023-10";  // Default fallback
+      });
+      
+      if (!versionResponse.ok) {
+        console.warn("Failed to detect API version, fallback to 2025-01");
+        apiVersion = "2025-01";  // Updated default fallback
+      } else {
+        const versionData = await versionResponse.json();
+        
+        if (versionData && versionData.supported_versions && versionData.supported_versions.length > 0) {
+          // Get the latest stable version (first in the list is usually the latest)
+          const latestVersion = versionData.supported_versions.find(v => v.status === "stable") || 
+                               versionData.supported_versions[0];
+          apiVersion = latestVersion.version;
+          console.log("Detected latest Shopify API version:", apiVersion);
+        } else {
+          console.warn("Unable to parse API version response, using fallback");
+          apiVersion = "2025-01";  // Updated default fallback
+        }
       }
+    } catch (versionError) {
+      console.error("Error detecting API version:", versionError);
+      apiVersion = "2025-01";  // Updated default fallback
     }
 
     // For test_only, we just verify if we can connect to Shopify's GraphQL API
@@ -204,41 +185,8 @@ serve(async (req) => {
       }
     }
     
-    // If not just testing, check if we need to fetch a new schema
-    if (!force_refresh) {
-      // Check if we have a recent cache (less than 4 hours old)
-      const { data: cachedSchema, error: cacheError } = await supabase
-        .from("schema_cache")
-        .select("schema, cached_at, api_version")
-        .eq("source_id", source_id)
-        .order("cached_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (cachedSchema && !cacheError) {
-        const cacheAge = Date.now() - new Date(cachedSchema.cached_at).getTime();
-        const cacheAgeHours = cacheAge / (1000 * 60 * 60);
-        
-        // Use cached schema if it's less than 4 hours old
-        if (cacheAgeHours < 4) {
-          console.log("Using cached schema, age:", cacheAgeHours.toFixed(2), "hours, API version:", cachedSchema.api_version);
-          
-          return new Response(
-            JSON.stringify({ 
-              success: true, 
-              schema: cachedSchema.schema, 
-              message: "Using cached schema",
-              is_cached: true,
-              cached_at: cachedSchema.cached_at,
-              api_version: cachedSchema.api_version
-            }),
-            { 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          );
-        }
-      }
-    }
+    // If force_refresh is true or no cache exists, fetch a new schema
+    // We've removed the cached version logic here as we want to always detect the latest API version
     
     // Fetch new schema from Shopify
     try {
