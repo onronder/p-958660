@@ -20,4 +20,6 @@ export interface Dataset {
   export_details?: any;
   created_at: string;
   updated_at: string;
+  is_deleted?: boolean;
+  deletion_marked_at?: string;
 }

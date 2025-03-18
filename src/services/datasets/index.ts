@@ -15,7 +15,7 @@ export const fetchDatasets = async (): Promise<Dataset[]> => {
     throw new Error(`Failed to fetch datasets: ${error.message}`);
   }
 
-  return data || [];
+  return data as Dataset[] || [];
 };
 
 // Fetch all deleted datasets
@@ -31,7 +31,7 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
     throw new Error(`Failed to fetch deleted datasets: ${error.message}`);
   }
 
-  return data || [];
+  return data as Dataset[] || [];
 };
 
 // Delete a dataset (soft delete)
@@ -41,7 +41,7 @@ export const deleteDataset = async (datasetId: string): Promise<boolean> => {
     .update({
       is_deleted: true,
       deletion_marked_at: new Date().toISOString(),
-      status: "paused"
+      status: "pending"
     })
     .eq("id", datasetId);
 
@@ -70,7 +70,7 @@ export const restoreDataset = async (datasetId: string): Promise<Dataset | null>
     throw new Error(`Failed to restore dataset: ${error.message}`);
   }
 
-  return data;
+  return data as Dataset;
 };
 
 // Permanently delete a dataset

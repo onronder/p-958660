@@ -29,17 +29,6 @@ const MyDatasets = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [sourcesExist, setSourcesExist] = useState(false);
   
-  const { handleRestoreDataset, handlePermanentDelete } = useDatasetActions(loadDatasets);
-
-  useEffect(() => {
-    loadDatasets();
-    loadDeletedDatasets();
-  }, []);
-  
-  useEffect(() => {
-    setSourcesExist(sources.length > 0);
-  }, [sources]);
-
   const loadDatasets = async () => {
     setIsLoading(true);
     try {
@@ -68,6 +57,17 @@ const MyDatasets = () => {
       setIsDeletedLoading(false);
     }
   };
+  
+  const { handleRestoreDataset, handlePermanentDelete } = useDatasetActions(loadDatasets);
+
+  useEffect(() => {
+    loadDatasets();
+    loadDeletedDatasets();
+  }, []);
+  
+  useEffect(() => {
+    setSourcesExist(sources.length > 0);
+  }, [sources]);
 
   const handleDatasetCreated = (newDataset: Dataset) => {
     setDatasets([newDataset, ...datasets]);
