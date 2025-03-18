@@ -41,3 +41,7 @@ src = "./shopify-dependent/index.ts"
 [[api.endpoints]]
 path = "/pre_recent_orders_dashboard"
 src = "./pre_recent_orders_dashboard/index.ts"
+
+[[api.endpoints]]
+path = "/shopify-private"
+src = "./shopify-private/index.ts"

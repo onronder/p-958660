@@ -50,8 +50,8 @@ export const useDashboardData = () => {
 
     try {
       console.log("Fetching dashboard data with access token");
-      // Call the edge function with auth token
-      const { data, error } = await supabase.functions.invoke("get-dashboard-metrics", {
+      // Call the edge function with auth token - using the endpoint name exactly as in config.toml
+      const { data, error } = await supabase.functions.invoke("dashboard-data", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${session.access_token}`
