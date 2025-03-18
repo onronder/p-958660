@@ -48,7 +48,7 @@ export const fetchUserDatasets = async (): Promise<Dataset[]> => {
       record_count: item.record_count || 0,
       created_at: item.created_at,
       updated_at: item.last_updated,
-      is_deleted: Boolean(item.is_deleted)
+      is_deleted: false // Since we filtered for is_deleted=false
     };
   });
 
@@ -102,7 +102,7 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
       record_count: item.record_count || 0,
       created_at: item.created_at,
       updated_at: item.last_updated,
-      is_deleted: true
+      is_deleted: true // Since we filtered for is_deleted=true
     };
   });
 
@@ -224,6 +224,7 @@ export const updateDataset = async (datasetId: string, updates: Partial<Dataset>
   if (updates.status_message) dbUpdates.error_message = updates.status_message;
   if (updates.result_data) dbUpdates.result_data = updates.result_data;
   if (updates.record_count !== undefined) dbUpdates.record_count = updates.record_count;
+  if (updates.is_deleted !== undefined) dbUpdates.is_deleted = updates.is_deleted;
 
   const { data, error } = await supabase
     .from('user_datasets')
@@ -326,3 +327,4 @@ export const fetchDatasetById = async (datasetId: string): Promise<Dataset> => {
 
   return dataset;
 };
+
