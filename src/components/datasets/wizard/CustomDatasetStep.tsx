@@ -96,6 +96,11 @@ const CustomDatasetStep: React.FC<CustomDatasetStepProps> = ({
       setIsRunning(false);
     }
   };
+
+  // Fix: Wrap the loadSchema function in a handler that doesn't pass parameters
+  const handleRefreshSchema = () => {
+    loadSchema(true); // Force refresh the schema
+  };
   
   return (
     <div className="space-y-4">
@@ -104,7 +109,7 @@ const CustomDatasetStep: React.FC<CustomDatasetStepProps> = ({
         <Button 
           variant="outline" 
           size="sm"
-          onClick={loadSchema}
+          onClick={handleRefreshSchema}
           disabled={isLoading}
         >
           {isLoading ? (

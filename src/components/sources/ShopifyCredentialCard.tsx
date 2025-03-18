@@ -143,6 +143,19 @@ const ShopifyCredentialCard: React.FC<ShopifyCredentialCardProps> = ({
     }
   };
 
+  // Create a properly formatted source object from the credential
+  const shopifySource = {
+    id: credential.id,
+    name: credential.store_name,
+    url: credential.store_name,
+    credentials: {
+      api_key: credential.api_key,
+      api_token: credential.api_token
+    },
+    last_connection_status: credential.last_connection_status,
+    last_connection_time: credential.last_connection_time
+  };
+
   return (
     <>
       <Card className="p-6 hover:shadow-md transition-shadow duration-200">
@@ -152,10 +165,7 @@ const ShopifyCredentialCard: React.FC<ShopifyCredentialCardProps> = ({
             lastConnectionStatus={credential.last_connection_status}
           />
           
-          <ShopifyCredentialDetails
-            lastConnectionTime={credential.last_connection_time}
-            createdAt={credential.created_at}
-          />
+          <ShopifyCredentialDetails source={shopifySource} />
         </div>
         
         <ShopifyCredentialActions
