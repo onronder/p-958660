@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { devLogger } from "@/utils/DevLogger";
+import { getSupabaseUrl } from "@/hooks/destinations/api/apiUtils";
 
 export const useGraphQLSchema = (sourceId: string) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -30,11 +31,7 @@ export const useGraphQLSchema = (sourceId: string) => {
         throw new Error("No authenticated session");
       }
       
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      
-      if (!supabaseUrl) {
-        throw new Error("Missing VITE_SUPABASE_URL environment variable");
-      }
+      const supabaseUrl = getSupabaseUrl();
       
       // Call the Shopify schema edge function
       const response = await fetch(`${supabaseUrl}/functions/v1/shopify-schema`, {
@@ -62,10 +59,16 @@ export const useGraphQLSchema = (sourceId: string) => {
         }
       }
       
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error("Failed to parse JSON response:", jsonError);
+        throw new Error("Invalid response from server - failed to parse JSON");
+      }
       
-      if (!data.success) {
-        throw new Error(data.message || "No schema returned from the server");
+      if (!data || !data.success) {
+        throw new Error(data?.message || "No schema returned from the server");
       }
       
       devLogger.info("GraphQLSchema", `Schema loaded successfully: ${data.is_cached ? 'from cache' : 'fresh fetch'}`);

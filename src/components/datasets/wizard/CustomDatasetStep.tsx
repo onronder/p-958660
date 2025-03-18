@@ -7,6 +7,7 @@ import GraphQLQueryEditor from "./schema/GraphQLQueryEditor";
 import GraphQLSchemaExplorer from "./schema/GraphQLSchemaExplorer";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseUrl } from "@/hooks/destinations/api/apiUtils";
 
 interface CustomDatasetStepProps {
   sourceId: string;
@@ -49,7 +50,8 @@ const CustomDatasetStep: React.FC<CustomDatasetStepProps> = ({
       }
       
       // Call the shopify-extract edge function with preview_only flag
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/shopify-extract`, {
+      const supabaseUrl = getSupabaseUrl();
+      const response = await fetch(`${supabaseUrl}/functions/v1/shopify-extract`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

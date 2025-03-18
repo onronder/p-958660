@@ -25,7 +25,13 @@ export async function getAuthToken() {
 
 // Helper to get the Supabase URL
 export function getSupabaseUrl() {
-  return import.meta.env.VITE_SUPABASE_URL || 'https://eovyjotxecnkqjylwdnj.supabase.co';
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  if (!url) {
+    console.warn("VITE_SUPABASE_URL is not defined in environment variables, using fallback URL");
+    // Fall back to the default URL
+    return 'https://eovyjotxecnkqjylwdnj.supabase.co';
+  }
+  return url;
 }
 
 // Helper to handle API errors

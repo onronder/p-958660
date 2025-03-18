@@ -4,6 +4,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { devLogger } from "@/utils/DevLogger";
+import { getSupabaseUrl } from "@/hooks/destinations/api/apiUtils";
 
 export function useSchemaCache() {
   const [status, setStatus] = useState<Record<string, SchemaCacheStatus>>({});
@@ -45,11 +46,7 @@ export function useSchemaCache() {
         throw new Error("No authenticated session");
       }
       
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      
-      if (!supabaseUrl) {
-        throw new Error("Missing VITE_SUPABASE_URL environment variable");
-      }
+      const supabaseUrl = getSupabaseUrl();
       
       // Call the edge function to fetch and cache the schema
       const response = await fetch(`${supabaseUrl}/functions/v1/shopify-schema`, {
@@ -77,10 +74,16 @@ export function useSchemaCache() {
         }
       }
       
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error("Failed to parse JSON response:", jsonError);
+        throw new Error("Invalid response from server - failed to parse JSON");
+      }
       
-      if (!data.success) {
-        throw new Error(data.message || "Unknown error refreshing schema");
+      if (!data || !data.success) {
+        throw new Error(data?.message || "Unknown error refreshing schema");
       }
 
       // Update status with success
