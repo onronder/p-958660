@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { devLogger } from '@/utils/DevLogger';
+import { devLogger } from '@/utils/logger';
 
 export type ConnectionTestResult = {
   success: boolean;
@@ -40,8 +40,8 @@ export function useConnectionTest() {
       let credentials: { access_token?: string; api_key?: string; store_name?: string } = {};
       
       if (sourceData.credentials && typeof sourceData.credentials === 'object') {
-        // Extract credentials from the credentials JSON object
-        const creds = sourceData.credentials;
+        // Extract credentials safely with type checking
+        const creds = sourceData.credentials as Record<string, any>;
         credentials = {
           access_token: typeof creds.access_token === 'string' ? creds.access_token : undefined,
           api_key: typeof creds.api_key === 'string' ? creds.api_key : undefined,
@@ -110,6 +110,7 @@ export function useConnectionTest() {
     isTestingConnection,
     connectionTestResult,
     testConnection,
-    clearConnectionTestResult: () => setConnectionTestResult(null)
+    clearConnectionTestResult: () => setConnectionTestResult(null),
+    setConnectionTestResult // Expose this function to fix the related error
   };
 }

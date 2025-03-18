@@ -1,82 +1,85 @@
+import React from 'react';
+import { Dataset } from '@/types/dataset';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Trash, RefreshCw } from 'lucide-react';
+import DatasetStatusBadge from './DatasetStatusBadge';
 
-import React from "react";
-import { format, formatDistanceToNow } from "date-fns";
-import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCw } from "lucide-react";
-import { Dataset } from "@/types/dataset";
-import DatasetStatusBadge from "./DatasetStatusBadge";
-
-interface DeletedDatasetsTableProps {
+export interface DeletedDatasetsTableProps {
   deletedDatasets: Dataset[];
-  onRestoreDataset: (datasetId: string) => Promise<void>;
-  onPermanentDelete: (datasetId: string) => Promise<void>;
+  isRestoring: boolean; // Add isRestoring prop
+  isDeleting: boolean; // Add isDeleting prop
+  onRestore: (id: string, name: string) => Promise<boolean>;
+  onDelete: (id: string, name: string) => Promise<boolean>;
 }
 
-const DeletedDatasetsTable = ({ deletedDatasets, onRestoreDataset, onPermanentDelete }: DeletedDatasetsTableProps) => {
-  if (deletedDatasets.length === 0) {
-    return <p className="text-center text-muted-foreground py-4">No deleted datasets found.</p>;
-  }
-
+const DeletedDatasetsTable: React.FC<DeletedDatasetsTableProps> = ({
+  deletedDatasets,
+  isRestoring,
+  isDeleting,
+  onRestore,
+  onDelete
+}) => {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Type</TableHead>
-          <TableHead>Deleted</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {deletedDatasets.map((dataset) => (
-          <TableRow key={dataset.id}>
-            <TableCell className="font-medium">
-              <div>
-                <div>{dataset.name}</div>
-              </div>
-            </TableCell>
-            <TableCell>{dataset.extraction_type}</TableCell>
-            <TableCell>
-              {dataset.deletion_marked_at && (
-                <div className="flex flex-col">
-                  <span>{format(new Date(dataset.deletion_marked_at), "PPp")}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(dataset.deletion_marked_at), { addSuffix: true })}
-                  </span>
-                </div>
-              )}
-            </TableCell>
-            <TableCell>
-              <DatasetStatusBadge status={dataset.status} />
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 px-2"
-                  onClick={() => onRestoreDataset(dataset.id)}
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  <span className="ml-1">Restore</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => onPermanentDelete(dataset.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span className="ml-1">Delete Permanently</span>
-                </Button>
-              </div>
-            </TableCell>
+    <Card>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Created At</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {deletedDatasets.map((dataset) => (
+            <TableRow key={dataset.id}>
+              <TableCell className="font-medium">{dataset.name}</TableCell>
+              <TableCell>
+                <DatasetStatusBadge status={dataset.status} />
+              </TableCell>
+              <TableCell>{new Date(dataset.created_at).toLocaleDateString()}</TableCell>
+              <TableCell className="text-right">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onRestore(dataset.id, dataset.name)}
+                  disabled={isRestoring}
+                >
+                  {isRestoring ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Restoring...
+                    </>
+                  ) : (
+                    "Restore"
+                  )}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => onDelete(dataset.id, dataset.name)}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash className="mr-2 h-4 w-4" />
+                      Delete
+                    </>
+                  )}
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Card>
   );
 };
 

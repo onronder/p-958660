@@ -12,7 +12,7 @@ export interface Dataset {
   status_message?: string;
   started_at?: string;
   completed_at?: string;
-  result_data?: any[];
+  result_data: any[]; // Changed from any[] to ensure it's always an array
   record_count?: number;
   exported_at?: string;
   export_format?: string;

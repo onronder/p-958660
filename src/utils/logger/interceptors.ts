@@ -11,8 +11,14 @@ function setupFetchInterceptor(logger: typeof devLogger): void {
 
   // Replace with our intercepted version
   window.fetch = async function interceptedFetch(input, init) {
-    const url = typeof input === 'string' ? input : input.url;
-    const method = init?.method || (typeof input === 'string' ? 'GET' : input.method) || 'GET';
+    // Handle different input types correctly
+    const url = (typeof input === 'string') 
+      ? input 
+      : (input instanceof Request ? input.url : input.toString());
+      
+    const method = init?.method || 
+      (typeof input !== 'string' && input instanceof Request ? input.method : 'GET');
+      
     const startTime = performance.now();
     
     try {

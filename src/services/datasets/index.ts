@@ -15,23 +15,34 @@ export const fetchUserDatasets = async (): Promise<Dataset[]> => {
   }
 
   // Transform the data to match Dataset type
-  const datasets: Dataset[] = (data || []).map(item => ({
-    id: item.id,
-    user_id: item.user_id,
-    source_id: item.source_id,
-    name: item.name,
-    extraction_type: item.dataset_type as "predefined" | "dependent" | "custom",
-    template_name: item.description || undefined,
-    custom_query: item.query_params?.query as string | undefined,
-    status: item.status as "pending" | "running" | "completed" | "failed",
-    progress: 100, // Default to 100%
-    status_message: item.error_message || undefined,
-    result_data: item.result_data,
-    record_count: item.record_count || 0,
-    created_at: item.created_at,
-    updated_at: item.last_updated,
-    is_deleted: false
-  }));
+  const datasets: Dataset[] = (data || []).map(item => {
+    // Safely handle query_params
+    const queryParams = item.query_params as Record<string, any> | null;
+    const customQuery = queryParams?.query as string | undefined;
+    
+    // Safely handle result_data
+    const resultData = Array.isArray(item.result_data) 
+      ? item.result_data 
+      : (item.result_data ? [item.result_data] : []);
+
+    return {
+      id: item.id,
+      user_id: item.user_id,
+      source_id: item.source_id,
+      name: item.name,
+      extraction_type: item.dataset_type as "predefined" | "dependent" | "custom",
+      template_name: item.description || undefined,
+      custom_query: customQuery,
+      status: item.status as "pending" | "running" | "completed" | "failed",
+      progress: 100, // Default to 100%
+      status_message: item.error_message || undefined,
+      result_data: resultData,
+      record_count: item.record_count || 0,
+      created_at: item.created_at,
+      updated_at: item.last_updated,
+      is_deleted: false
+    };
+  });
 
   return datasets;
 };
@@ -49,36 +60,47 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
   }
 
   // Transform the data to match Dataset type
-  const datasets: Dataset[] = (data || []).map(item => ({
-    id: item.id,
-    user_id: item.user_id,
-    source_id: item.source_id,
-    name: item.name,
-    extraction_type: item.dataset_type as "predefined" | "dependent" | "custom",
-    template_name: item.description || undefined,
-    custom_query: item.query_params?.query as string | undefined,
-    status: item.status as "pending" | "running" | "completed" | "failed",
-    progress: 100, // Default to 100%
-    status_message: item.error_message || undefined,
-    result_data: item.result_data,
-    record_count: item.record_count || 0,
-    created_at: item.created_at,
-    updated_at: item.last_updated,
-    is_deleted: true
-  }));
+  const datasets: Dataset[] = (data || []).map(item => {
+    // Safely handle query_params
+    const queryParams = item.query_params as Record<string, any> | null;
+    const customQuery = queryParams?.query as string | undefined;
+    
+    // Safely handle result_data
+    const resultData = Array.isArray(item.result_data) 
+      ? item.result_data 
+      : (item.result_data ? [item.result_data] : []);
+
+    return {
+      id: item.id,
+      user_id: item.user_id,
+      source_id: item.source_id,
+      name: item.name,
+      extraction_type: item.dataset_type as "predefined" | "dependent" | "custom",
+      template_name: item.description || undefined,
+      custom_query: customQuery,
+      status: item.status as "pending" | "running" | "completed" | "failed",
+      progress: 100, // Default to 100%
+      status_message: item.error_message || undefined,
+      result_data: resultData,
+      record_count: item.record_count || 0,
+      created_at: item.created_at,
+      updated_at: item.last_updated,
+      is_deleted: true
+    };
+  });
 
   return datasets;
 };
 
 export const createDataset = async (datasetData: Partial<Dataset>): Promise<Dataset> => {
   // Convert Dataset type to DB schema
-  const dbData = {
+  const dbData: Record<string, any> = {
     user_id: datasetData.user_id,
     source_id: datasetData.source_id,
     name: datasetData.name,
     dataset_type: datasetData.extraction_type,
     description: datasetData.template_name,
-    query_params: { query: datasetData.custom_query },
+    query_params: datasetData.custom_query ? { query: datasetData.custom_query } : null,
     status: datasetData.status || 'pending',
     error_message: datasetData.status_message,
     record_count: datasetData.record_count,
@@ -97,6 +119,14 @@ export const createDataset = async (datasetData: Partial<Dataset>): Promise<Data
   }
 
   // Transform the returned data to match Dataset type
+  const queryParams = data.query_params as Record<string, any> | null;
+  const customQuery = queryParams?.query as string | undefined;
+  
+  // Safely handle result_data
+  const resultData = Array.isArray(data.result_data) 
+    ? data.result_data 
+    : (data.result_data ? [data.result_data] : []);
+
   const dataset: Dataset = {
     id: data.id,
     user_id: data.user_id,
@@ -104,11 +134,11 @@ export const createDataset = async (datasetData: Partial<Dataset>): Promise<Data
     name: data.name,
     extraction_type: data.dataset_type as "predefined" | "dependent" | "custom",
     template_name: data.description || undefined,
-    custom_query: data.query_params?.query as string | undefined,
+    custom_query: customQuery,
     status: data.status as "pending" | "running" | "completed" | "failed",
     progress: 0,
     status_message: data.error_message || undefined,
-    result_data: data.result_data,
+    result_data: resultData,
     record_count: data.record_count || 0,
     created_at: data.created_at,
     updated_at: data.last_updated,
@@ -156,12 +186,12 @@ export const permanentlyDeleteDataset = async (datasetId: string): Promise<void>
 
 export const updateDataset = async (datasetId: string, updates: Partial<Dataset>): Promise<Dataset> => {
   // Convert Dataset type updates to DB schema
-  const dbUpdates: any = {};
+  const dbUpdates: Record<string, any> = {};
   
   if (updates.name) dbUpdates.name = updates.name;
   if (updates.extraction_type) dbUpdates.dataset_type = updates.extraction_type;
   if (updates.template_name) dbUpdates.description = updates.template_name;
-  if (updates.custom_query) dbUpdates.query_params = { ...dbUpdates.query_params, query: updates.custom_query };
+  if (updates.custom_query) dbUpdates.query_params = { query: updates.custom_query };
   if (updates.status) dbUpdates.status = updates.status;
   if (updates.status_message) dbUpdates.error_message = updates.status_message;
   if (updates.result_data) dbUpdates.result_data = updates.result_data;
@@ -180,6 +210,14 @@ export const updateDataset = async (datasetId: string, updates: Partial<Dataset>
   }
 
   // Transform the returned data to match Dataset type
+  const queryParams = data.query_params as Record<string, any> | null;
+  const customQuery = queryParams?.query as string | undefined;
+  
+  // Safely handle result_data
+  const resultData = Array.isArray(data.result_data) 
+    ? data.result_data 
+    : (data.result_data ? [data.result_data] : []);
+
   const dataset: Dataset = {
     id: data.id,
     user_id: data.user_id,
@@ -187,11 +225,11 @@ export const updateDataset = async (datasetId: string, updates: Partial<Dataset>
     name: data.name,
     extraction_type: data.dataset_type as "predefined" | "dependent" | "custom",
     template_name: data.description || undefined,
-    custom_query: data.query_params?.query as string | undefined,
+    custom_query: customQuery,
     status: data.status as "pending" | "running" | "completed" | "failed",
     progress: 100,
     status_message: data.error_message || undefined,
-    result_data: data.result_data,
+    result_data: resultData,
     record_count: data.record_count || 0,
     created_at: data.created_at,
     updated_at: data.last_updated,
@@ -214,6 +252,14 @@ export const fetchDatasetById = async (datasetId: string): Promise<Dataset> => {
   }
 
   // Transform the data to match Dataset type
+  const queryParams = data.query_params as Record<string, any> | null;
+  const customQuery = queryParams?.query as string | undefined;
+  
+  // Safely handle result_data
+  const resultData = Array.isArray(data.result_data) 
+    ? data.result_data 
+    : (data.result_data ? [data.result_data] : []);
+
   const dataset: Dataset = {
     id: data.id,
     user_id: data.user_id,
@@ -221,11 +267,11 @@ export const fetchDatasetById = async (datasetId: string): Promise<Dataset> => {
     name: data.name,
     extraction_type: data.dataset_type as "predefined" | "dependent" | "custom",
     template_name: data.description || undefined,
-    custom_query: data.query_params?.query as string | undefined,
+    custom_query: customQuery,
     status: data.status as "pending" | "running" | "completed" | "failed",
     progress: 100,
     status_message: data.error_message || undefined,
-    result_data: data.result_data,
+    result_data: resultData,
     record_count: data.record_count || 0,
     created_at: data.created_at,
     updated_at: data.last_updated,

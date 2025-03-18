@@ -1,97 +1,102 @@
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useEffect, useState } from 'react';
+import { PredefinedDatasetTemplate } from '@/types/dataset';
+import { supabase } from '@/integrations/supabase/client';
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Button } from '@/components/ui/button';
+import { CheckCircle2, Loader2 } from 'lucide-react';
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-
-interface CreateDatasetDialogProps {
-  sources: { id: string; name: string }[];
-  onDatasetCreated?: (newDataset: any) => void;
-  isOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
+export interface CreateDatasetDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (templateId: string) => void; // Add onSubmit prop
 }
 
-const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({ 
-  sources, 
-  onDatasetCreated, 
-  isOpen, 
-  onOpenChange 
+const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
+  isOpen,
+  onOpenChange,
+  onSubmit
 }) => {
-  const navigate = useNavigate();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [templates, setTemplates] = useState<PredefinedDatasetTemplate[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
-  // Handle external open state changes
   useEffect(() => {
-    if (isOpen !== undefined) {
-      setIsDialogOpen(isOpen);
-    }
-  }, [isOpen]);
+    const fetchTemplates = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('predefined_dataset_templates')
+          .select('*');
 
-  // Handle dialog state changes
-  const handleDialogOpenChange = (open: boolean) => {
-    setIsDialogOpen(open);
-    if (onOpenChange) {
-      onOpenChange(open);
-    }
-  };
+        if (error) {
+          console.error('Error fetching templates:', error);
+          return;
+        }
 
-  // Check if sources exist before opening dialog
-  const handleDialogOpen = () => {
-    if (sources.length === 0) {
-      toast({
-        title: "No Data Sources",
-        description: "You need to connect a data source before creating a dataset.",
-        variant: "destructive",
-      });
-      navigate("/sources");
-      return;
-    }
-    handleDialogOpenChange(true);
-  };
+        setTemplates(data || []);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handleCreateDataset = () => {
-    // Navigate to the CreateDatasetPage
-    handleDialogOpenChange(false);
-    navigate("/create-dataset");
+    fetchTemplates();
+  }, []);
+
+  const handleSubmit = () => {
+    if (selectedTemplate) {
+      onSubmit(selectedTemplate);
+      onOpenChange(false);
+    }
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2" onClick={handleDialogOpen}>
-          <Plus className="h-4 w-4" />
-          Create New Dataset
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
-          <DialogTitle>Create New Dataset</DialogTitle>
-          <DialogDescription>
-            Create a dataset to extract and process data from your connected sources.
-          </DialogDescription>
+          <DialogTitle>Create Dataset from Template</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4 pt-4">
-          <p>Start creating a new dataset to extract data from your connected sources.</p>
-          
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateDataset}>
-              Start Dataset Creation
-            </Button>
-          </div>
-        </div>
+
+        <Tabs defaultValue="templates" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="templates">Templates</TabsTrigger>
+          </TabsList>
+          <TabsContent value="templates" className="space-y-4">
+            {isLoading ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <span>Loading templates...</span>
+              </div>
+            ) : (
+              <ScrollArea className="h-[300px] rounded-md border">
+                <div className="grid gap-4 p-4">
+                  {templates.map((template) => (
+                    <Button
+                      key={template.id}
+                      variant="outline"
+                      className="justify-start text-left"
+                      onClick={() => setSelectedTemplate(template.id)}
+                      active={selectedTemplate === template.id}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span>{template.name}</span>
+                        {selectedTemplate === template.id && (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        )}
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        <Button onClick={handleSubmit} disabled={!selectedTemplate} className="mt-4">
+          Create Dataset
+        </Button>
       </DialogContent>
     </Dialog>
   );

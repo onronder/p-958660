@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { devLogger } from '@/utils/DevLogger';
+import { devLogger } from '@/utils/logger';
 import { useConnectionTest } from './preview/useConnectionTest';
 import { processPreviewData, generateDataSample } from './preview/previewDataProcessing';
 import { executePredefinedDataset, executeCustomQuery, fetchTemplateDetails } from './preview/previewApiService';
@@ -12,7 +12,7 @@ export const useDatasetPreview = () => {
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewSample, setPreviewSample] = useState<string | null>(null);
   
-  // Use the connection test hook
+  // Use the connection test hook with full return type
   const { 
     connectionTestResult, 
     setConnectionTestResult, 

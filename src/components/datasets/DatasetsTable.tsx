@@ -1,16 +1,23 @@
+import React from 'react';
+import { Dataset } from '@/types/dataset';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import DatasetStatusBadge from './DatasetStatusBadge';
+import DatasetTableRow from './DatasetTableRow';
 
-import React from "react";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dataset } from "@/types/dataset";
-import DatasetTableRow from "./DatasetTableRow";
-
-interface DatasetsTableProps {
+export interface DatasetsTableProps {
   datasets: Dataset[];
-  onRunDataset: (dataset: Dataset) => Promise<void>;
-  onDeleteDataset: (datasetId: string, datasetName: string) => Promise<void>;
+  isLoading?: boolean;
+  onDelete?: (datasetId: string, datasetName: string) => Promise<void>;
+  onRun?: (datasetId: string) => Promise<void>;
 }
 
-const DatasetsTable = ({ datasets, onRunDataset, onDeleteDataset }: DatasetsTableProps) => {
+const DatasetsTable: React.FC<DatasetsTableProps> = ({ 
+  datasets, 
+  isLoading = false, 
+  onDelete,
+  onRun 
+}) => {
   return (
     <Table>
       <TableHeader>
@@ -28,8 +35,8 @@ const DatasetsTable = ({ datasets, onRunDataset, onDeleteDataset }: DatasetsTabl
           <DatasetTableRow
             key={dataset.id}
             dataset={dataset}
-            onRunDataset={onRunDataset}
-            onDelete={onDeleteDataset}
+            onRunDataset={onRun}
+            onDelete={onDelete}
           />
         ))}
       </TableBody>
