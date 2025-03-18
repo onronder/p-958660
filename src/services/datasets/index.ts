@@ -26,8 +26,9 @@ export const fetchDatasets = async (): Promise<Dataset[]> => {
       name: item.name,
       extraction_type: item.dataset_type as "predefined" | "dependent" | "custom",
       template_name: item.description || undefined,
-      custom_query: item.query_params?.custom_query,
-      status: item.status,
+      custom_query: item.query_params && typeof item.query_params === 'object' ? 
+                   (item.query_params as any).custom_query : undefined,
+      status: mapDatabaseStatus(item.status),
       progress: 100, // Completed datasets are at 100%
       result_data: item.result_data,
       record_count: item.record_count || 0,
@@ -38,6 +39,22 @@ export const fetchDatasets = async (): Promise<Dataset[]> => {
   } catch (error) {
     console.error("Error in fetchDatasets:", error);
     return [];
+  }
+};
+
+// Helper function to map database status to Dataset status type
+const mapDatabaseStatus = (status: string): "pending" | "running" | "completed" | "failed" => {
+  switch (status) {
+    case "ready":
+      return "completed";
+    case "processing":
+      return "running";
+    case "creating":
+      return "pending";
+    case "error":
+      return "failed";
+    default:
+      return "pending"; // Default fallback
   }
 };
 
@@ -64,8 +81,9 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
       name: item.name,
       extraction_type: item.dataset_type as "predefined" | "dependent" | "custom",
       template_name: item.description || undefined,
-      custom_query: item.query_params?.custom_query,
-      status: item.status,
+      custom_query: item.query_params && typeof item.query_params === 'object' ? 
+                   (item.query_params as any).custom_query : undefined,
+      status: "completed", // Deleted datasets are considered completed
       progress: 100, // Completed datasets are at 100%
       result_data: item.result_data,
       record_count: item.record_count || 0,
@@ -131,10 +149,11 @@ export const restoreDataset = async (datasetId: string): Promise<Dataset | null>
       name: data.name,
       extraction_type: data.dataset_type as "predefined" | "dependent" | "custom",
       template_name: data.description || undefined,
-      custom_query: data.query_params?.custom_query,
-      status: data.status,
+      custom_query: data.query_params && typeof data.query_params === 'object' ? 
+                   (data.query_params as any).custom_query : undefined,
+      status: "completed", // Restored datasets are considered completed
       progress: 100, // Restored datasets are at 100%
-      result_data: data.result_data,
+      result_data: Array.isArray(data.result_data) ? data.result_data : [],
       record_count: data.record_count || 0,
       created_at: data.created_at,
       updated_at: data.last_updated,

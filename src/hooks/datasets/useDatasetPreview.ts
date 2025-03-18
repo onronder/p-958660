@@ -248,16 +248,22 @@ export const useDatasetPreview = () => {
         // Extract the credential ID from the source
         // Handle credentials as a JSON object 
         const credentials = sourceData.credentials;
+        let credentialId: string | null = null;
         
-        if (!credentials || typeof credentials !== 'object' || !credentials.credential_id) {
+        if (typeof credentials === 'object' && credentials !== null) {
+          // Check if credentials is an object with credential_id property
+          if ('credential_id' in credentials) {
+            credentialId = credentials.credential_id as string;
+          }
+        }
+        
+        if (!credentialId) {
           devLogger.error('Dataset Preview', 'Source has no credential ID', null, { sourceId });
           return {
             success: false,
             message: 'Source has no credentials attached.'
           };
         }
-        
-        const credentialId = credentials.credential_id;
         
         // Get the Shopify credentials
         const { data: credentialData, error: credentialError } = await supabase
