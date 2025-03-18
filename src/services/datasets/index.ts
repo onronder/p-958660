@@ -1,7 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Dataset } from '@/types/dataset';
-import { Json } from '@/integrations/supabase/types';
 
 export const fetchUserDatasets = async (): Promise<Dataset[]> => {
   const { data, error } = await supabase
@@ -19,12 +17,13 @@ export const fetchUserDatasets = async (): Promise<Dataset[]> => {
   const datasets: Dataset[] = (data || []).map(item => {
     // Safely handle query_params
     let customQuery: string | undefined;
-    if (item.query_params && typeof item.query_params === 'object' && !Array.isArray(item.query_params)) {
-      try {
-        // Ensure we access the query property only on object types
-        customQuery = item.query_params.query ? String(item.query_params.query) : undefined;
-      } catch (e) {
-        customQuery = undefined;
+    if (item.query_params) {
+      if (typeof item.query_params === 'object' && !Array.isArray(item.query_params)) {
+        // If it's an object, try to access query property
+        customQuery = 'query' in item.query_params ? String(item.query_params.query) : undefined;
+      } else if (typeof item.query_params === 'string') {
+        // If it's a string, use it directly
+        customQuery = item.query_params;
       }
     }
     
@@ -49,7 +48,7 @@ export const fetchUserDatasets = async (): Promise<Dataset[]> => {
       record_count: item.record_count || 0,
       created_at: item.created_at,
       updated_at: item.last_updated,
-      is_deleted: false
+      is_deleted: Boolean(item.is_deleted)
     };
   });
 
@@ -72,11 +71,13 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
   const datasets: Dataset[] = (data || []).map(item => {
     // Safely handle query_params
     let customQuery: string | undefined;
-    if (item.query_params && typeof item.query_params === 'object' && !Array.isArray(item.query_params)) {
-      try {
-        customQuery = item.query_params.query ? String(item.query_params.query) : undefined;
-      } catch (e) {
-        customQuery = undefined;
+    if (item.query_params) {
+      if (typeof item.query_params === 'object' && !Array.isArray(item.query_params)) {
+        // If it's an object, try to access query property
+        customQuery = 'query' in item.query_params ? String(item.query_params.query) : undefined;
+      } else if (typeof item.query_params === 'string') {
+        // If it's a string, use it directly
+        customQuery = item.query_params;
       }
     }
     
@@ -137,11 +138,13 @@ export const createDataset = async (datasetData: Partial<Dataset>): Promise<Data
   // Transform the returned data to match Dataset type
   // Safely handle query_params
   let customQuery: string | undefined;
-  if (data.query_params && typeof data.query_params === 'object') {
-    try {
-      customQuery = data.query_params.query ? String(data.query_params.query) : undefined;
-    } catch (e) {
-      customQuery = undefined;
+  if (data.query_params) {
+    if (typeof data.query_params === 'object' && !Array.isArray(data.query_params)) {
+      // If it's an object, try to access query property
+      customQuery = 'query' in data.query_params ? String(data.query_params.query) : undefined;
+    } else if (typeof data.query_params === 'string') {
+      // If it's a string, use it directly
+      customQuery = data.query_params;
     }
   }
   
@@ -166,7 +169,7 @@ export const createDataset = async (datasetData: Partial<Dataset>): Promise<Data
     record_count: data.record_count || 0,
     created_at: data.created_at,
     updated_at: data.last_updated,
-    is_deleted: false
+    is_deleted: Boolean(data.is_deleted)
   };
 
   return dataset;
@@ -237,11 +240,13 @@ export const updateDataset = async (datasetId: string, updates: Partial<Dataset>
   // Transform the returned data to match Dataset type
   // Safely handle query_params
   let customQuery: string | undefined;
-  if (data.query_params && typeof data.query_params === 'object') {
-    try {
-      customQuery = data.query_params.query ? String(data.query_params.query) : undefined;
-    } catch (e) {
-      customQuery = undefined;
+  if (data.query_params) {
+    if (typeof data.query_params === 'object' && !Array.isArray(data.query_params)) {
+      // If it's an object, try to access query property
+      customQuery = 'query' in data.query_params ? String(data.query_params.query) : undefined;
+    } else if (typeof data.query_params === 'string') {
+      // If it's a string, use it directly
+      customQuery = data.query_params;
     }
   }
   
@@ -266,7 +271,7 @@ export const updateDataset = async (datasetId: string, updates: Partial<Dataset>
     record_count: data.record_count || 0,
     created_at: data.created_at,
     updated_at: data.last_updated,
-    is_deleted: data.is_deleted || false
+    is_deleted: Boolean(data.is_deleted)
   };
 
   return dataset;
@@ -286,11 +291,13 @@ export const fetchDatasetById = async (datasetId: string): Promise<Dataset> => {
 
   // Transform the data to match Dataset type
   let customQuery: string | undefined;
-  if (data.query_params && typeof data.query_params === 'object' && !Array.isArray(data.query_params)) {
-    try {
-      customQuery = data.query_params.query ? String(data.query_params.query) : undefined;
-    } catch (e) {
-      customQuery = undefined;
+  if (data.query_params) {
+    if (typeof data.query_params === 'object' && !Array.isArray(data.query_params)) {
+      // If it's an object, try to access query property
+      customQuery = 'query' in data.query_params ? String(data.query_params.query) : undefined;
+    } else if (typeof data.query_params === 'string') {
+      // If it's a string, use it directly
+      customQuery = data.query_params;
     }
   }
   

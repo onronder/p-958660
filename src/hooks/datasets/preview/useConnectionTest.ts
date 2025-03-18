@@ -37,7 +37,9 @@ export function useConnectionTest() {
       }
       
       // Check if we have the credentials in the source
-      const credentials = sourceData.credentials || {};
+      const credentials = sourceData.credentials ? 
+        (typeof sourceData.credentials === 'object' ? sourceData.credentials : {}) : 
+        {};
       
       // Check if we have the minimum required credentials based on source type
       let isValid = false;
@@ -45,8 +47,13 @@ export function useConnectionTest() {
       
       if (sourceData.source_type === 'Shopify') {
         // For Shopify, check for either access_token or api_token
-        const hasAccessToken = credentials && 'access_token' in credentials;
-        const hasApiToken = credentials && 'api_token' in credentials;
+        const hasAccessToken = credentials && 
+          typeof credentials === 'object' && 
+          ('access_token' in credentials || 'accessToken' in credentials);
+          
+        const hasApiToken = credentials && 
+          typeof credentials === 'object' && 
+          ('api_token' in credentials || 'apiToken' in credentials);
         
         if (!hasAccessToken && !hasApiToken) {
           missingFields.push('access token');
@@ -55,7 +62,10 @@ export function useConnectionTest() {
         isValid = missingFields.length === 0;
       } else if (sourceData.source_type === 'WooCommerce') {
         // For WooCommerce, we need api_key and store_name
-        const hasApiKey = credentials && 'api_key' in credentials;
+        const hasApiKey = credentials && 
+          typeof credentials === 'object' && 
+          ('api_key' in credentials || 'apiKey' in credentials);
+          
         const hasStoreName = sourceData.url && sourceData.url.length > 0;
         
         if (!hasApiKey) missingFields.push('API key');
@@ -63,11 +73,11 @@ export function useConnectionTest() {
         
         isValid = missingFields.length === 0;
       } else {
-        // For other sources, let's assume we need at least one credential
+        // For other sources, let's check for common credential types
         isValid = !!(
-          (credentials && 'access_token' in credentials) || 
-          (credentials && 'api_key' in credentials) ||
-          (credentials && 'api_token' in credentials)
+          (credentials && typeof credentials === 'object' && 'access_token' in credentials) || 
+          (credentials && typeof credentials === 'object' && 'api_key' in credentials) ||
+          (credentials && typeof credentials === 'object' && 'api_token' in credentials)
         );
         
         if (!isValid) {
@@ -81,7 +91,7 @@ export function useConnectionTest() {
         sourceType: sourceData.source_type,
         isValid,
         missingFields,
-        credentials: Object.keys(credentials) // Only log keys for security
+        credentialKeys: typeof credentials === 'object' ? Object.keys(credentials) : [] // Only log keys for security
       });
       
       if (!isValid) {
