@@ -12,15 +12,10 @@ import { useDatasetCreation } from '@/hooks/datasets/useDatasetCreation';
 
 // Components
 import StepSelector from '@/components/datasets/wizard/StepSelector';
-import DatasetTypeStep from '@/components/datasets/wizard/DatasetTypeStep';
-import ConfigurationStep from '@/components/datasets/wizard/ConfigurationStep';
-import PredefinedDatasetStep from '@/components/datasets/wizard/PredefinedDatasetStep';
-import DependentDatasetStep from '@/components/datasets/wizard/DependentDatasetStep';
-import CustomDatasetStep from '@/components/datasets/wizard/CustomDatasetStep';
-import DataPreviewStep from '@/components/datasets/wizard/DataPreviewStep';
-import SourceSelectionStep from '@/components/sources/SourceSelectionStep';
 import CreateDatasetHeader from '@/components/datasets/wizard/CreateDatasetHeader';
 import CreateDatasetFooter from '@/components/datasets/wizard/CreateDatasetFooter';
+import WizardStepContent from '@/components/datasets/wizard/WizardStepContent';
+import { useWizardNavigation } from '@/components/datasets/wizard/WizardNavigation';
 
 const CreateDatasetPage = () => {
   const navigate = useNavigate();
@@ -34,6 +29,18 @@ const CreateDatasetPage = () => {
   
   // Dataset creation functionality
   const { isCreating, progress, createDataset } = useDatasetCreation();
+
+  // Navigation validation
+  const { canProceedToNext } = useWizardNavigation({
+    currentStep: datasetState.currentStep,
+    datasetType: datasetState.datasetType,
+    selectedSourceId: datasetState.selectedSourceId,
+    datasetName: datasetState.datasetName,
+    selectedTemplate: datasetState.selectedTemplate,
+    selectedDependentTemplate: datasetState.selectedDependentTemplate,
+    customQuery: datasetState.customQuery,
+    checkCanProceed: () => true
+  });
   
   // Check for sources on load
   useEffect(() => {
@@ -127,108 +134,6 @@ const CreateDatasetPage = () => {
     datasetState.setCurrentStep(step as any);
   };
   
-  // Check if the selected source is Shopify
-  const isShopifySource = datasetState.selectedSourceType.toLowerCase() === 'shopify';
-  
-  // Rendering helpers
-  const renderTemplateStep = () => {
-    if (datasetState.datasetType === 'predefined') {
-      return (
-        <PredefinedDatasetStep
-          selectedTemplate={datasetState.selectedTemplate}
-          onSelectTemplate={datasetState.setSelectedTemplate}
-        />
-      );
-    } else if (datasetState.datasetType === 'dependent') {
-      return (
-        <DependentDatasetStep
-          selectedTemplate={datasetState.selectedDependentTemplate}
-          onSelectTemplate={datasetState.setSelectedDependentTemplate}
-        />
-      );
-    } else {
-      return (
-        <CustomDatasetStep
-          sourceId={datasetState.selectedSourceId}
-          query={datasetState.customQuery}
-          onQueryChange={datasetState.setCustomQuery}
-        />
-      );
-    }
-  };
-  
-  const renderStepContent = () => {
-    switch (datasetState.currentStep) {
-      case 'source':
-        return (
-          <SourceSelectionStep
-            sources={sources || []}
-            selectedSourceId={datasetState.selectedSourceId}
-            onSelectSource={handleSourceSelection}
-            onTestConnection={handleTestConnection}
-          />
-        );
-      case 'type':
-        return (
-          <DatasetTypeStep
-            selectedType={datasetState.datasetType}
-            onSelectType={datasetState.setDatasetType}
-            isShopifySource={isShopifySource}
-          />
-        );
-      case 'configuration':
-        return (
-          <ConfigurationStep
-            name={datasetState.datasetName}
-            onNameChange={datasetState.setDatasetName}
-            sourceId={datasetState.selectedSourceId}
-            onSourceChange={datasetState.setSelectedSourceId}
-            sources={sources || []}
-            isLoading={sourcesLoading}
-            datasetType={datasetState.datasetType}
-            templateName={datasetState.datasetType === 'predefined' ? datasetState.selectedTemplate : 
-                         datasetState.datasetType === 'dependent' ? datasetState.selectedDependentTemplate : undefined}
-          />
-        );
-      case 'templates':
-        return renderTemplateStep();
-      case 'preview':
-        return (
-          <DataPreviewStep
-            isLoading={previewHook.isPreviewLoading}
-            previewData={previewHook.previewData}
-            error={previewHook.previewError}
-            onRegeneratePreview={handleGeneratePreview}
-            onSaveDataset={handleCreateDataset}
-            sourceId={datasetState.selectedSourceId}
-            connectionTestResult={previewHook.connectionTestResult}
-            previewSample={previewHook.previewSample}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
-  // Check if we can proceed to the next step
-  const canProceedToNext = () => {
-    switch (datasetState.currentStep) {
-      case 'source':
-        return !!datasetState.selectedSourceId;
-      case 'type':
-        return !!datasetState.datasetType;
-      case 'configuration':
-        return !!datasetState.datasetName;
-      case 'templates':
-        if (datasetState.datasetType === 'predefined') return !!datasetState.selectedTemplate;
-        if (datasetState.datasetType === 'dependent') return !!datasetState.selectedDependentTemplate;
-        if (datasetState.datasetType === 'custom') return !!datasetState.customQuery;
-        return false;
-      default:
-        return true;
-    }
-  };
-  
   return (
     <div className="space-y-6">
       <CreateDatasetHeader 
@@ -249,7 +154,33 @@ const CreateDatasetPage = () => {
       />
       
       <Card className="p-6">
-        {renderStepContent()}
+        <WizardStepContent
+          currentStep={datasetState.currentStep}
+          sources={sources || []}
+          selectedSourceId={datasetState.selectedSourceId}
+          selectedSourceType={datasetState.selectedSourceType}
+          datasetType={datasetState.datasetType}
+          datasetName={datasetState.datasetName}
+          selectedTemplate={datasetState.selectedTemplate}
+          selectedDependentTemplate={datasetState.selectedDependentTemplate}
+          customQuery={datasetState.customQuery}
+          isPreviewLoading={previewHook.isPreviewLoading}
+          previewData={previewHook.previewData}
+          previewError={previewHook.previewError}
+          connectionTestResult={previewHook.connectionTestResult}
+          previewSample={previewHook.previewSample}
+          
+          onSourceSelection={handleSourceSelection}
+          onTestConnection={handleTestConnection}
+          setDatasetType={datasetState.setDatasetType}
+          setDatasetName={datasetState.setDatasetName}
+          setSelectedSourceId={datasetState.setSelectedSourceId}
+          setSelectedTemplate={datasetState.setSelectedTemplate}
+          setSelectedDependentTemplate={datasetState.setSelectedDependentTemplate}
+          setCustomQuery={datasetState.setCustomQuery}
+          onRegeneratePreview={handleGeneratePreview}
+          onSaveDataset={handleCreateDataset}
+        />
         
         <CreateDatasetFooter
           currentStep={datasetState.currentStep}

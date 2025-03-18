@@ -17,7 +17,7 @@ export const fetchDatasets = async (): Promise<Dataset[]> => {
       return [];
     }
 
-    // Type assertion with type checking for the is_deleted property
+    // Type assertion with type checking
     return (data || []) as Dataset[];
   } catch (error) {
     console.error("Error in fetchDatasets:", error);
@@ -40,7 +40,7 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
       return [];
     }
 
-    // Type assertion with type checking for the is_deleted property
+    // Type assertion with type checking
     return (data || []) as Dataset[];
   } catch (error) {
     console.error("Error in fetchDeletedDatasets:", error);
