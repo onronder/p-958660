@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dataset } from '@/types/dataset';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -8,8 +9,8 @@ import DatasetStatusBadge from './DatasetStatusBadge';
 
 export interface DeletedDatasetsTableProps {
   deletedDatasets: Dataset[];
-  isRestoring: boolean; // Add isRestoring prop
-  isDeleting: boolean; // Add isDeleting prop
+  isRestoring: boolean;
+  isDeleting: boolean;
   onRestore: (id: string, name: string) => Promise<boolean>;
   onDelete: (id: string, name: string) => Promise<boolean>;
 }

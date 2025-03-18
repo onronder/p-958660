@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { PlusCircle } from 'lucide-react';
 
 export interface EmptyDatasetsStateProps {
-  onCreate: () => void; // Add the onCreate prop
+  onCreate: () => void;
 }
 
 const EmptyDatasetsState: React.FC<EmptyDatasetsStateProps> = ({ onCreate }) => {

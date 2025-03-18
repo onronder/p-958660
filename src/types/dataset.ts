@@ -12,7 +12,7 @@ export interface Dataset {
   status_message?: string;
   started_at?: string;
   completed_at?: string;
-  result_data: any[]; // Changed from any[] to ensure it's always an array
+  result_data: any[]; // Explicitly typed as array to prevent type errors
   record_count?: number;
   exported_at?: string;
   export_format?: string;
@@ -51,10 +51,11 @@ export interface UserDataset {
   description: string | null;
   dataset_type: 'predefined' | 'dependent' | 'custom';
   query_params: Record<string, any> | null;
-  result_data: any;
+  result_data: any[];
   status: 'pending' | 'processing' | 'completed' | 'error';
   error_message: string | null;
   record_count: number | null;
   last_updated: string;
   created_at: string;
+  is_deleted?: boolean;
 }

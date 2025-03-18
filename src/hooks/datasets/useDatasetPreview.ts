@@ -16,7 +16,8 @@ export const useDatasetPreview = () => {
   const { 
     connectionTestResult, 
     setConnectionTestResult, 
-    testConnection 
+    testConnection,
+    isTestingConnection
   } = useConnectionTest();
 
   const generatePreview = async (
@@ -44,8 +45,10 @@ export const useDatasetPreview = () => {
       devLogger.info('Dataset Preview', 'Testing connection to source', { sourceId });
       const testResult = await testConnection(sourceId);
       
-      // Store the connection test result
-      setConnectionTestResult(testResult);
+      // Store the connection test result using the exposed setter function
+      if (setConnectionTestResult) {
+        setConnectionTestResult(testResult);
+      }
       
       if (!testResult.success) {
         setIsPreviewLoading(false);
@@ -158,6 +161,7 @@ export const useDatasetPreview = () => {
     connectionTestResult,
     previewSample,
     generatePreview,
-    testConnection,  // Expose the testConnection function
+    testConnection,
+    isTestingConnection
   };
 };

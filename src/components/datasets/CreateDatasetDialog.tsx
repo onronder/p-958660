@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -11,7 +12,7 @@ import { CheckCircle2, Loader2 } from 'lucide-react';
 export interface CreateDatasetDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (templateId: string) => void; // Add onSubmit prop
+  onSubmit: (templateId: string) => void;
 }
 
 const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
@@ -28,7 +29,7 @@ const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
       setIsLoading(true);
       try {
         const { data, error } = await supabase
-          .from('predefined_dataset_templates')
+          .from('pre_datasettemplate')
           .select('*');
 
         if (error) {
@@ -36,7 +37,23 @@ const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
           return;
         }
 
-        setTemplates(data || []);
+        // Make sure we map the data correctly to match the PredefinedDatasetTemplate interface
+        const formattedTemplates: PredefinedDatasetTemplate[] = (data || []).map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          template_key: item.template_key,
+          query_structure: item.query_structure || {
+            query: '',
+            defaultParams: {},
+            dataPath: ''
+          },
+          source_type: item.source_type || 'unknown',
+          created_at: item.created_at,
+          updated_at: item.updated_at || item.created_at
+        }));
+
+        setTemplates(formattedTemplates);
       } finally {
         setIsLoading(false);
       }
@@ -78,7 +95,7 @@ const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
                       variant="outline"
                       className="justify-start text-left"
                       onClick={() => setSelectedTemplate(template.id)}
-                      active={selectedTemplate === template.id}
+                      data-selected={selectedTemplate === template.id}
                     >
                       <div className="flex items-center justify-between w-full">
                         <span>{template.name}</span>

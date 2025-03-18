@@ -37,16 +37,11 @@ export function useConnectionTest() {
       }
       
       // Check if we have the credentials in the source
-      let credentials: { access_token?: string; api_key?: string; store_name?: string } = {};
+      let credentials: Record<string, any> = {};
       
       if (sourceData.credentials && typeof sourceData.credentials === 'object') {
-        // Extract credentials safely with type checking
-        const creds = sourceData.credentials as Record<string, any>;
-        credentials = {
-          access_token: typeof creds.access_token === 'string' ? creds.access_token : undefined,
-          api_key: typeof creds.api_key === 'string' ? creds.api_key : undefined,
-          store_name: typeof creds.store_name === 'string' ? creds.store_name : undefined
-        };
+        // Safely cast credentials to Record<string, any>
+        credentials = sourceData.credentials as Record<string, any>;
       }
       
       // Check if we have the minimum required credentials based on source type
@@ -111,6 +106,6 @@ export function useConnectionTest() {
     connectionTestResult,
     testConnection,
     clearConnectionTestResult: () => setConnectionTestResult(null),
-    setConnectionTestResult // Expose this function to fix the related error
+    setConnectionTestResult // Expose this function to fix the error
   };
 }

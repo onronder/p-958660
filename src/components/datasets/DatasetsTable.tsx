@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { Dataset } from '@/types/dataset';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import DatasetStatusBadge from './DatasetStatusBadge';
 import DatasetTableRow from './DatasetTableRow';
 
@@ -35,8 +37,8 @@ const DatasetsTable: React.FC<DatasetsTableProps> = ({
           <DatasetTableRow
             key={dataset.id}
             dataset={dataset}
-            onRunDataset={onRun}
-            onDelete={onDelete}
+            onRunDataset={onRun ? (datasetId: string) => onRun(datasetId) : undefined}
+            onDelete={onDelete ? (datasetId: string, datasetName: string) => onDelete(datasetId, datasetName) : undefined}
           />
         ))}
       </TableBody>
