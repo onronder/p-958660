@@ -1,62 +1,97 @@
 
-import { Dataset } from "@/types/dataset";
-import { toast } from "@/hooks/use-toast";
-import { deleteDataset, restoreDataset, permanentlyDeleteDataset } from "@/services/datasets";
+import { useState } from 'react';
+import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { deleteDataset, restoreDataset, permanentlyDeleteDataset } from '@/services/datasets';
 
-export const useDatasetActions = (onDatasetsUpdated: () => void) => {
-  const handleRunDataset = async (dataset: Dataset) => {
-    toast({
-      title: "Dataset Processing Started",
-      description: `Processing dataset "${dataset.name}" now...`,
-    });
-    
-    // This would typically call an API to start processing the dataset
-    console.log("Starting dataset processing:", dataset.id);
-    
-    // After processing starts, refresh the list
-    onDatasetsUpdated();
-  };
+export function useDatasetActions() {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const navigate = useNavigate();
 
-  const handleDeleteDataset = async (datasetId: string, datasetName: string) => {
-    if (window.confirm(`Are you sure you want to delete dataset "${datasetName}"?`)) {
-      if (await deleteDataset(datasetId)) {
-        onDatasetsUpdated();
-        toast({
-          title: "Dataset Deleted",
-          description: `The dataset "${datasetName}" has been moved to deleted datasets.`,
-        });
-      }
-    }
-  };
-  
-  const handleRestoreDataset = async (datasetId: string) => {
-    const restoredDataset = await restoreDataset(datasetId);
-    if (restoredDataset) {
-      onDatasetsUpdated();
-      toast({
-        title: "Dataset Restored",
-        description: `The dataset "${restoredDataset.name}" has been restored successfully.`,
-      });
-    }
-  };
-  
-  const handlePermanentDelete = async (datasetId: string) => {
-    if (window.confirm("Are you sure you want to permanently delete this dataset? This action cannot be undone.")) {
-      const success = await permanentlyDeleteDataset(datasetId);
+  const handleDelete = async (id: string, name: string) => {
+    setIsDeleting(true);
+    try {
+      const success = await deleteDataset(id);
       if (success) {
-        onDatasetsUpdated();
         toast({
-          title: "Dataset Permanently Deleted",
-          description: "The dataset has been permanently deleted from the system.",
+          title: 'Dataset Deleted',
+          description: `Dataset "${name}" has been moved to trash.`,
         });
+        return true;
+      } else {
+        throw new Error('Failed to delete dataset');
       }
+    } catch (error) {
+      console.error('Error deleting dataset:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete dataset. Please try again.',
+        variant: 'destructive',
+      });
+      return false;
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleRestore = async (id: string, name: string) => {
+    setIsRestoring(true);
+    try {
+      const success = await restoreDataset(id);
+      if (success) {
+        toast({
+          title: 'Dataset Restored',
+          description: `Dataset "${name}" has been restored.`,
+        });
+        return true;
+      } else {
+        throw new Error('Failed to restore dataset');
+      }
+    } catch (error) {
+      console.error('Error restoring dataset:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to restore dataset. Please try again.',
+        variant: 'destructive',
+      });
+      return false;
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string, name: string) => {
+    setIsDeleting(true);
+    try {
+      const success = await permanentlyDeleteDataset(id);
+      if (success) {
+        toast({
+          title: 'Dataset Permanently Deleted',
+          description: `Dataset "${name}" has been permanently deleted.`,
+        });
+        return true;
+      } else {
+        throw new Error('Failed to permanently delete dataset');
+      }
+    } catch (error) {
+      console.error('Error permanently deleting dataset:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to permanently delete dataset. Please try again.',
+        variant: 'destructive',
+      });
+      return false;
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   return {
-    handleRunDataset,
-    handleDeleteDataset,
-    handleRestoreDataset,
-    handlePermanentDelete
+    isDeleting,
+    isRestoring,
+    handleDelete,
+    handleRestore,
+    handlePermanentDelete,
   };
-};
+}

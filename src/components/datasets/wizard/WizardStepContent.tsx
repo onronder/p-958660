@@ -1,14 +1,14 @@
 
 import React from 'react';
-import SourceSelectionStep from '@/components/sources/SourceSelectionStep';
-import DatasetTypeStep from './DatasetTypeStep';
-import ConfigurationStep from './ConfigurationStep';
-import PredefinedDatasetStep from './PredefinedDatasetStep';
-import DependentDatasetStep from './DependentDatasetStep';
-import CustomDatasetStep from './CustomDatasetStep';
-import DataPreviewStep from './DataPreviewStep';
 import { Source } from '@/types/source';
-import { StepType } from '@/hooks/datasets/useCreateDatasetState';
+import { StepType } from '@/hooks/datasets/state/types';
+
+// Import our separated step components
+import SourceStep from './steps/SourceStep';
+import TypeStep from './steps/TypeStep';
+import ConfigurationStep from './steps/ConfigurationStep';
+import TemplateStep from './steps/TemplateStep';
+import PreviewStep from './steps/PreviewStep';
 
 interface WizardStepContentProps {
   currentStep: StepType;
@@ -70,51 +70,27 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
   // Check if the selected source is Shopify
   const isShopifySource = selectedSourceType.toLowerCase() === 'shopify';
   
-  // Helper function to render the template step based on the dataset type
-  const renderTemplateStep = () => {
-    if (datasetType === 'predefined') {
-      return (
-        <PredefinedDatasetStep
-          selectedTemplate={selectedTemplate}
-          onSelectTemplate={setSelectedTemplate}
-        />
-      );
-    } else if (datasetType === 'dependent') {
-      return (
-        <DependentDatasetStep
-          selectedTemplate={selectedDependentTemplate}
-          onSelectTemplate={setSelectedDependentTemplate}
-        />
-      );
-    } else {
-      return (
-        <CustomDatasetStep
-          sourceId={selectedSourceId}
-          query={customQuery}
-          onQueryChange={setCustomQuery}
-        />
-      );
-    }
-  };
-
+  // Determine which component to render based on the current step
   switch (currentStep) {
     case 'source':
       return (
-        <SourceSelectionStep
+        <SourceStep
           sources={sources || []}
           selectedSourceId={selectedSourceId}
           onSelectSource={onSourceSelection}
           onTestConnection={onTestConnection}
         />
       );
+      
     case 'type':
       return (
-        <DatasetTypeStep
+        <TypeStep
           selectedType={datasetType}
           onSelectType={setDatasetType}
           isShopifySource={isShopifySource}
         />
       );
+      
     case 'configuration':
       return (
         <ConfigurationStep
@@ -123,17 +99,29 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
           sourceId={selectedSourceId}
           onSourceChange={setSelectedSourceId}
           sources={sources || []}
-          isLoading={false}
           datasetType={datasetType}
           templateName={datasetType === 'predefined' ? selectedTemplate : 
                       datasetType === 'dependent' ? selectedDependentTemplate : undefined}
         />
       );
+      
     case 'templates':
-      return renderTemplateStep();
+      return (
+        <TemplateStep
+          datasetType={datasetType}
+          selectedTemplate={selectedTemplate}
+          selectedDependentTemplate={selectedDependentTemplate}
+          customQuery={customQuery}
+          selectedSourceId={selectedSourceId}
+          onSelectTemplate={setSelectedTemplate}
+          onSelectDependentTemplate={setSelectedDependentTemplate}
+          onCustomQueryChange={setCustomQuery}
+        />
+      );
+      
     case 'preview':
       return (
-        <DataPreviewStep
+        <PreviewStep
           isLoading={isPreviewLoading}
           previewData={previewData}
           error={previewError}
@@ -144,6 +132,7 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
           previewSample={previewSample}
         />
       );
+      
     default:
       return null;
   }
