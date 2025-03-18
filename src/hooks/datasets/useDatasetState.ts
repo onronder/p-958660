@@ -1,163 +1,39 @@
 
-import { useState, useEffect } from "react";
-import { Source } from "@/types/source";
+import { useDatasetStateCore } from "./state/useDatasetStateCore";
 
 /**
- * Hook for managing dataset creation state
+ * Hook for managing dataset creation state with session storage persistence
  */
 export const useDatasetState = () => {
-  // Use sessionStorage to persist state between page navigations
-  const getStoredState = <T>(key: string, defaultValue: T): T => {
-    try {
-      // First check the backup value directly
-      const backupKey = `dataset_${key}_backup`;
-      const backupValue = sessionStorage.getItem(backupKey);
-      
-      if (backupValue) {
-        // If we have a backup value, use it and also save it to the regular key
-        const parsedValue = JSON.parse(backupValue);
-        sessionStorage.setItem(`dataset_${key}`, JSON.stringify(parsedValue));
-        console.log(`Retrieved ${key} from backup:`, parsedValue);
-        return parsedValue;
-      }
-      
-      // Otherwise use the regular stored value
-      const stored = sessionStorage.getItem(`dataset_${key}`);
-      if (stored) {
-        const parsedValue = JSON.parse(stored);
-        console.log(`Retrieved ${key} from session storage:`, parsedValue);
-        return parsedValue;
-      }
-      
-      return defaultValue;
-    } catch (error) {
-      console.error(`Error retrieving stored state for ${key}:`, error);
-      return defaultValue;
-    }
-  };
-
-  const setStoredState = <T>(key: string, value: T) => {
-    try {
-      const valueStr = JSON.stringify(value);
-      
-      // Store in both regular and backup locations
-      sessionStorage.setItem(`dataset_${key}`, valueStr);
-      sessionStorage.setItem(`dataset_${key}_backup`, valueStr);
-      
-      console.log(`Stored ${key} in session storage:`, value);
-    } catch (error) {
-      console.error(`Error storing state for ${key}:`, error);
-    }
-    return value;
-  };
-
-  const [sourceId, setSourceIdState] = useState(() => getStoredState('sourceId', ''));
-  const [sourceName, setSourceNameState] = useState(() => getStoredState('sourceName', ''));
-  const [datasetType, setDatasetTypeState] = useState<"predefined" | "dependent" | "custom">(() => 
-    getStoredState('datasetType', 'predefined') as "predefined" | "dependent" | "custom"
-  );
-  const [templateName, setTemplateNameState] = useState(() => getStoredState('templateName', ''));
-  const [customQuery, setCustomQueryState] = useState(() => getStoredState('customQuery', ''));
-  const [name, setNameState] = useState(() => getStoredState('name', ''));
-  const [previewData, setPreviewDataState] = useState<any[]>(() => getStoredState('previewData', []));
-  
-  // Debug log state on init
-  useEffect(() => {
-    console.log("useDatasetState: Initial state loaded", {
-      sourceId,
-      sourceName,
-      datasetType,
-      templateName,
-      customQuery,
-      backupSourceId: sessionStorage.getItem('dataset_sourceId_backup'),
-      backupSourceName: sessionStorage.getItem('dataset_sourceName_backup'),
-      backupDatasetType: sessionStorage.getItem('dataset_datasetType_backup'),
-      backupTemplateName: sessionStorage.getItem('dataset_templateName_backup')
-    });
-  }, []);
-  
-  // Wrapper setters that also update sessionStorage
-  const setSourceId = (id: string) => {
-    console.log("Setting sourceId in storage:", id);
-    setStoredState('sourceId', id);
-    setSourceIdState(id);
-  };
-  
-  const setSourceName = (name: string) => {
-    setStoredState('sourceName', name);
-    setSourceNameState(name);
-  };
-  
-  const setDatasetType = (type: "predefined" | "dependent" | "custom") => {
-    setStoredState('datasetType', type);
-    setDatasetTypeState(type);
-  };
-  
-  const setTemplateName = (name: string) => {
-    console.log("Setting templateName in storage:", name);
-    setStoredState('templateName', name);
-    setTemplateNameState(name);
-  };
-  
-  const setCustomQuery = (query: string) => {
-    setStoredState('customQuery', query);
-    setCustomQueryState(query);
-  };
-  
-  const setName = (name: string) => {
-    setStoredState('name', name);
-    setNameState(name);
-  };
-  
-  const setPreviewData = (data: any[]) => {
-    setStoredState('previewData', data);
-    setPreviewDataState(data);
-  };
-  
-  const resetState = () => {
-    // Clear all stored dataset state
-    Object.keys(sessionStorage).forEach(key => {
-      if (key.startsWith('dataset_')) {
-        sessionStorage.removeItem(key);
-      }
-    });
-    
-    // Reset all state values
-    setSourceIdState('');
-    setSourceNameState('');
-    setDatasetTypeState('predefined');
-    setTemplateNameState('');
-    setCustomQueryState('');
-    setNameState('');
-    setPreviewDataState([]);
-  };
+  // Use the core state management hook
+  const state = useDatasetStateCore();
   
   return {
     // Source info
-    sourceId,
-    sourceName,
-    setSourceId,
-    setSourceName,
+    sourceId: state.sourceId,
+    sourceName: state.sourceName,
+    setSourceId: state.setSourceId,
+    setSourceName: state.setSourceName,
     
     // Dataset type
-    datasetType,
-    setDatasetType,
+    datasetType: state.datasetType,
+    setDatasetType: state.setDatasetType,
     
     // Template/query
-    templateName,
-    setTemplateName,
-    customQuery,
-    setCustomQuery,
+    templateName: state.templateName,
+    setTemplateName: state.setTemplateName,
+    customQuery: state.customQuery,
+    setCustomQuery: state.setCustomQuery,
     
     // Dataset metadata
-    name,
-    setName,
+    name: state.name,
+    setName: state.setName,
     
     // Preview data
-    previewData,
-    setPreviewData,
+    previewData: state.previewData,
+    setPreviewData: state.setPreviewData,
     
     // Reset function
-    resetState
+    resetState: state.resetState
   };
 };
