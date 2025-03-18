@@ -1,8 +1,10 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, AlertCircle, CheckCircle, Save } from "lucide-react";
+import { Loader2, RefreshCw, AlertCircle, CheckCircle, Save, Database } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
+import { devLogger } from "@/utils/DevLogger";
 
 interface DataPreviewStepProps {
   isLoading: boolean;
@@ -14,7 +16,7 @@ interface DataPreviewStepProps {
   connectionTestResult?: {
     success: boolean;
     message: string;
-  };
+  } | null;
   previewSample?: string | null;
 }
 
@@ -28,6 +30,30 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
   sourceId,
   connectionTestResult
 }) => {
+  // Log component render
+  React.useEffect(() => {
+    devLogger.debug('DataPreviewStep', 'Component rendered', {
+      hasSourceId: !!sourceId,
+      hasPreviewData: previewData?.length > 0,
+      hasError: !!error,
+      connectionTestSuccess: connectionTestResult?.success
+    });
+  }, [sourceId, previewData, error, connectionTestResult]);
+
+  // Handle refresh preview
+  const handleRefreshPreview = () => {
+    devLogger.info('DataPreviewStep', 'Refresh preview clicked');
+    onRegeneratePreview();
+  };
+
+  // Handle save dataset
+  const handleSaveDataset = () => {
+    devLogger.info('DataPreviewStep', 'Save dataset clicked', {
+      previewDataCount: previewData?.length || 0
+    });
+    onSaveDataset?.();
+  };
+
   if (!sourceId) {
     return (
       <div className="space-y-4">
@@ -52,7 +78,7 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={onRegeneratePreview}
+            onClick={handleRefreshPreview}
             disabled={isLoading}
           >
             {isLoading ? (
@@ -67,7 +93,7 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
             <Button
               variant="default"
               size="sm"
-              onClick={onSaveDataset}
+              onClick={handleSaveDataset}
               disabled={isLoading}
             >
               <Save className="h-4 w-4 mr-2" />
@@ -94,43 +120,61 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
       )}
       
       {isLoading ? (
-        <div className="h-64 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          <span className="ml-3 text-muted-foreground">Loading preview data...</span>
+        <div className="h-64 flex flex-col items-center justify-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="text-center">
+            <span className="text-muted-foreground">Loading preview data...</span>
+            <p className="text-sm text-muted-foreground mt-1">This may take a moment depending on the data source size.</p>
+          </div>
         </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">
-          <p className="font-medium">Error loading preview:</p>
-          <p className="mt-1">{error}</p>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error loading preview</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       ) : previewData.length === 0 ? (
-        <div className="h-64 flex items-center justify-center text-muted-foreground">
-          No preview data available. Try refreshing or adjusting your query.
+        <div className="h-64 flex flex-col items-center justify-center space-y-4">
+          <Database className="h-12 w-12 text-muted-foreground opacity-30" />
+          <div className="text-center">
+            <p className="text-muted-foreground">No preview data available.</p>
+            <p className="text-sm text-muted-foreground mt-1">Try refreshing or adjusting your query.</p>
+          </div>
+          <Button onClick={handleRefreshPreview} variant="outline">Generate Preview</Button>
         </div>
       ) : (
         <div className="space-y-4">
           {previewSample && (
-            <Alert>
-              <AlertTitle>Data Sample (First {Math.min(previewData.length, 3)} records)</AlertTitle>
-              <AlertDescription>
-                <pre className="text-xs p-2 bg-gray-50 rounded-md overflow-auto mt-2 max-h-48">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="mb-2 flex items-center justify-between">
+                  <h4 className="text-sm font-semibold">Data Sample (First {Math.min(previewData.length, 3)} records)</h4>
+                  <span className="text-xs text-muted-foreground">
+                    Showing {Math.min(previewData.length, 3)} of {previewData.length} records
+                  </span>
+                </div>
+                
+                <pre className="text-xs p-4 bg-slate-50 rounded-md overflow-auto mt-2 max-h-72 border">
                   {previewSample}
                 </pre>
-              </AlertDescription>
-            </Alert>
+              </CardContent>
+            </Card>
           )}
           
-          <div className="overflow-auto max-h-96">
-            <pre className="text-xs p-4 bg-muted rounded-md">
-              {JSON.stringify(previewData, null, 2)}
-            </pre>
-          </div>
-          
-          {previewData.length > 0 && (
-            <div className="text-sm text-muted-foreground">
-              Total records: <span className="font-medium">{previewData.length}</span>
+          <div className="bg-muted/20 p-4 rounded-md border">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-sm font-semibold">Full Preview Data</h4>
+              <div className="text-xs text-muted-foreground">
+                Total records: <span className="font-medium">{previewData.length}</span>
+              </div>
             </div>
-          )}
+            
+            <div className="overflow-auto max-h-96 border rounded-md">
+              <pre className="text-xs p-4 bg-white">
+                {JSON.stringify(previewData, null, 2)}
+              </pre>
+            </div>
+          </div>
         </div>
       )}
     </div>

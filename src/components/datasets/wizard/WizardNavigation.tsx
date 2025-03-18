@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { StepType } from '@/hooks/datasets/useCreateDatasetState';
+import { devLogger } from '@/utils/DevLogger';
 
 interface WizardNavigationProps {
   currentStep: StepType;
@@ -10,8 +11,6 @@ interface WizardNavigationProps {
   selectedTemplate: string;
   selectedDependentTemplate: string;
   customQuery: string;
-  
-  checkCanProceed: () => boolean;
 }
 
 export const useWizardNavigation = ({
@@ -25,21 +24,44 @@ export const useWizardNavigation = ({
 }: WizardNavigationProps) => {
   // Check if we can proceed to the next step
   const canProceedToNext = (): boolean => {
+    let canProceed = false;
+
     switch (currentStep) {
       case 'source':
-        return !!selectedSourceId;
+        canProceed = !!selectedSourceId;
+        break;
       case 'type':
-        return !!datasetType;
+        canProceed = !!datasetType;
+        break;
       case 'configuration':
-        return !!datasetName;
+        canProceed = !!datasetName && !!selectedSourceId;
+        break;
       case 'templates':
-        if (datasetType === 'predefined') return !!selectedTemplate;
-        if (datasetType === 'dependent') return !!selectedDependentTemplate;
-        if (datasetType === 'custom') return !!customQuery;
-        return false;
+        if (datasetType === 'predefined') {
+          canProceed = !!selectedTemplate;
+        } else if (datasetType === 'dependent') {
+          canProceed = !!selectedDependentTemplate;
+        } else if (datasetType === 'custom') {
+          canProceed = !!customQuery && customQuery.trim().length > 0;
+        }
+        break;
       default:
-        return true;
+        canProceed = true;
+        break;
     }
+
+    // Log validation results for debugging
+    devLogger.debug('WizardNavigation', `Step validation for ${currentStep}`, {
+      canProceed,
+      datasetType,
+      hasSourceId: !!selectedSourceId,
+      hasName: !!datasetName,
+      hasTemplate: !!selectedTemplate,
+      hasDependentTemplate: !!selectedDependentTemplate, 
+      hasCustomQuery: !!customQuery
+    });
+
+    return canProceed;
   };
 
   return {

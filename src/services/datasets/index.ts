@@ -1,14 +1,15 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Dataset } from "@/types/dataset";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Fetch all active datasets
 export const fetchDatasets = async (): Promise<Dataset[]> => {
   try {
     const { data, error } = await supabase
-      .from("extractions")
+      .from("user_datasets")
       .select("*")
-      .eq("is_deleted", false)
+      .eq("status", "ready")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -29,10 +30,10 @@ export const fetchDatasets = async (): Promise<Dataset[]> => {
 export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
   try {
     const { data, error } = await supabase
-      .from("extractions")
+      .from("user_datasets")
       .select("*")
-      .eq("is_deleted", true)
-      .order("deletion_marked_at", { ascending: false });
+      .eq("status", "deleted")
+      .order("deleted_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching deleted datasets:", error);
@@ -52,13 +53,12 @@ export const fetchDeletedDatasets = async (): Promise<Dataset[]> => {
 export const deleteDataset = async (datasetId: string): Promise<boolean> => {
   try {
     const updateData = {
-      is_deleted: true,
-      deletion_marked_at: new Date().toISOString(),
-      status: "pending"
+      status: "deleted",
+      deleted_at: new Date().toISOString()
     };
 
     const { error } = await supabase
-      .from("extractions")
+      .from("user_datasets")
       .update(updateData)
       .eq("id", datasetId);
 
@@ -78,10 +78,10 @@ export const deleteDataset = async (datasetId: string): Promise<boolean> => {
 export const restoreDataset = async (datasetId: string): Promise<Dataset | null> => {
   try {
     const { data, error } = await supabase
-      .from("extractions")
+      .from("user_datasets")
       .update({
-        is_deleted: false,
-        deletion_marked_at: null
+        status: "ready",
+        deleted_at: null
       })
       .eq("id", datasetId)
       .select()
@@ -103,7 +103,7 @@ export const restoreDataset = async (datasetId: string): Promise<Dataset | null>
 export const permanentlyDeleteDataset = async (datasetId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from("extractions")
+      .from("user_datasets")
       .delete()
       .eq("id", datasetId);
 
