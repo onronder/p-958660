@@ -13,8 +13,20 @@ interface DevLogsViewerProps {
 }
 
 export function DevLogsViewer({ logLevelFilters = ['debug', 'info', 'warn', 'error', 'critical'] }: DevLogsViewerProps) {
-  const { logs, isLoading, error, logCount, loadLogs, clearLogs, toggleLogging, filterLogsByTerm } = useDevLogs();
+  const { 
+    logs, 
+    isLoading, 
+    error, 
+    logCount, 
+    loadLogs, 
+    clearLogs, 
+    toggleLogging, 
+    togglePersistence, 
+    filterLogsByTerm 
+  } = useDevLogs();
+  
   const [isLoggingEnabled, setIsLoggingEnabled] = useState(true);
+  const [isPersistenceEnabled, setIsPersistenceEnabled] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedLogs, setExpandedLogs] = useState<Record<string, boolean>>({});
 
@@ -57,6 +69,12 @@ export function DevLogsViewer({ logLevelFilters = ['debug', 'info', 'warn', 'err
     setIsLoggingEnabled(enabled);
     toggleLogging(enabled);
   };
+  
+  // Handle toggling persistence
+  const handleTogglePersistence = (enabled: boolean) => {
+    setIsPersistenceEnabled(enabled);
+    togglePersistence(enabled);
+  };
 
   // Collapse all expanded logs
   const collapseAll = () => {
@@ -77,7 +95,9 @@ export function DevLogsViewer({ logLevelFilters = ['debug', 'info', 'warn', 'err
         <LogFilters 
           onSearch={setSearchTerm}
           isLoggingEnabled={isLoggingEnabled}
+          isPersistenceEnabled={isPersistenceEnabled}
           onToggleLogging={handleToggleLogging}
+          onTogglePersistence={handleTogglePersistence}
         />
 
         <ErrorDisplay error={error} />

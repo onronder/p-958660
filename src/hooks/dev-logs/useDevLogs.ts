@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
-import { devLogger } from '@/utils/DevLogger';
+import { devLogger } from '@/utils/logger';
 import { DevLog } from './types';
 import { fetchLogs, clearAllLogs } from './devLogsApiService';
 
@@ -61,6 +61,11 @@ export function useDevLogs() {
   const toggleLogging = useCallback((enabled: boolean) => {
     devLogger.setEnabled(enabled);
   }, []);
+  
+  // Enable/disable persistence
+  const togglePersistence = useCallback((enabled: boolean) => {
+    devLogger.setPersistLogs(enabled);
+  }, []);
 
   // Apply search filtering to logs
   const filterLogsByTerm = useCallback((logs: DevLog[], searchTerm: string): DevLog[] => {
@@ -88,6 +93,7 @@ export function useDevLogs() {
     loadLogs,
     clearLogs,
     toggleLogging,
+    togglePersistence,
     filterLogsByTerm
   };
 }
