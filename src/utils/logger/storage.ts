@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { DevLogEntry, PersistedLog } from './types';
+import { DevLogEntry, PersistedLog, LogLevel } from './types';
 
 /**
  * Handles log storage operations
@@ -86,8 +86,15 @@ export class LogStorage {
         throw countError;
       }
 
+      // Map to the correct types
+      const typedLogs: PersistedLog[] = data?.map(log => ({
+        ...log,
+        // Ensure log_level is one of the allowed types
+        log_level: (log.log_level as LogLevel) || 'info'
+      })) || [];
+
       return {
-        logs: data || [],
+        logs: typedLogs,
         count: count || 0,
         error: null
       };
