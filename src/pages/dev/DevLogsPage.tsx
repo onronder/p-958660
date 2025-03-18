@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { DevLogsViewer } from '@/components/dev/DevLogsViewer';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MultiSelect } from '@/components/dev/MultiSelect';
 import { supabase } from '@/integrations/supabase/client';
 import { Trash2, AlertTriangle } from 'lucide-react';

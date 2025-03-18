@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useDevLogs } from '@/hooks/useDevLogs';
+import { useDevLogs, useLogFilters } from '@/hooks/dev-logs';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LogHeader } from './LogHeader';
 import { LogFilters } from './LogFilters';
@@ -13,7 +13,7 @@ interface DevLogsViewerProps {
 }
 
 export function DevLogsViewer({ logLevelFilters = ['debug', 'info', 'warn', 'error', 'critical'] }: DevLogsViewerProps) {
-  const { logs, isLoading, error, logCount, loadLogs, clearLogs, toggleLogging } = useDevLogs();
+  const { logs, isLoading, error, logCount, loadLogs, clearLogs, toggleLogging, filterLogsByTerm } = useDevLogs();
   const [isLoggingEnabled, setIsLoggingEnabled] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedLogs, setExpandedLogs] = useState<Record<string, boolean>>({});

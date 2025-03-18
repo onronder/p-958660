@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { DevLog } from '@/hooks/useDevLogs';
+import { DevLog } from '@/hooks/dev-logs';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -13,12 +12,10 @@ interface LogItemProps {
 }
 
 export function LogItem({ log, isExpanded, onToggleExpand }: LogItemProps) {
-  // Format timestamp to local time
   const formatTimestamp = (timestamp: string) => {
     return new Date(timestamp).toLocaleString();
   };
 
-  // Function to get appropriate badge color based on log level
   const getLogLevelBadge = (level: string) => {
     switch (level) {
       case 'debug':

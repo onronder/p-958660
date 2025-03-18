@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { DevLog } from '@/hooks/useDevLogs';
+import { DevLog } from '@/hooks/dev-logs';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LogItem } from './LogItem';
 
