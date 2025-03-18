@@ -24,6 +24,7 @@ import Insights from "@/pages/Insights";
 import Notifications from "@/pages/Notifications";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
+import MyDatasets from "@/pages/MyDatasets";
 
 export function AppRoutes() {
   const handleLogin = () => {
@@ -51,6 +52,7 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/sources" element={<Sources />} />
+          <Route path="/my-datasets" element={<MyDatasets />} />
           <Route path="/transform" element={<Transformations />} />
           <Route path="/destinations" element={<Destinations />} />
           <Route path="/jobs" element={<Jobs />} />
