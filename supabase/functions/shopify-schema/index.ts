@@ -20,7 +20,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse request body
-    const { source_id, test_only = false } = await req.json();
+    const { source_id, test_only = false, force_refresh = false } = await req.json();
     
     if (!source_id) {
       return new Response(
@@ -32,7 +32,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("Processing request for source_id:", source_id, "test_only:", test_only);
+    console.log("Processing request for source_id:", source_id, "test_only:", test_only, "force_refresh:", force_refresh);
 
     // Get source details from database
     const { data: source, error: sourceError } = await supabase
@@ -146,8 +146,45 @@ serve(async (req) => {
       }
     }
     
-    // If not just testing, fetch the schema
+    // If not just testing, check if we need to fetch a new schema
+    if (!force_refresh) {
+      // Check if we have a recent cache (less than 4 hours old)
+      const { data: cachedSchema, error: cacheError } = await supabase
+        .from("schema_cache")
+        .select("schema, cached_at")
+        .eq("source_id", source_id)
+        .order("cached_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (cachedSchema && !cacheError) {
+        const cacheAge = Date.now() - new Date(cachedSchema.cached_at).getTime();
+        const cacheAgeHours = cacheAge / (1000 * 60 * 60);
+        
+        // Use cached schema if it's less than 4 hours old
+        if (cacheAgeHours < 4) {
+          console.log("Using cached schema, age:", cacheAgeHours.toFixed(2), "hours");
+          
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              schema: cachedSchema.schema, 
+              message: "Using cached schema",
+              is_cached: true,
+              cached_at: cachedSchema.cached_at
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+      }
+    }
+    
+    // Fetch new schema from Shopify
     try {
+      console.log("Fetching fresh schema from Shopify");
+      
       // Introspection query to get the full schema
       const introspectionQuery = `
         query IntrospectionQuery {
@@ -261,11 +298,34 @@ serve(async (req) => {
       
       const schemaData = await response.json();
       
+      if (!schemaData.data) {
+        throw new Error("Invalid schema data received from Shopify");
+      }
+      
+      // Store the schema in our cache
+      const now = new Date().toISOString();
+      const { error: upsertError } = await supabase
+        .from("schema_cache")
+        .upsert({
+          source_id,
+          schema: schemaData.data,
+          api_version: "2023-10",
+          cached_at: now
+        });
+      
+      if (upsertError) {
+        console.error("Error caching schema:", upsertError);
+      } else {
+        console.log("Schema cached successfully at", now);
+      }
+      
       return new Response(
         JSON.stringify({ 
           success: true, 
           schema: schemaData.data, 
-          message: "Successfully fetched Shopify GraphQL schema" 
+          message: "Successfully fetched and cached Shopify GraphQL schema",
+          is_cached: false,
+          cached_at: now
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
