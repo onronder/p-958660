@@ -23,8 +23,9 @@ interface WizardStepContentProps {
   isPreviewLoading: boolean;
   previewData: any[];
   previewError: string | null;
-  connectionTestResult?: { success: boolean; message: string };
+  connectionTestResult?: { success: boolean; message: string } | null;
   previewSample?: string | null;
+  isTestingConnection?: boolean;
   
   // Handlers
   onSourceSelection: (id: string, name: string) => void;
@@ -54,6 +55,7 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
   previewError,
   connectionTestResult,
   previewSample,
+  isTestingConnection,
   
   // Handlers
   onSourceSelection,
@@ -79,6 +81,8 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
           selectedSourceId={selectedSourceId}
           onSelectSource={onSourceSelection}
           onTestConnection={onTestConnection}
+          connectionTestResult={connectionTestResult}
+          isTestingConnection={isTestingConnection}
         />
       );
       

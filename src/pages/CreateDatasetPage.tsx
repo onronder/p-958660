@@ -33,9 +33,11 @@ const CreateDatasetPage = () => {
       previewError={previewHook.previewError}
       isPreviewLoading={previewHook.isPreviewLoading}
       connectionTestResult={previewHook.connectionTestResult}
+      isTestingConnection={previewHook.isTestingConnection}
       sources={sources || []}
       isCreating={isCreating}
       progress={progress}
+      previewSample={previewHook.previewSample}
       
       // Handlers
       onSetCurrentStep={handleSetCurrentStep}

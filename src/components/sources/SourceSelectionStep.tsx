@@ -1,10 +1,10 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Source } from "@/types/source";
 import { Card } from "@/components/ui/card";
-import { ShoppingBag, Database, CheckCircle2, Globe, Search } from "lucide-react";
+import { ShoppingBag, Database, CheckCircle2, Globe, Search, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -13,15 +13,19 @@ interface SourceSelectionStepProps {
   selectedSourceId: string;
   onSelectSource: (id: string, name: string) => void;
   onTestConnection?: () => void;
+  connectionTestResult?: { success: boolean; message: string } | null;
+  isTestingConnection?: boolean;
 }
 
 const SourceSelectionStep: React.FC<SourceSelectionStepProps> = ({
   sources,
   selectedSourceId,
   onSelectSource,
-  onTestConnection
+  onTestConnection,
+  connectionTestResult,
+  isTestingConnection = false
 }) => {
-  const [searchTerm, setSearchTerm] = React.useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   
   // Filter sources based on search term
   const filteredSources = sources.filter(source => 
@@ -127,16 +131,49 @@ const SourceSelectionStep: React.FC<SourceSelectionStepProps> = ({
       )}
       
       {selectedSourceId && onTestConnection && (
-        <div className="flex justify-end mt-4">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onTestConnection}
-            className="flex items-center gap-2"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Test Connection
-          </Button>
+        <div className="flex flex-col space-y-2">
+          <div className="flex justify-end mt-2">
+            <Button 
+              type="button" 
+              variant={connectionTestResult?.success ? "outline" : "default"}
+              onClick={onTestConnection}
+              className="flex items-center gap-2"
+              disabled={isTestingConnection}
+            >
+              {isTestingConnection ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                  Testing Connection...
+                </>
+              ) : connectionTestResult?.success ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  Connected Successfully
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  Test Connection
+                </>
+              )}
+            </Button>
+          </div>
+          
+          {connectionTestResult && (
+            <div className={`p-3 rounded-md text-sm ${
+              connectionTestResult.success ? 'bg-green-50 text-green-700 border border-green-200' : 
+              'bg-red-50 text-red-700 border border-red-200'
+            }`}>
+              <div className="flex items-start">
+                {connectionTestResult.success ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+                )}
+                <span>{connectionTestResult.message}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -8,13 +8,17 @@ interface SourceStepProps {
   selectedSourceId: string;
   onSelectSource: (id: string, name: string) => void;
   onTestConnection: () => void;
+  connectionTestResult?: { success: boolean; message: string } | null;
+  isTestingConnection?: boolean;
 }
 
 const SourceStep: React.FC<SourceStepProps> = ({
   sources,
   selectedSourceId,
   onSelectSource,
-  onTestConnection
+  onTestConnection,
+  connectionTestResult,
+  isTestingConnection
 }) => {
   return (
     <SourceSelectionStep
@@ -22,6 +26,8 @@ const SourceStep: React.FC<SourceStepProps> = ({
       selectedSourceId={selectedSourceId}
       onSelectSource={onSelectSource}
       onTestConnection={onTestConnection}
+      connectionTestResult={connectionTestResult}
+      isTestingConnection={isTestingConnection}
     />
   );
 };

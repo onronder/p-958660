@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { devLogger } from '@/utils/logger';
+import { toast } from '@/hooks/use-toast';
 
 export type ConnectionTestResult = {
   success: boolean;
@@ -20,7 +21,6 @@ export function useConnectionTest() {
     }
     
     setIsTestingConnection(true);
-    setConnectionTestResult(null);
     
     try {
       devLogger.debug('useConnectionTest', 'Testing connection for source', { sourceId });
@@ -36,81 +36,108 @@ export function useConnectionTest() {
         throw new Error(`Failed to fetch source details: ${sourceError.message}`);
       }
       
+      // Log the source type for debugging
+      console.log('Testing connection for source type:', sourceData.source_type);
+      
       // Check if we have the credentials in the source
       const credentials = sourceData.credentials ? 
         (typeof sourceData.credentials === 'object' ? sourceData.credentials : {}) : 
         {};
       
-      // Check if we have the minimum required credentials based on source type
-      let isValid = false;
-      let missingFields: string[] = [];
-      
-      if (sourceData.source_type === 'Shopify') {
-        // For Shopify, check for either access_token or api_token
-        const hasAccessToken = credentials && 
-          typeof credentials === 'object' && 
-          ('access_token' in credentials || 'accessToken' in credentials);
-          
-        const hasApiToken = credentials && 
-          typeof credentials === 'object' && 
-          ('api_token' in credentials || 'apiToken' in credentials);
+      // If source is already marked as Active, return success immediately
+      if (sourceData.status === 'Active') {
+        toast({
+          title: 'Connection Available',
+          description: `Source "${sourceData.name}" is already active and ready to use.`,
+        });
         
-        if (!hasAccessToken && !hasApiToken) {
-          missingFields.push('access token');
-        }
-        
-        isValid = missingFields.length === 0;
-      } else if (sourceData.source_type === 'WooCommerce') {
-        // For WooCommerce, we need api_key and store_name
-        const hasApiKey = credentials && 
-          typeof credentials === 'object' && 
-          ('api_key' in credentials || 'apiKey' in credentials);
-          
-        const hasStoreName = sourceData.url && sourceData.url.length > 0;
-        
-        if (!hasApiKey) missingFields.push('API key');
-        if (!hasStoreName) missingFields.push('store URL');
-        
-        isValid = missingFields.length === 0;
-      } else {
-        // For other sources, let's check for common credential types
-        isValid = !!(
-          (credentials && typeof credentials === 'object' && 'access_token' in credentials) || 
-          (credentials && typeof credentials === 'object' && 'api_key' in credentials) ||
-          (credentials && typeof credentials === 'object' && 'api_token' in credentials)
-        );
-        
-        if (!isValid) {
-          missingFields.push('valid credentials');
-        }
-      }
-      
-      // Log the validation result for debugging
-      console.log('Connection test validation:', {
-        sourceId,
-        sourceType: sourceData.source_type,
-        isValid,
-        missingFields,
-        credentialKeys: typeof credentials === 'object' ? Object.keys(credentials) : [] // Only log keys for security
-      });
-      
-      if (!isValid) {
         const result = { 
-          success: false, 
-          message: `Missing credentials: ${missingFields.join(', ')}` 
+          success: true, 
+          message: `Source "${sourceData.name}" is connected and ready to use.` 
         };
         setConnectionTestResult(result);
         return result;
       }
       
-      // If we have valid credentials, let's simulate a connection test
-      // In a real app, you would make an API call to test the connection
-      const result = { 
-        success: true, 
-        message: `Successfully connected to ${sourceData.source_type} source` 
-      };
-      setConnectionTestResult(result);
-      return result;
+      // If source is marked as Failed, show warning but still attempt to test
+      if (sourceData.status === 'Failed') {
+        toast({
+          title: 'Connection Warning',
+          description: `Source "${sourceData.name}" previously had connection issues. Testing again...`,
+          variant: 'warning',
+        });
+      }
+      
+      // Based on source type, test the connection using specific Edge Function
+      if (sourceData.source_type === 'Shopify') {
+        try {
+          // For Shopify, use the shopify-private Edge Function to test
+          const { data, error } = await supabase.functions.invoke("shopify-private", {
+            body: {
+              action: "test_connection",
+              source_id: sourceId
+            }
+          });
+          
+          if (error || (data && data.error)) {
+            const errorMsg = error?.message || data?.error || 'Connection test failed';
+            throw new Error(errorMsg);
+          }
+          
+          // Create success result
+          const result = { 
+            success: true, 
+            message: `Successfully connected to ${sourceData.name} (${sourceData.source_type}).` 
+          };
+          
+          toast({
+            title: 'Connection Successful',
+            description: `Successfully connected to ${sourceData.name}.`,
+          });
+          
+          setConnectionTestResult(result);
+          return result;
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          
+          const result = { 
+            success: false, 
+            message: `Connection failed: ${errorMsg}` 
+          };
+          
+          toast({
+            title: 'Connection Failed',
+            description: errorMsg,
+            variant: 'destructive',
+          });
+          
+          setConnectionTestResult(result);
+          return result;
+        }
+      } else {
+        // For other source types
+        // We'll check if we have minimum required credentials
+        const hasCredentials = credentials && 
+          typeof credentials === 'object' && 
+          Object.keys(credentials).length > 0;
+          
+        if (!hasCredentials) {
+          const result = { 
+            success: false, 
+            message: `Missing credentials for ${sourceData.source_type} source.` 
+          };
+          setConnectionTestResult(result);
+          return result;
+        }
+        
+        // For now, just validate that we have credentials
+        const result = { 
+          success: true, 
+          message: `${sourceData.source_type} source credentials are available.` 
+        };
+        setConnectionTestResult(result);
+        return result;
+      }
     } catch (error) {
       devLogger.error('useConnectionTest', 'Connection test error', error);
       
@@ -123,11 +150,13 @@ export function useConnectionTest() {
     }
   };
   
+  const clearConnectionTestResult = () => setConnectionTestResult(null);
+  
   return {
     isTestingConnection,
     connectionTestResult,
     testConnection,
-    clearConnectionTestResult: () => setConnectionTestResult(null),
+    clearConnectionTestResult,
     setConnectionTestResult
   };
 }

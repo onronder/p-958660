@@ -17,7 +17,8 @@ export const useDatasetPreview = () => {
     connectionTestResult, 
     setConnectionTestResult, 
     testConnection,
-    isTestingConnection
+    isTestingConnection,
+    clearConnectionTestResult
   } = useConnectionTest();
 
   const generatePreview = async (
@@ -162,6 +163,7 @@ export const useDatasetPreview = () => {
     previewSample,
     generatePreview,
     testConnection,
-    isTestingConnection
+    isTestingConnection,
+    clearConnectionTestResult
   };
 };
