@@ -37,19 +37,16 @@ export function useConnectionTest() {
       }
       
       // Check if we have the credentials in the source
-      let credentials = null;
+      let credentials: { access_token?: string; api_key?: string; store_name?: string } = {};
       
-      if (sourceData.credentials) {
+      if (sourceData.credentials && typeof sourceData.credentials === 'object') {
         // Extract credentials from the credentials JSON object
+        const creds = sourceData.credentials;
         credentials = {
-          access_token: sourceData.credentials.access_token,
-          api_key: sourceData.credentials.api_key,
-          store_name: sourceData.credentials.store_name
+          access_token: typeof creds.access_token === 'string' ? creds.access_token : undefined,
+          api_key: typeof creds.api_key === 'string' ? creds.api_key : undefined,
+          store_name: typeof creds.store_name === 'string' ? creds.store_name : undefined
         };
-      }
-      
-      if (!credentials) {
-        throw new Error('No credentials found for this source');
       }
       
       // Check if we have the minimum required credentials based on source type
