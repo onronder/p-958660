@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, AlertTriangle } from "lucide-react";
+import { RefreshCw, AlertTriangle, Check } from "lucide-react";
 import { useSchemaCache } from "@/hooks/useSchemaCache";
 import { formatDistanceToNow } from "date-fns";
 
@@ -12,6 +12,7 @@ interface ShopifySchemaCacheStatusProps {
 const ShopifySchemaCacheStatus: React.FC<ShopifySchemaCacheStatusProps> = ({ sourceId }) => {
   const { status, checkCacheStatus, refreshSchema } = useSchemaCache();
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  const [apiVersion, setApiVersion] = useState<string | null>(null);
   
   const sourceStatus = status[sourceId] || {
     isCaching: false,
@@ -21,7 +22,14 @@ const ShopifySchemaCacheStatus: React.FC<ShopifySchemaCacheStatusProps> = ({ sou
   
   useEffect(() => {
     if (sourceId) {
-      checkCacheStatus(sourceId);
+      const checkStatus = async () => {
+        const result = await checkCacheStatus(sourceId);
+        if (result && result.api_version) {
+          setApiVersion(result.api_version);
+        }
+      };
+      
+      checkStatus();
       setLastChecked(new Date());
     }
   }, [sourceId, checkCacheStatus]);
@@ -54,9 +62,17 @@ const ShopifySchemaCacheStatus: React.FC<ShopifySchemaCacheStatusProps> = ({ sou
     const timeAgo = formatDistanceToNow(lastCachedDate, { addSuffix: true });
     
     return (
-      <span className="text-muted-foreground">
-        Schema cached {timeAgo}
-      </span>
+      <div className="flex flex-col">
+        <span className="text-muted-foreground">
+          Schema cached {timeAgo}
+        </span>
+        {apiVersion && (
+          <div className="flex items-center text-xs text-muted-foreground mt-1">
+            <Check className="h-3 w-3 mr-1 text-green-500" />
+            <span>Using Shopify API v{apiVersion}</span>
+          </div>
+        )}
+      </div>
     );
   };
   

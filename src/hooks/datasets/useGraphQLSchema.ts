@@ -11,6 +11,7 @@ export const useGraphQLSchema = (sourceId: string) => {
   const [error, setError] = useState<string | null>(null);
   const [isCached, setIsCached] = useState<boolean>(false);
   const [cachedAt, setCachedAt] = useState<string | null>(null);
+  const [apiVersion, setApiVersion] = useState<string | null>(null);
   
   const loadSchema = useCallback(async (forceRefresh = false) => {
     if (!sourceId) {
@@ -71,10 +72,11 @@ export const useGraphQLSchema = (sourceId: string) => {
         throw new Error(data?.message || "No schema returned from the server");
       }
       
-      devLogger.info("GraphQLSchema", `Schema loaded successfully: ${data.is_cached ? 'from cache' : 'fresh fetch'}`);
+      devLogger.info("GraphQLSchema", `Schema loaded successfully: ${data.is_cached ? 'from cache' : 'fresh fetch'}, API version: ${data.api_version}`);
       setSchema(data.schema);
       setIsCached(data.is_cached || false);
       setCachedAt(data.cached_at || null);
+      setApiVersion(data.api_version || null);
       
     } catch (error) {
       devLogger.error("GraphQLSchema", "Error loading schema", error);
@@ -101,6 +103,7 @@ export const useGraphQLSchema = (sourceId: string) => {
     error,
     isCached,
     cachedAt,
+    apiVersion,
     loadSchema,
     refreshSchema: () => loadSchema(true)
   };

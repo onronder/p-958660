@@ -10,7 +10,15 @@ export async function executeShopifyQuery({
   apiVersion
 }) {
   try {
+    // Ensure we have a valid API version
+    if (!apiVersion) {
+      console.warn("No API version provided, falling back to default 2023-10");
+      apiVersion = "2023-10";
+    }
+    
     const endpoint = `https://${shopName}.myshopify.com/admin/api/${apiVersion}/graphql.json`;
+    
+    console.log(`Executing Shopify query using API version: ${apiVersion}`);
     
     const response = await fetch(endpoint, {
       method: "POST",

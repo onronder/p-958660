@@ -98,7 +98,7 @@ export function useSchemaCache() {
 
       toast({
         title: "Schema refreshed",
-        description: data.message || "GraphQL schema successfully updated",
+        description: `GraphQL schema successfully updated (API v${data.api_version})`,
       });
 
       return data;
@@ -131,7 +131,7 @@ export function useSchemaCache() {
     try {
       const { data, error } = await supabase
         .from("schema_cache")
-        .select("cached_at")
+        .select("cached_at, api_version")
         .eq("source_id", sourceId)
         .order("cached_at", { ascending: false })
         .limit(1)
@@ -151,7 +151,7 @@ export function useSchemaCache() {
         }));
       }
       
-      return data?.cached_at || null;
+      return data || null;
     } catch (error) {
       devLogger.error("SchemaCache", "Failed to check cache status", error);
       return null;
