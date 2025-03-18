@@ -5,12 +5,13 @@ import { toast } from '@/hooks/use-toast';
 
 export const useDatasetPreview = () => {
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-  const [previewData, setPreviewData] = useState<any>(null);
+  const [previewData, setPreviewData] = useState<any[]>([]);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [connectionTestResult, setConnectionTestResult] = useState<{
     success: boolean;
     message: string;
   } | null>(null);
+  const [previewSample, setPreviewSample] = useState<string | null>(null);
 
   const generatePreview = async (
     datasetType: string,
@@ -21,7 +22,8 @@ export const useDatasetPreview = () => {
   ) => {
     setIsPreviewLoading(true);
     setPreviewError(null);
-    setPreviewData(null);
+    setPreviewData([]);
+    setPreviewSample(null);
     
     try {
       // Test the connection first
@@ -52,7 +54,12 @@ export const useDatasetPreview = () => {
           throw new Error(error.message || 'Failed to generate preview');
         }
         
-        setPreviewData(data);
+        // Process the data for preview
+        const processedData = processPreviewData(data);
+        setPreviewData(processedData);
+        
+        // Generate sample preview
+        generateDataSample(processedData);
       } 
       else if (datasetType === 'dependent') {
         // Logic for dependent dataset preview
@@ -84,6 +91,9 @@ export const useDatasetPreview = () => {
         
         const data = await response.json();
         setPreviewData(data);
+        
+        // Generate sample preview
+        generateDataSample(data);
       }
     } catch (error) {
       console.error('Error generating preview:', error);
@@ -95,6 +105,55 @@ export const useDatasetPreview = () => {
       });
     } finally {
       setIsPreviewLoading(false);
+    }
+  };
+
+  // Process preview data to standardize format
+  const processPreviewData = (data: any): any[] => {
+    // For Shopify orders data
+    if (data && data.orders) {
+      return data.orders;
+    }
+    
+    // Handle other data types
+    if (Array.isArray(data)) {
+      return data;
+    }
+    
+    // Try to extract data from known paths
+    if (data && typeof data === 'object') {
+      // Check common data paths
+      for (const key of ['data', 'results', 'items', 'records']) {
+        if (data[key] && Array.isArray(data[key])) {
+          return data[key];
+        }
+      }
+      
+      // If we can't find a specific array, return the object in an array
+      return [data];
+    }
+    
+    return [];
+  };
+
+  // Generate a small sample of data for quick preview
+  const generateDataSample = (data: any[]) => {
+    try {
+      if (!data || data.length === 0) {
+        setPreviewSample(null);
+        return;
+      }
+      
+      // Take first 3 items, or fewer if not available
+      const sampleItems = data.slice(0, 3);
+      
+      // Format the sample data nicely
+      const formatted = JSON.stringify(sampleItems, null, 2);
+      setPreviewSample(formatted);
+      
+    } catch (error) {
+      console.error('Error generating data sample:', error);
+      setPreviewSample(null);
     }
   };
 
@@ -131,6 +190,7 @@ export const useDatasetPreview = () => {
     previewData,
     previewError,
     connectionTestResult,
+    previewSample,
     generatePreview,
   };
 };

@@ -1,25 +1,30 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, AlertCircle, CheckCircle } from "lucide-react";
+import { Loader2, RefreshCw, AlertCircle, CheckCircle, Save } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface DataPreviewStepProps {
   isLoading: boolean;
   previewData: any[];
   error: string | null;
   onRegeneratePreview: () => void;
+  onSaveDataset?: () => void;
   sourceId?: string;
   connectionTestResult?: {
     success: boolean;
     message: string;
   };
+  previewSample?: string | null;
 }
 
 const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
   isLoading,
   previewData,
+  previewSample,
   error,
   onRegeneratePreview,
+  onSaveDataset,
   sourceId,
   connectionTestResult
 }) => {
@@ -43,19 +48,33 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Data Preview</h3>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRegeneratePreview}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4 mr-2" />
+        <div className="space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRegeneratePreview}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Refresh Preview
+          </Button>
+          
+          {previewData.length > 0 && onSaveDataset && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onSaveDataset}
+              disabled={isLoading}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Dataset
+            </Button>
           )}
-          Refresh Preview
-        </Button>
+        </div>
       </div>
       
       {connectionTestResult && (
@@ -89,10 +108,29 @@ const DataPreviewStep: React.FC<DataPreviewStepProps> = ({
           No preview data available. Try refreshing or adjusting your query.
         </div>
       ) : (
-        <div className="overflow-auto max-h-96">
-          <pre className="text-xs p-4 bg-muted rounded-md">
-            {JSON.stringify(previewData, null, 2)}
-          </pre>
+        <div className="space-y-4">
+          {previewSample && (
+            <Alert>
+              <AlertTitle>Data Sample (First {Math.min(previewData.length, 3)} records)</AlertTitle>
+              <AlertDescription>
+                <pre className="text-xs p-2 bg-gray-50 rounded-md overflow-auto mt-2 max-h-48">
+                  {previewSample}
+                </pre>
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          <div className="overflow-auto max-h-96">
+            <pre className="text-xs p-4 bg-muted rounded-md">
+              {JSON.stringify(previewData, null, 2)}
+            </pre>
+          </div>
+          
+          {previewData.length > 0 && (
+            <div className="text-sm text-muted-foreground">
+              Total records: <span className="font-medium">{previewData.length}</span>
+            </div>
+          )}
         </div>
       )}
     </div>

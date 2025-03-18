@@ -33,7 +33,7 @@ const CreateDatasetPage = () => {
   const previewHook = useDatasetPreview();
   
   // Dataset creation functionality
-  const { isCreating, createDataset } = useDatasetCreation();
+  const { isCreating, progress, createDataset } = useDatasetCreation();
   
   // Check for sources on load
   useEffect(() => {
@@ -57,6 +57,23 @@ const CreateDatasetPage = () => {
       }
     }
   }, [datasetState.selectedSourceId, sources]);
+  
+  // Update preview data from the preview hook
+  useEffect(() => {
+    if (previewHook.previewData) {
+      datasetState.setPreviewData(previewHook.previewData);
+    }
+    if (previewHook.previewError) {
+      datasetState.setPreviewError(previewHook.previewError);
+    }
+    datasetState.setIsPreviewLoading(previewHook.isPreviewLoading);
+    datasetState.setConnectionTestResult(previewHook.connectionTestResult);
+  }, [
+    previewHook.previewData, 
+    previewHook.previewError, 
+    previewHook.isPreviewLoading,
+    previewHook.connectionTestResult
+  ]);
   
   // Handler for source selection
   const handleSourceSelection = (id: string, name: string) => {
@@ -85,11 +102,21 @@ const CreateDatasetPage = () => {
   
   // Handler for dataset creation
   const handleCreateDataset = () => {
+    if (previewHook.previewData.length === 0) {
+      toast({
+        title: "Preview Required",
+        description: "Please generate a preview before creating the dataset.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     createDataset(
       datasetState.datasetName,
       datasetState.selectedSourceId,
       datasetState.datasetType,
       datasetState.selectedTemplate,
+      previewHook.previewData,
       datasetState.selectedDependentTemplate,
       datasetState.customQuery
     );
@@ -172,8 +199,10 @@ const CreateDatasetPage = () => {
             previewData={previewHook.previewData}
             error={previewHook.previewError}
             onRegeneratePreview={handleGeneratePreview}
+            onSaveDataset={handleCreateDataset}
             sourceId={datasetState.selectedSourceId}
             connectionTestResult={previewHook.connectionTestResult}
+            previewSample={previewHook.previewSample}
           />
         );
       default:
@@ -231,6 +260,7 @@ const CreateDatasetPage = () => {
           canProceedToNext={canProceedToNext()}
           isPreviewLoading={previewHook.isPreviewLoading}
           isCreating={isCreating}
+          progress={progress}
         />
       </Card>
     </div>
