@@ -15,6 +15,7 @@ import CustomDatasetStep from '@/components/datasets/wizard/CustomDatasetStep';
 import DataPreviewStep from '@/components/datasets/wizard/DataPreviewStep';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
+import { Dataset } from '@/types/dataset';
 
 // Step types
 type StepType = 'type' | 'configuration' | 'templates' | 'preview';
@@ -43,7 +44,7 @@ const CreateDatasetPage = () => {
   
   // Check for sources on load
   useEffect(() => {
-    if (!sourcesLoading && sources.length === 0) {
+    if (!sourcesLoading && sources && sources.length === 0) {
       toast({
         title: "No Data Sources",
         description: "You need to connect a data source before creating a dataset.",
@@ -72,7 +73,7 @@ const CreateDatasetPage = () => {
         const parsedState = JSON.parse(savedState);
         
         // Restore saved state
-        if (parsedState.currentStep) setCurrentStep(parsedState.currentStep);
+        if (parsedState.currentStep) setCurrentStep(parsedState.currentStep as StepType);
         if (parsedState.datasetType) setDatasetType(parsedState.datasetType);
         if (parsedState.selectedSourceId) setSelectedSourceId(parsedState.selectedSourceId);
         if (parsedState.datasetName) setDatasetName(parsedState.datasetName);
@@ -192,7 +193,7 @@ const CreateDatasetPage = () => {
         });
         setPreviewData([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating preview:", error);
       setPreviewError(error.message || "Failed to generate preview");
     } finally {
@@ -258,7 +259,7 @@ const CreateDatasetPage = () => {
       }
       
       // Build dataset object
-      const dataset = {
+      const dataset: Partial<Dataset> = {
         name: datasetName,
         source_id: selectedSourceId,
         user_id: session.user.id,
@@ -299,7 +300,7 @@ const CreateDatasetPage = () => {
       
       navigate("/datasets");
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating dataset:", error);
       toast({
         title: "Error",
@@ -328,20 +329,25 @@ const CreateDatasetPage = () => {
     }
   };
   
+  // Helper for step selector
+  const handleSetCurrentStep = (step: string) => {
+    setCurrentStep(step as StepType);
+  };
+  
   // Rendering helpers
   const renderTemplateStep = () => {
     if (datasetType === 'predefined') {
       return (
         <PredefinedDatasetStep
           selectedTemplate={selectedTemplate}
-          onTemplateSelect={setSelectedTemplate}
+          onSelect={setSelectedTemplate}
         />
       );
     } else if (datasetType === 'dependent') {
       return (
         <DependentDatasetStep
           selectedTemplate={selectedDependentTemplate}
-          onTemplateSelect={setSelectedDependentTemplate}
+          onSelect={setSelectedDependentTemplate}
         />
       );
     } else {
@@ -373,6 +379,9 @@ const CreateDatasetPage = () => {
             onNameChange={setDatasetName}
             sources={sources || []}
             isLoading={sourcesLoading}
+            datasetType={datasetType}
+            templateName={datasetType === 'predefined' ? selectedTemplate : 
+                         datasetType === 'dependent' ? selectedDependentTemplate : undefined}
           />
         );
       case 'templates':
@@ -425,7 +434,7 @@ const CreateDatasetPage = () => {
       
       <StepSelector
         currentStep={currentStep}
-        setCurrentStep={setCurrentStep}
+        setCurrentStep={handleSetCurrentStep}
         steps={[
           { id: 'type', label: 'Type' },
           { id: 'configuration', label: 'Config' },

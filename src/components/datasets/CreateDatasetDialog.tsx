@@ -15,12 +15,17 @@ import { toast } from "@/hooks/use-toast";
 
 interface CreateDatasetDialogProps {
   sources: { id: string; name: string }[];
-  onDatasetCreated: (newDataset: any) => void;
+  onDatasetCreated?: (newDataset: any) => void;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-const CreateDatasetDialog = ({ sources, onDatasetCreated, isOpen, onOpenChange }: CreateDatasetDialogProps) => {
+const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({ 
+  sources, 
+  onDatasetCreated, 
+  isOpen, 
+  onOpenChange 
+}) => {
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 

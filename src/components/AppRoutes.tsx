@@ -33,17 +33,27 @@ const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
 
 const AppRoutes = () => {
+  const handleLogin = () => {
+    // Login callback handler
+    console.log("User logged in");
+  };
+
+  const handleRegister = () => {
+    // Register callback handler
+    console.log("User registered");
+  };
+
   return (
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={
         <Suspense fallback={<div className="p-8">Loading...</div>}>
-          <Login />
+          <Login onLogin={handleLogin} />
         </Suspense>
       } />
       <Route path="/register" element={
         <Suspense fallback={<div className="p-8">Loading...</div>}>
-          <Register />
+          <Register onRegister={handleRegister} />
         </Suspense>
       } />
       <Route path="/forgot-password" element={
