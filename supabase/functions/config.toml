@@ -45,3 +45,7 @@ src = "./pre_recent_orders_dashboard/index.ts"
 [[api.endpoints]]
 path = "/shopify-private"
 src = "./shopify-private/index.ts"
+
+[[api.endpoints]]
+path = "/cleanup-datasets"
+src = "./cleanup-datasets/index.ts"

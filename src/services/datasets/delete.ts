@@ -5,12 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
  * Soft deletes a dataset (moves to trash)
  */
 export const deleteDataset = async (datasetId: string): Promise<void> => {
-  // Simply mark the dataset as deleted rather than actually deleting it
+  // Mark the dataset as deleted and track when it was deleted
   const { error } = await supabase
     .from('user_datasets')
     .update({ 
-      // Using a dynamic property to avoid TypeScript errors with is_deleted
-      ...({"is_deleted": true} as any)
+      is_deleted: true,
+      deletion_marked_at: new Date().toISOString()
     })
     .eq('id', datasetId);
 
@@ -27,8 +27,8 @@ export const restoreDataset = async (datasetId: string): Promise<void> => {
   const { error } = await supabase
     .from('user_datasets')
     .update({ 
-      // Using a dynamic property to avoid TypeScript errors with is_deleted
-      ...({"is_deleted": false} as any)
+      is_deleted: false,
+      deletion_marked_at: null
     })
     .eq('id', datasetId);
 
