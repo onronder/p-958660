@@ -37,6 +37,15 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
     
     // Create a function to execute the request
     const executeRequest = async () => {
+      // Log detailed info about the request
+      devLogger.info('Dataset Preview API', 'Invoking shopify-extract function with parameters', {
+        extraction_id: "preview",
+        source_id: sourceId,
+        custom_query_length: customQuery.length,
+        preview_only: true,
+        limit: 10
+      });
+      
       const response = await supabase.functions.invoke("shopify-extract", {
         body: {
           extraction_id: "preview",
@@ -47,8 +56,18 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
         }
       });
       
-      // Log the response
+      // Log the response status and whether it contains data/error
       logApiResponse('Shopify-extract custom query', response);
+      
+      // Log more detailed info for debugging
+      devLogger.debug('Dataset Preview API', 'Response details', {
+        status: response.status,
+        hasData: !!response.data,
+        hasError: !!response.error,
+        errorMessage: response.error?.message,
+        dataType: response.data ? typeof response.data : 'undefined',
+        hasResults: response.data?.results?.length > 0
+      });
       
       return response;
     };
@@ -72,6 +91,13 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
     } else if (errorMessage.includes('Edge Function') || errorMessage.includes('Failed to fetch')) {
       errorMessage = 'Failed to connect to the Edge Function. Please check your network connection and try again.';
     }
+    
+    // Add more detailed guidance to help troubleshoot
+    errorMessage += ' If this issue persists, please check the following:';
+    errorMessage += '\n1. Ensure you have a stable internet connection';
+    errorMessage += '\n2. Verify your Shopify credentials are correct';
+    errorMessage += '\n3. Check if the Supabase Edge Function is deployed correctly';
+    errorMessage += '\n4. Review the developer logs for more detailed error information';
     
     return { error: errorMessage };
   }

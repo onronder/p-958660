@@ -22,6 +22,23 @@ serve(async (req: Request) => {
       origin: requestOrigin
     });
     
+    // Handle ping request for connectivity testing
+    try {
+      const requestData = await req.json();
+      if (requestData && requestData.ping === true) {
+        console.log("Ping request received, returning success response");
+        return new Response(
+          JSON.stringify({ status: "ok", message: "Edge Function is online" }),
+          { 
+            status: 200, 
+            headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          }
+        );
+      }
+    } catch (e) {
+      // Not a ping request or couldn't parse JSON, continue with normal processing
+    }
+    
     const supabase = createSupabaseClient();
     
     // Get user from authorization header

@@ -1,11 +1,13 @@
 
-import { getProductionCorsHeaders } from "../_shared/cors.ts";
-
 /**
- * Create a standardized error response
+ * Create an error response with proper CORS headers
  */
-export function createErrorResponse(message: string, status: number = 500, requestOrigin: string | null = null) {
-  const corsHeaders = getProductionCorsHeaders(requestOrigin);
+export function createErrorResponse(message: string, status: number, requestOrigin: string | null) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': requestOrigin || '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
   
   return new Response(
     JSON.stringify({ error: message }),

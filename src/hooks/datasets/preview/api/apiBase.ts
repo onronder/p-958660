@@ -85,13 +85,34 @@ export const testEdgeFunctionConnectivity = async (functionName: string) => {
       };
     }
     
+    // Log detailed response for debugging
+    devLogger.debug('Dataset Preview API', 'Edge Function connectivity test response', {
+      functionName,
+      status: response.status,
+      hasData: !!response.data,
+      dataContent: response.data
+    });
+    
     return { success: true };
   } catch (error) {
     devLogger.error('Dataset Preview API', `Edge Function connectivity test failed: ${functionName}`, error);
     
+    // Provide more detailed error information
+    let errorMessage = error instanceof Error ? error.message : String(error);
+    let errorDetails = '';
+    
+    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('Network')) {
+      errorDetails = 'This appears to be a network connectivity issue. Check your internet connection.';
+    } else if (errorMessage.includes('timeout')) {
+      errorDetails = 'The function request timed out. The Edge Function may be overloaded or unresponsive.';
+    } else if (errorMessage.includes('CORS') || errorMessage.includes('Access-Control')) {
+      errorDetails = 'This may be a CORS issue. The Edge Function may not be configured to accept requests from this origin.';
+    }
+    
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : String(error)
+      error: errorMessage,
+      details: errorDetails
     };
   }
 };
@@ -127,7 +148,12 @@ export const retryWithBackoff = async <T>(
       }
       
       retries++;
-      devLogger.info('Dataset Preview API', `Retry attempt ${retries}/${maxRetries} after ${delay}ms`, { error });
+      devLogger.info('Dataset Preview API', `Retry attempt ${retries}/${maxRetries} after ${delay}ms`, { 
+        error,
+        retryCount: retries,
+        maxRetries,
+        delayMs: delay
+      });
       
       // Wait before retry
       await new Promise(resolve => setTimeout(resolve, delay));
