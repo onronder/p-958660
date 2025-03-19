@@ -26,6 +26,7 @@ interface WizardStepContentProps {
   connectionTestResult?: { success: boolean; message: string } | null;
   previewSample?: string | null;
   isTestingConnection?: boolean;
+  retryCount?: number;
   
   // Handlers
   onSourceSelection: (id: string, name: string) => void;
@@ -56,6 +57,7 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
   connectionTestResult,
   previewSample,
   isTestingConnection,
+  retryCount,
   
   // Handlers
   onSourceSelection,
@@ -134,6 +136,7 @@ const WizardStepContent: React.FC<WizardStepContentProps> = ({
           sourceId={selectedSourceId}
           connectionTestResult={connectionTestResult}
           previewSample={previewSample}
+          retryCount={retryCount}
         />
       );
       

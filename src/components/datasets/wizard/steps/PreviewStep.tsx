@@ -1,6 +1,6 @@
 
 import React from "react";
-import DataPreviewStep from "@/components/datasets/wizard/DataPreviewStep";
+import DataPreview from "@/components/datasets/wizard/preview/DataPreview";
 
 interface PreviewStepProps {
   isLoading: boolean;
@@ -29,7 +29,7 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
   retryCount
 }) => {
   return (
-    <DataPreviewStep
+    <DataPreview
       isLoading={isLoading}
       previewData={previewData}
       error={error}
