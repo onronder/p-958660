@@ -41,10 +41,10 @@ const ShopifyApiTester: React.FC = () => {
         </CardHeader>
         
         <CardContent className="space-y-6">
-          <Alert variant="warning" className="bg-amber-50 dark:bg-amber-950/20 border-amber-200">
+          <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200">
             <Info className="h-4 w-4 text-amber-500" />
             <AlertDescription>
-              This is running in demo mode. No actual API calls are being made. Results shown are sample data.
+              This tester will execute queries against your actual Shopify Admin API. Use caution when running write operations.
             </AlertDescription>
           </Alert>
           

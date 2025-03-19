@@ -1,55 +1,21 @@
 
-project_id = "eovyjotxecnkqjylwdnj"
+# A string used as a key when handling Deno cache. Using a different cache_key value will force Deno to redownload the dependencies.
+cache_key = "v1"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage"]
+# An array of additional local paths to include as imports in your functions. These are typically used to share code between functions.
+imports = []
 
-[[api.endpoints]]
-path = "/destinations/*"
-src = "./destinations/index.ts"
+# An array of scripts to run before the functions are executed.
+before_scripts = []
 
-[[api.endpoints]]
-path = "/help/*"
-src = "./help/index.ts"
+[scripts]
+  # A command to run before the function is executed.
+  before = []
+  # A command to run after the function is executed.
+  after = []
 
-[[api.endpoints]]
-path = "/settings/*"
-src = "./settings/index.ts"
-
-[[api.endpoints]]
-path = "/sources/*"
-src = "./sources/index.ts"
-
-[[api.endpoints]]
-path = "/get-analytics-data"
-src = "./get-analytics-data/index.ts"
-
-[[api.endpoints]]
-path = "/dashboard-data"
-src = "./get-dashboard-metrics/index.ts"
-
-[[api.endpoints]]
-path = "/shopify-extract"
-src = "./shopify-extract/index.ts"
-
-[[api.endpoints]]
-path = "/shopify-dependent"
-src = "./shopify-dependent/index.ts"
-
-[[api.endpoints]]
-path = "/pre_recent_orders_dashboard"
-src = "./pre_recent_orders_dashboard/index.ts"
-
-[[api.endpoints]]
-path = "/shopify-private"
-src = "./shopify-private/index.ts"
-
-[[api.endpoints]]
-path = "/cleanup-datasets"
-src = "./cleanup-datasets/index.ts"
-
-[[api.endpoints]]
-path = "/test-shopify-graphql"
-src = "./test-shopify-graphql/index.ts"
+[[headers]]
+for = "/*"
+[headers.values]
+Access-Control-Allow-Origin = "*"
+Access-Control-Allow-Headers = "authorization, x-client-info, apikey, content-type"

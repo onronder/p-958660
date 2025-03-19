@@ -1,16 +1,19 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import { createErrorResponse, createSuccessResponse } from "../shopify-extract/response-utils.ts";
-import { getProductionCorsHeaders } from "../_shared/cors.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    const origin = req.headers.get('origin');
     return new Response(null, {
       status: 204,
-      headers: getProductionCorsHeaders(origin)
+      headers: corsHeaders
     });
   }
 
@@ -22,10 +25,18 @@ serve(async (req) => {
     const requestUrl = new URL(req.url);
     if (requestUrl.searchParams.get('ping') === 'true') {
       console.log("Ping test received");
-      return createSuccessResponse({ 
-        status: "ok", 
-        message: "test-shopify-graphql function is operational" 
-      }, origin);
+      return new Response(
+        JSON.stringify({ 
+          status: "ok", 
+          message: "test-shopify-graphql function is operational" 
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
     }
 
     // Create Supabase client using the service role key (needed to access source credentials)
@@ -38,12 +49,30 @@ serve(async (req) => {
     
     if (!source_id) {
       console.error("Missing source_id in request");
-      return createErrorResponse("Source ID is required", 400, origin);
+      return new Response(
+        JSON.stringify({ error: "Source ID is required" }),
+        { 
+          status: 400, 
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
     }
     
     if (!query) {
       console.error("Missing query in request");
-      return createErrorResponse("GraphQL query is required", 400, origin);
+      return new Response(
+        JSON.stringify({ error: "GraphQL query is required" }),
+        { 
+          status: 400, 
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
     }
     
     console.log(`Processing test query for source: ${source_id}`);
@@ -58,31 +87,65 @@ serve(async (req) => {
     
     if (sourceError || !source) {
       console.error("Error fetching source:", sourceError);
-      return createErrorResponse(
-        `Failed to fetch source details: ${sourceError?.message || "Source not found"}`, 
-        404, 
-        origin
+      return new Response(
+        JSON.stringify({ 
+          error: `Failed to fetch source details: ${sourceError?.message || "Source not found"}` 
+        }),
+        { 
+          status: 404, 
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
       );
     }
     
     if (source.source_type !== 'Shopify') {
       console.error(`Invalid source type: ${source.source_type}, expected Shopify`);
-      return createErrorResponse("Source must be a Shopify source", 400, origin);
+      return new Response(
+        JSON.stringify({ error: "Source must be a Shopify source" }),
+        { 
+          status: 400, 
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
     }
     
     // Extract credentials
     const credentials = source.credentials || {};
-    const shopName = credentials.store_url;
+    const shopName = credentials.store_url || source.url;
     const apiToken = credentials.access_token || credentials.admin_api_token;
     
     if (!shopName) {
       console.error("Missing shop_name in source credentials");
-      return createErrorResponse("Shop name is missing in source credentials", 400, origin);
+      return new Response(
+        JSON.stringify({ error: "Shop name is missing in source credentials" }),
+        { 
+          status: 400, 
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
     }
     
     if (!apiToken) {
       console.error("Missing API token in source credentials");
-      return createErrorResponse("API token is missing in source credentials", 400, origin);
+      return new Response(
+        JSON.stringify({ error: "API token is missing in source credentials" }),
+        { 
+          status: 400, 
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
     }
     
     // Ensure shop name is properly formatted
@@ -120,11 +183,20 @@ serve(async (req) => {
         errorDetails = errorText;
       }
       
-      return createErrorResponse({
-        message: 'Shopify API request failed',
-        details: errorDetails,
-        status: shopifyResponse.status
-      }, shopifyResponse.status, origin);
+      return new Response(
+        JSON.stringify({
+          error: 'Shopify API request failed',
+          details: errorDetails,
+          status: shopifyResponse.status
+        }),
+        { 
+          status: shopifyResponse.status, 
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
     }
     
     const responseData = await shopifyResponse.json();
@@ -132,25 +204,52 @@ serve(async (req) => {
     // Handle GraphQL errors
     if (responseData.errors) {
       console.error('Shopify GraphQL errors:', responseData.errors);
-      return createErrorResponse({
-        message: 'GraphQL query execution failed',
-        errors: responseData.errors
-      }, 400, origin);
+      return new Response(
+        JSON.stringify({
+          error: 'GraphQL query execution failed',
+          errors: responseData.errors
+        }),
+        { 
+          status: 400, 
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
     }
     
     // Return success response
-    return createSuccessResponse({
-      data: responseData,
-      meta: {
-        source_id: source_id,
-        shop_name: formattedShopName
+    return new Response(
+      JSON.stringify({
+        data: responseData,
+        meta: {
+          source_id: source_id,
+          shop_name: formattedShopName
+        }
+      }),
+      { 
+        status: 200, 
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders
+        }
       }
-    }, origin);
+    );
   } catch (error) {
     console.error('Exception in test-shopify-graphql:', error);
-    return createErrorResponse({
-      message: `Failed to execute Shopify GraphQL query: ${error.message}`,
-      stack: error.stack
-    }, 500, req.headers.get('origin'));
+    return new Response(
+      JSON.stringify({
+        error: `Failed to execute Shopify GraphQL query: ${error.message}`,
+        stack: error.stack
+      }),
+      { 
+        status: 500, 
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders
+        }
+      }
+    );
   }
 });

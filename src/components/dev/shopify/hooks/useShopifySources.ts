@@ -2,18 +2,12 @@
 import { useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
 import { devLogger } from '@/utils/logger';
+import { supabase } from "@/integrations/supabase/client";
 
 export interface SourceOption {
   id: string;
   name: string;
 }
-
-// Mock data for sources
-const MOCK_SOURCES: SourceOption[] = [
-  { id: "demo-source-1", name: "Demo Store 1" },
-  { id: "demo-source-2", name: "Demo Store 2" },
-  { id: "demo-source-3", name: "Demo Store 3" }
-];
 
 export const useShopifySources = () => {
   const [sources, setSources] = useState<SourceOption[]>([]);
@@ -23,23 +17,40 @@ export const useShopifySources = () => {
   const loadSources = async () => {
     try {
       setIsLoadingSources(true);
-      devLogger.info('test_shopify_api', 'Loading Shopify sources for testing (DEMO MODE)');
+      devLogger.info('shopify_api', 'Loading Shopify sources');
       
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Fetch sources from the database
+      const { data, error } = await supabase
+        .from('sources')
+        .select('id, name')
+        .eq('source_type', 'Shopify')
+        .eq('is_deleted', false);
       
-      // Set mock sources
-      setSources(MOCK_SOURCES);
-      devLogger.debug('test_shopify_api', 'Loaded mock sources', { count: MOCK_SOURCES.length });
+      if (error) {
+        throw error;
+      }
       
-      if (MOCK_SOURCES.length > 0 && !selectedSourceId) {
-        setSelectedSourceId(MOCK_SOURCES[0].id);
+      if (data && data.length > 0) {
+        const shopifySources = data.map(source => ({
+          id: source.id,
+          name: source.name
+        }));
+        
+        setSources(shopifySources);
+        devLogger.debug('shopify_api', 'Loaded sources', { count: shopifySources.length });
+        
+        if (shopifySources.length > 0 && !selectedSourceId) {
+          setSelectedSourceId(shopifySources[0].id);
+        }
+      } else {
+        setSources([]);
+        devLogger.debug('shopify_api', 'No Shopify sources found');
       }
     } catch (error) {
-      devLogger.error('test_shopify_api', 'Error loading sources', error);
+      devLogger.error('shopify_api', 'Error loading sources', error);
       toast({
         title: 'Error',
-        description: 'Failed to load Shopify sources (Demo Mode)',
+        description: 'Failed to load Shopify sources. Please try again.',
         variant: 'destructive',
       });
     } finally {
