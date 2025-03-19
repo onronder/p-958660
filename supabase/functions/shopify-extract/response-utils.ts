@@ -2,31 +2,19 @@
 import { getProductionCorsHeaders } from "../_shared/cors.ts";
 
 /**
- * Helper to create standardized error responses
+ * Create a standardized error response
  */
-export function createErrorResponse(message: string, status: number, requestOrigin: string | null) {
-  const responseCorsHeaders = getProductionCorsHeaders(requestOrigin);
+export function createErrorResponse(message: string, status: number = 500, requestOrigin: string | null = null) {
+  const corsHeaders = getProductionCorsHeaders(requestOrigin);
   
   return new Response(
     JSON.stringify({ error: message }),
     { 
       status, 
-      headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-    }
-  );
-}
-
-/**
- * Helper to create standardized success responses
- */
-export function createSuccessResponse(data: any, requestOrigin: string | null) {
-  const responseCorsHeaders = getProductionCorsHeaders(requestOrigin);
-  
-  return new Response(
-    JSON.stringify(data),
-    { 
-      status: 200, 
-      headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+      headers: { 
+        "Content-Type": "application/json",
+        ...corsHeaders
+      } 
     }
   );
 }
