@@ -2,11 +2,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Play, Beaker } from "lucide-react";
+import { Loader2, Play, Beaker, Info } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import SourceSelector from './shopify/SourceSelector';
 import QueryEditor from './shopify/QueryEditor';
 import TestResults from './shopify/TestResults';
-import { useShopifyTester, TEST_QUERY_SIMPLE, TEST_QUERY_PRODUCTS } from './shopify/hooks/useShopifyTester';
+import { useShopifyTester } from './shopify/hooks/useShopifyTester';
 import { getQueryTemplates } from './shopify/constants/queryTemplates';
 
 const ShopifyApiTester: React.FC = () => {
@@ -40,6 +41,13 @@ const ShopifyApiTester: React.FC = () => {
         </CardHeader>
         
         <CardContent className="space-y-6">
+          <Alert variant="warning" className="bg-amber-50 dark:bg-amber-950/20 border-amber-200">
+            <Info className="h-4 w-4 text-amber-500" />
+            <AlertDescription>
+              This is running in demo mode. No actual API calls are being made. Results shown are sample data.
+            </AlertDescription>
+          </Alert>
+          
           <div className="space-y-4">
             <SourceSelector
               sources={sources}
