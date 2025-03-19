@@ -1,30 +1,28 @@
 
-import { useState } from 'react';
-import { toast } from '@/hooks/use-toast';
 import { devLogger } from '@/utils/logger';
 import { useConnectionTest } from './useConnectionTest';
 import { previewActions } from './previewActions';
-import { PreviewError } from './types';
+import { handlePreviewError } from './previewErrorHandling';
+import { usePreviewState } from './previewState';
+import { PreviewGenerationOptions } from './types';
 
 /**
  * Hook for handling dataset preview functionality
  */
 export const useDatasetPreview = () => {
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-  const [previewData, setPreviewData] = useState<any[]>([]);
-  const [previewError, setPreviewError] = useState<string | null>(null);
-  const [previewSample, setPreviewSample] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  // Use the preview state management hook
+  const previewState = usePreviewState();
   
   // Use the connection test hook
   const { 
-    connectionTestResult, 
-    setConnectionTestResult, 
     testConnection,
     isTestingConnection,
     clearConnectionTestResult
   } = useConnectionTest();
 
+  /**
+   * Generate a preview based on dataset options
+   */
   const generatePreview = async (
     datasetType: string,
     sourceId: string,
@@ -32,10 +30,16 @@ export const useDatasetPreview = () => {
     selectedDependentTemplate?: string,
     customQuery?: string
   ) => {
-    setIsPreviewLoading(true);
-    setPreviewError(null);
-    setPreviewData([]);
-    setPreviewSample(null);
+    previewState.setIsPreviewLoading(true);
+    previewState.resetPreviewState();
+    
+    const options: PreviewGenerationOptions = {
+      datasetType,
+      sourceId,
+      selectedTemplate,
+      selectedDependentTemplate,
+      customQuery
+    };
     
     devLogger.info('Dataset Preview', 'Generating preview', {
       datasetType,
@@ -47,68 +51,74 @@ export const useDatasetPreview = () => {
     
     try {
       // Test the connection first
-      devLogger.info('Dataset Preview', 'Testing connection to source', { sourceId });
-      const testResult = await testConnection(sourceId);
+      await testAndValidateConnection(sourceId);
       
-      // Store the connection test result
-      if (setConnectionTestResult) {
-        setConnectionTestResult(testResult);
-      }
+      // Generate the preview
+      const result = await generatePreviewData(options);
       
-      if (!testResult.success) {
-        setIsPreviewLoading(false);
-        setPreviewError('Connection to the data source failed. Please check your credentials and try again.');
-        devLogger.error('Dataset Preview', 'Connection test failed', null, { sourceId, testResult });
-        return;
-      }
-
-      try {
-        // Call the appropriate preview actions based on dataset type
-        const result = await previewActions.generatePreviewByType(
-          datasetType, 
-          sourceId, 
-          selectedTemplate, 
-          selectedDependentTemplate, 
-          customQuery
-        );
-          
-        if (result.error) {
-          throw new Error(result.error);
-        }
-        
-        setPreviewData(result.data || []);
-        setPreviewSample(result.sample || null);
-        
-        devLogger.info('Dataset Preview', 'Preview generated successfully', { 
-          recordCount: result.data?.length || 0
-        });
-      } catch (error) {
-        throw error;
-      }
-    } catch (error) {
-      const errorHandler = new PreviewError(error);
-      const { errorMessage, shouldIncrementRetry } = errorHandler.getFormattedError(retryCount);
+      // Update state with the result
+      previewState.setPreviewData(result.data || []);
+      previewState.setPreviewSample(result.sample || null);
       
-      console.error('Error generating preview:', error);
-      setPreviewError(errorMessage);
-      
-      devLogger.error('Dataset Preview', 'Preview generation failed', error);
-      
-      toast({
-        title: 'Preview Generation Failed',
-        description: errorMessage,
-        variant: 'destructive',
+      devLogger.info('Dataset Preview', 'Preview generated successfully', { 
+        recordCount: result.data?.length || 0
       });
-      
-      if (shouldIncrementRetry) {
-        setRetryCount(prev => prev + 1);
-      }
+    } catch (error) {
+      handlePreviewError(
+        error, 
+        previewState.retryCount, 
+        previewState.setPreviewError,
+        previewState.setRetryCount
+      );
     } finally {
-      setIsPreviewLoading(false);
+      previewState.setIsPreviewLoading(false);
     }
   };
 
-  // Function to retry the preview generation
+  /**
+   * Test and validate connection to the source
+   */
+  const testAndValidateConnection = async (sourceId: string) => {
+    devLogger.info('Dataset Preview', 'Testing connection to source', { sourceId });
+    const testResult = await testConnection(sourceId);
+    
+    // Store the connection test result
+    previewState.setConnectionTestResult(testResult);
+    
+    if (!testResult.success) {
+      throw new Error('Connection to the data source failed. Please check your credentials and try again.');
+    }
+    
+    return testResult;
+  };
+
+  /**
+   * Generate preview data based on options
+   */
+  const generatePreviewData = async (options: PreviewGenerationOptions) => {
+    try {
+      // Call the appropriate preview actions based on dataset type
+      const result = await previewActions.generatePreviewByType(
+        options.datasetType, 
+        options.sourceId, 
+        options.selectedTemplate, 
+        options.selectedDependentTemplate, 
+        options.customQuery
+      );
+        
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  /**
+   * Function to retry the preview generation
+   */
   const retryPreviewGeneration = (
     datasetType: string,
     sourceId: string,
@@ -117,21 +127,21 @@ export const useDatasetPreview = () => {
     customQuery?: string
   ) => {
     // Reset retry count on manual retry
-    setRetryCount(0);
+    previewState.resetRetryCount();
     return generatePreview(datasetType, sourceId, selectedTemplate, selectedDependentTemplate, customQuery);
   };
 
   return {
-    isPreviewLoading,
-    previewData,
-    previewError,
-    connectionTestResult,
-    previewSample,
+    isPreviewLoading: previewState.isPreviewLoading,
+    previewData: previewState.previewData,
+    previewError: previewState.previewError,
+    connectionTestResult: previewState.connectionTestResult,
+    previewSample: previewState.previewSample,
     generatePreview,
     retryPreviewGeneration,
     testConnection,
     isTestingConnection,
     clearConnectionTestResult,
-    retryCount
+    retryCount: previewState.retryCount
   };
 };
