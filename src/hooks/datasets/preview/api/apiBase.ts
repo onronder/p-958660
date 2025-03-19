@@ -35,12 +35,16 @@ export const logApiRequest = (endpoint: string, details: any) => {
  * Log API response details
  */
 export const logApiResponse = (endpoint: string, response: any) => {
-  devLogger.debug(`Dataset Preview API`, `${endpoint} response`, {
+  // Create a safe object with properties we know exist
+  const responseInfo = {
     hasData: !!response.data,
     hasError: !!response.error,
-    status: response.status,
-    statusText: response.statusText
-  });
+    // Safely access status, which might not exist on FunctionsResponseFailure
+    status: response.status ?? 'unknown',
+    statusText: response.statusText ?? 'unknown'
+  };
+  
+  devLogger.debug(`Dataset Preview API`, `${endpoint} response`, responseInfo);
 };
 
 /**
@@ -85,10 +89,10 @@ export const testEdgeFunctionConnectivity = async (functionName: string) => {
       };
     }
     
-    // Log detailed response for debugging
+    // Log detailed response for debugging, safely accessing properties
     devLogger.debug('Dataset Preview API', 'Edge Function connectivity test response', {
       functionName,
-      status: response.status,
+      status: response.status ?? 'unknown',
       hasData: !!response.data,
       dataContent: response.data
     });

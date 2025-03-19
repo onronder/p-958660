@@ -56,12 +56,12 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
         }
       });
       
-      // Log the response status and whether it contains data/error
+      // Log the response, safely accessing properties
       logApiResponse('Shopify-extract custom query', response);
       
-      // Log more detailed info for debugging
+      // Log more detailed info for debugging, safely accessing status property
       devLogger.debug('Dataset Preview API', 'Response details', {
-        status: response.status,
+        status: response.status ?? 'unknown',
         hasData: !!response.data,
         hasError: !!response.error,
         errorMessage: response.error?.message,
