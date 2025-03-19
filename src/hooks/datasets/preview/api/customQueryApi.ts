@@ -6,7 +6,8 @@ import {
   logApiResponse, 
   withTimeout, 
   handleApiResponse,
-  retryWithBackoff
+  retryWithBackoff,
+  testEdgeFunctionConnectivity
 } from './apiBase';
 
 /**
@@ -24,6 +25,15 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
       source_id: sourceId,
       custom_query: customQuery
     });
+    
+    // Test connectivity to the edge function first
+    const connectivityTest = await testEdgeFunctionConnectivity("shopify-extract");
+    if (!connectivityTest.success) {
+      devLogger.error('Dataset Preview API', 'Edge Function connectivity test failed', connectivityTest.error);
+      return { 
+        error: `Edge Function connectivity error: ${connectivityTest.error}. Please check your network connection or try again later.` 
+      };
+    }
     
     // Create a function to execute the request
     const executeRequest = async () => {
@@ -46,7 +56,9 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
     // Execute with retry and timeout
     const response = await retryWithBackoff(
       () => withTimeout(executeRequest(), 45000), // 45 second timeout with retries
-      2 // Maximum 2 retries
+      3, // Maximum 3 retries
+      1000, // Start with 1 second delay 
+      2 // Exponential factor
     );
     
     return handleApiResponse(response, 'Custom query');
@@ -57,7 +69,7 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
     let errorMessage = error.message || 'Failed to execute custom query';
     if (errorMessage.includes('timeout')) {
       errorMessage = 'The query took too long to execute. Please try again or simplify your query.';
-    } else if (errorMessage.includes('Edge Function')) {
+    } else if (errorMessage.includes('Edge Function') || errorMessage.includes('Failed to fetch')) {
       errorMessage = 'Failed to connect to the Edge Function. Please check your network connection and try again.';
     }
     

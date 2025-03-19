@@ -63,6 +63,40 @@ export const handleApiResponse = (response: any, endpoint: string) => {
 };
 
 /**
+ * Test connectivity to an Edge Function
+ */
+export const testEdgeFunctionConnectivity = async (functionName: string) => {
+  try {
+    devLogger.info('Dataset Preview API', `Testing connectivity to Edge Function: ${functionName}`);
+    
+    // Use the Supabase client to ping the function with a minimal payload
+    const response = await withTimeout(
+      supabase.functions.invoke(functionName, {
+        method: "POST",
+        body: { ping: true }
+      }),
+      5000 // 5 second timeout for connectivity test
+    );
+    
+    if (response.error) {
+      return { 
+        success: false, 
+        error: `Error connecting to ${functionName}: ${response.error.message || 'Unknown error'}`
+      };
+    }
+    
+    return { success: true };
+  } catch (error) {
+    devLogger.error('Dataset Preview API', `Edge Function connectivity test failed: ${functionName}`, error);
+    
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+};
+
+/**
  * Retry a function with exponential backoff
  */
 export const retryWithBackoff = async <T>(
