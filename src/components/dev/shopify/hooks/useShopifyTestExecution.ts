@@ -1,38 +1,10 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { devLogger } from '@/utils/logger';
 
-export const TEST_QUERY_SIMPLE = `{
-  shop {
-    name
-    email
-    url
-  }
-}`;
-
-export const TEST_QUERY_PRODUCTS = `{
-  products(first: 5) {
-    edges {
-      node {
-        id
-        title
-        description
-        handle
-        createdAt
-        updatedAt
-      }
-    }
-  }
-}`;
-
-interface SourceOption {
-  id: string;
-  name: string;
-}
-
-interface TestOutput {
+export interface TestOutput {
   status?: string;
   data?: any;
   error?: any;
@@ -40,48 +12,11 @@ interface TestOutput {
   timestamp?: string;
 }
 
-export const useShopifyTester = () => {
-  const [sources, setSources] = useState<SourceOption[]>([]);
-  const [selectedSourceId, setSelectedSourceId] = useState<string>('');
-  const [isLoadingSources, setIsLoadingSources] = useState(false);
-  const [query, setQuery] = useState(TEST_QUERY_SIMPLE);
+export const useShopifyTestExecution = () => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [testOutput, setTestOutput] = useState<TestOutput | null>(null);
 
-  const loadSources = async () => {
-    try {
-      setIsLoadingSources(true);
-      devLogger.info('test_shopify_api', 'Loading Shopify sources for testing');
-      
-      const { data, error } = await supabase
-        .from('sources')
-        .select('id, name')
-        .eq('source_type', 'Shopify')
-        .eq('is_deleted', false);
-        
-      if (error) {
-        throw error;
-      }
-      
-      setSources(data as SourceOption[]);
-      devLogger.debug('test_shopify_api', 'Loaded sources', { count: data.length });
-      
-      if (data.length > 0 && !selectedSourceId) {
-        setSelectedSourceId(data[0].id);
-      }
-    } catch (error) {
-      devLogger.error('test_shopify_api', 'Error loading sources', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load Shopify sources',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoadingSources(false);
-    }
-  };
-
-  const executeDirectQuery = async () => {
+  const executeDirectQuery = async (selectedSourceId: string, query: string) => {
     if (!selectedSourceId) {
       toast({
         title: 'No Source Selected',
@@ -125,7 +60,7 @@ export const useShopifyTester = () => {
       
       // Log the response - using optional chaining to safely access status
       devLogger.debug('test_shopify_api', 'Test query response', {
-        // Fix: Use type-safe access to the status property with a default value
+        // Use type-safe access to the status property with a default value
         status: 'status' in response ? response.status : 'unknown',
         hasData: !!response.data,
         hasError: !!response.error
@@ -190,20 +125,9 @@ export const useShopifyTester = () => {
     }
   };
 
-  useEffect(() => {
-    loadSources();
-  }, []);
-
   return {
-    sources,
-    selectedSourceId,
-    setSelectedSourceId,
-    isLoadingSources,
-    query,
-    setQuery,
     isExecuting,
     testOutput,
-    loadSources,
     executeDirectQuery,
     downloadResults
   };

@@ -6,7 +6,8 @@ import { Loader2, Play, Beaker } from "lucide-react";
 import SourceSelector from './shopify/SourceSelector';
 import QueryEditor from './shopify/QueryEditor';
 import TestResults from './shopify/TestResults';
-import { useShopifyTester, TEST_QUERY_SIMPLE, TEST_QUERY_PRODUCTS } from './shopify/useShopifyTester';
+import { useShopifyTester, TEST_QUERY_SIMPLE, TEST_QUERY_PRODUCTS } from './shopify/hooks/useShopifyTester';
+import { getQueryTemplates } from './shopify/constants/queryTemplates';
 
 const ShopifyApiTester: React.FC = () => {
   const {
@@ -23,10 +24,7 @@ const ShopifyApiTester: React.FC = () => {
     downloadResults
   } = useShopifyTester();
 
-  const queryTemplates = [
-    { name: 'Shop Info', query: TEST_QUERY_SIMPLE },
-    { name: 'Products', query: TEST_QUERY_PRODUCTS }
-  ];
+  const queryTemplates = getQueryTemplates();
 
   return (
     <div className="space-y-6">
