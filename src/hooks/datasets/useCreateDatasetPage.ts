@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { useSources } from '@/hooks/useSources';
 import { useCreateDatasetState } from '@/hooks/datasets/useCreateDatasetState';
-import { useDatasetPreview } from '@/hooks/datasets/useDatasetPreview';
+import { useDatasetPreview } from '@/hooks/datasets/preview/useDatasetPreview';
 import { useDatasetCreation } from '@/hooks/datasets/useDatasetCreation';
 import { devLogger } from '@/utils/DevLogger';
 
