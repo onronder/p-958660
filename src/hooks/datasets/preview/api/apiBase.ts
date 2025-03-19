@@ -39,9 +39,9 @@ export const logApiResponse = (endpoint: string, response: any) => {
   const responseInfo = {
     hasData: !!response.data,
     hasError: !!response.error,
-    // Safely access status, which might not exist on FunctionsResponseFailure
-    status: response.status ?? 'unknown',
-    statusText: response.statusText ?? 'unknown'
+    // Fix: Use safer property access with 'in' operator to check if property exists
+    status: 'status' in response ? response.status : 'unknown',
+    statusText: 'statusText' in response ? response.statusText : 'unknown'
   };
   
   devLogger.debug(`Dataset Preview API`, `${endpoint} response`, responseInfo);
@@ -92,7 +92,8 @@ export const testEdgeFunctionConnectivity = async (functionName: string) => {
     // Log detailed response for debugging, safely accessing properties
     devLogger.debug('Dataset Preview API', 'Edge Function connectivity test response', {
       functionName,
-      status: response.status ?? 'unknown',
+      // Fix: Use safer property access to handle potentially missing status
+      status: 'status' in response ? response.status : 'unknown',
       hasData: !!response.data,
       dataContent: response.data
     });

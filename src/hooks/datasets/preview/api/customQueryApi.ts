@@ -61,7 +61,8 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
       
       // Log more detailed info for debugging, safely accessing status property
       devLogger.debug('Dataset Preview API', 'Response details', {
-        status: response.status ?? 'unknown',
+        // Fix: Use safer property access with 'in' operator
+        status: 'status' in response ? response.status : 'unknown',
         hasData: !!response.data,
         hasError: !!response.error,
         errorMessage: response.error?.message,

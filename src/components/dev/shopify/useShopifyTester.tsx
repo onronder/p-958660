@@ -123,9 +123,10 @@ export const useShopifyTester = () => {
       const endTime = performance.now();
       const executionTime = (endTime - startTime).toFixed(2);
       
-      // Log the response
+      // Log the response - using optional chaining to safely access status
       devLogger.debug('test_shopify_api', 'Test query response', {
-        status: response.status ?? 'unknown',
+        // Fix: Use type-safe access to the status property with a default value
+        status: 'status' in response ? response.status : 'unknown',
         hasData: !!response.data,
         hasError: !!response.error
       });
