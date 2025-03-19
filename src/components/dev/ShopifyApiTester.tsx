@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Play, RefreshCw, DownloadCloud } from "lucide-react";
+import { Loader2, Play, RefreshCw, DownloadCloud, Beaker } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { devLogger } from '@/utils/logger';
 
@@ -131,7 +130,7 @@ const ShopifyApiTester: React.FC = () => {
       
       // Log the response
       devLogger.debug('test_shopify_api', 'Test query response', {
-        status: response.status,
+        status: response.status ?? 'unknown',
         hasData: !!response.data,
         hasError: !!response.error
       });
@@ -172,12 +171,10 @@ const ShopifyApiTester: React.FC = () => {
     setQuery(template);
   };
   
-  // Load sources when component mounts
   React.useEffect(() => {
     loadSources();
   }, []);
   
-  // Format JSON output with syntax highlighting
   const formatOutput = (data: any) => {
     try {
       return JSON.stringify(data, null, 2);
