@@ -1,13 +1,25 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import { createErrorResponse, createSuccessResponse, handleCorsPreflightRequest } from "../shopify-extract/response-utils.ts";
+import { createErrorResponse, createSuccessResponse } from "../shopify-extract/response-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Handle CORS preflight requests
+function handleCorsPreflightRequest(origin: string | null) {
+  const headers = { ...corsHeaders };
+  if (origin) {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
+  return new Response(null, {
+    status: 204,
+    headers,
+  });
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -20,8 +32,8 @@ serve(async (req) => {
     const origin = req.headers.get('origin');
     
     // For ping test to check if the function is alive
-    const url = new URL(req.url);
-    if (url.searchParams.get('ping') === 'true') {
+    const requestUrl = new URL(req.url);
+    if (requestUrl.searchParams.get('ping') === 'true') {
       console.log("Ping test received");
       return createSuccessResponse({ 
         status: "ok", 
@@ -92,12 +104,12 @@ serve(async (req) => {
       : `${shopName}.myshopify.com`;
       
     const apiVersion = '2023-10'; // Could be made configurable if needed
-    const url = `https://${formattedShopName}/admin/api/${apiVersion}/graphql.json`;
+    const shopifyUrl = `https://${formattedShopName}/admin/api/${apiVersion}/graphql.json`;
     
-    console.log(`Executing Shopify GraphQL query to: ${url}`);
+    console.log(`Executing Shopify GraphQL query to: ${shopifyUrl}`);
     
     // Make the request to Shopify GraphQL API
-    const shopifyResponse = await fetch(url, {
+    const shopifyResponse = await fetch(shopifyUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

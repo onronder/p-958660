@@ -49,3 +49,7 @@ src = "./shopify-private/index.ts"
 [[api.endpoints]]
 path = "/cleanup-datasets"
 src = "./cleanup-datasets/index.ts"
+
+[[api.endpoints]]
+path = "/test-shopify-graphql"
+src = "./test-shopify-graphql/index.ts"
