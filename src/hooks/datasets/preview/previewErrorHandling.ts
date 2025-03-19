@@ -19,12 +19,19 @@ export class PreviewError {
     let errorMessage = this.error instanceof Error ? this.error.message : 'Failed to generate preview';
     let shouldIncrementRetry = false;
     
-    // Check if the error relates to Edge Function
+    // Check if the error relates to Edge Function or network connectivity
     if (errorMessage.includes('Failed to fetch') || 
         errorMessage.includes('network') || 
         errorMessage.includes('ECONNREFUSED') ||
-        errorMessage.includes('Failed to send a request to the Edge Function')) {
-      errorMessage = 'Failed to connect to the Edge Function. This could be due to network connectivity issues or the function being temporarily unavailable. Please check your network connection and try again.';
+        errorMessage.includes('Edge Function') ||
+        errorMessage.includes('timeout')) {
+      
+      // Format the message based on the specific error type
+      if (errorMessage.includes('timeout')) {
+        errorMessage = 'The request timed out. The preview data might be too large or the connection is slow.';
+      } else {
+        errorMessage = 'Failed to connect to the Edge Function. This could be due to network connectivity issues or the function being temporarily unavailable. Please check your network connection and try again.';
+      }
       
       // Mark for retry count increment
       shouldIncrementRetry = true;
@@ -35,6 +42,12 @@ export class PreviewError {
       } else {
         errorMessage += ' The Edge Function might be experiencing issues. Please try again later or contact support if the problem persists.';
       }
+    } else if (errorMessage.includes('GraphQL') || errorMessage.includes('syntax')) {
+      // Handle GraphQL syntax errors
+      errorMessage = `Invalid GraphQL query: ${errorMessage}. Please check your query syntax.`;
+    } else if (errorMessage.includes('auth') || errorMessage.includes('credentials') || errorMessage.includes('Access')) {
+      // Handle authentication errors
+      errorMessage = `Authentication error: ${errorMessage}. Please verify your credentials.`;
     }
     
     return { errorMessage, shouldIncrementRetry };
