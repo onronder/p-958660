@@ -125,7 +125,7 @@ export const useShopifyTester = () => {
       
       // Log the response
       devLogger.debug('test_shopify_api', 'Test query response', {
-        status: response.status || 'unknown',
+        status: response.status ?? 'unknown',
         hasData: !!response.data,
         hasError: !!response.error
       });
