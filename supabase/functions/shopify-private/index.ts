@@ -1,6 +1,16 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { getProductionCorsHeaders } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: getProductionCorsHeaders(req.headers.get('origin'))
+    });
+  }
+
   try {
     const { action, source_id, store_url, client_id, client_secret, access_token, api_key, api_token, user_id } = await req.json();
     
@@ -36,7 +46,13 @@ Deno.serve(async (req) => {
               errorType: 'database_error',
               details: error 
             }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
+            { 
+              status: 400, 
+              headers: { 
+                'Content-Type': 'application/json',
+                ...getProductionCorsHeaders(req.headers.get('origin'))
+              } 
+            }
           );
         }
         
@@ -61,7 +77,13 @@ Deno.serve(async (req) => {
             error: 'Store URL is required',
             errorType: 'missing_parameter' 
           }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+          { 
+            status: 400, 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...getProductionCorsHeaders(req.headers.get('origin'))
+            } 
+          }
         );
       }
       
@@ -75,7 +97,13 @@ Deno.serve(async (req) => {
             error: 'Either Client ID and Client Secret OR Access Token is required',
             errorType: 'missing_parameter' 
           }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+          { 
+            status: 400, 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...getProductionCorsHeaders(req.headers.get('origin'))
+            } 
+          }
         );
       }
       
@@ -121,7 +149,13 @@ Deno.serve(async (req) => {
               errorType,
               details: errorText
             }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
+            { 
+              status: 400, 
+              headers: { 
+                'Content-Type': 'application/json',
+                ...getProductionCorsHeaders(req.headers.get('origin'))
+              } 
+            }
           );
         }
         
@@ -152,7 +186,13 @@ Deno.serve(async (req) => {
             shop: shopData.shop,
             message: 'Successfully connected to Shopify'
           }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
+          { 
+            status: 200, 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...getProductionCorsHeaders(req.headers.get('origin'))
+            } 
+          }
         );
       } catch (error) {
         console.error('Error testing Shopify connection:', error);
@@ -163,7 +203,13 @@ Deno.serve(async (req) => {
             errorType: 'network_error',
             details: error.message
           }),
-          { status: 500, headers: { 'Content-Type': 'application/json' } }
+          { 
+            status: 500, 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...getProductionCorsHeaders(req.headers.get('origin'))
+            } 
+          }
         );
       }
     } 
@@ -173,14 +219,26 @@ Deno.serve(async (req) => {
     // If no action matched
     return new Response(
       JSON.stringify({ error: 'Invalid action' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
+      { 
+        status: 400, 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getProductionCorsHeaders(req.headers.get('origin'))
+        } 
+      }
     );
   } catch (error) {
     console.error('Error in Shopify Private function:', error);
     
     return new Response(
       JSON.stringify({ error: 'Internal server error', details: error.message }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { 
+        status: 500, 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getProductionCorsHeaders(req.headers.get('origin'))
+        } 
+      }
     );
   }
 });
