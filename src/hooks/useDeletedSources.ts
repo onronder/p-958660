@@ -43,8 +43,11 @@ export const useDeletedSources = () => {
         }
         
         // Make sure the display shows the source status correctly
-        const formattedSources = data?.map(source => ({
+        // Convert the raw data to the proper Source type with correctly typed credentials
+        const formattedSources: Source[] = data?.map(source => ({
           ...source,
+          // Ensure credentials is a proper Record<string, any> instead of Json
+          credentials: source.credentials as Record<string, any> || {},
           status: "Deleted" as "Deleted", // Display as deleted even if actual status is "Inactive"
         })) || [];
         

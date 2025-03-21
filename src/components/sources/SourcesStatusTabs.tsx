@@ -14,10 +14,12 @@ interface SourcesStatusTabsProps {
   shopifyCredentials: any[];
   onTestConnection: (sourceId: string) => void;
   onDeleteSource: (sourceId: string) => void;
-  onRestoreSource: (sourceId: string) => void;
+  onRestoreSource: (sourceId: string) => Promise<void>;
   onEditCredential: (credential: any) => void;
   onRefreshCredentials: () => void;
   onAddSource: () => void;
+  error?: Error | null;
+  onRetry?: () => void;
 }
 
 const SourcesStatusTabs: React.FC<SourcesStatusTabsProps> = ({
@@ -32,7 +34,9 @@ const SourcesStatusTabs: React.FC<SourcesStatusTabsProps> = ({
   onRestoreSource,
   onEditCredential,
   onRefreshCredentials,
-  onAddSource
+  onAddSource,
+  error,
+  onRetry
 }) => {
   return (
     <Tabs defaultValue="active" className="w-full">
@@ -67,6 +71,8 @@ const SourcesStatusTabs: React.FC<SourcesStatusTabsProps> = ({
           isLoading={isLoading}
           isRestoring={isRestoring}
           onRestoreSource={onRestoreSource}
+          error={error}
+          onRetry={onRetry}
         />
       </TabsContent>
     </Tabs>
