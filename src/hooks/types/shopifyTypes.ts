@@ -5,6 +5,9 @@ export interface ShopifyCredential {
   client_id: string;
   client_secret: string;
   access_token: string;
+  // Support for legacy fields
+  api_key?: string;
+  api_token?: string;
   last_connection_status: boolean | null;
   last_connection_time: string | null;
   created_at: string;

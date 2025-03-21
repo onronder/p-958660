@@ -12,6 +12,8 @@ export interface SourceOption {
     client_id?: string;
     client_secret?: string;
     access_token?: string;
+    api_key?: string;
+    api_token?: string;
   };
 }
 
@@ -48,7 +50,10 @@ export const useShopifySources = () => {
               store_name: creds.store_name || '',
               client_id: creds.client_id || '',
               client_secret: creds.client_secret || '',
-              access_token: creds.access_token || ''
+              access_token: creds.access_token || '',
+              // Support for legacy credential fields
+              api_key: creds.api_key || '',
+              api_token: creds.api_token || ''
             }
           };
         });

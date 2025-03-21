@@ -50,6 +50,7 @@ export const useShopifyCredentialsList = () => {
         .select("*")
         .eq("user_id", user.id)
         .eq("source_type", "Shopify")
+        .eq("is_deleted", false)
         .order("created_at", { ascending: false });
       
       if (fetchError) {
@@ -68,6 +69,9 @@ export const useShopifyCredentialsList = () => {
           client_id: creds.client_id || '',
           client_secret: creds.client_secret || '',
           access_token: creds.access_token || '',
+          // Include legacy fields for backward compatibility
+          api_key: creds.api_key || '',
+          api_token: creds.api_token || '',
           last_connection_status: creds.last_connection_status || null,
           last_connection_time: creds.last_connection_time || null,
           created_at: source.created_at
