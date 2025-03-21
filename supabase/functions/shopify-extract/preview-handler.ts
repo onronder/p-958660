@@ -62,39 +62,54 @@ export async function handlePreviewRequest(requestData, supabase, corsHeaders) {
       .from("shopify_credentials")
       .select("*")
       .eq("id", credentialId)
-      .single();
+      .maybeSingle(); // Use maybeSingle instead of single to handle cases where no record is found
     
-    if (credentialsError || !shopifyCredentials) {
+    if (credentialsError) {
       console.error("Credentials error:", credentialsError);
       return createErrorResponse({
-        message: "Shopify credentials not found",
+        message: "Error fetching Shopify credentials",
         details: credentialsError
-      }, 404, null, 'credentials_not_found');
+      }, 500, null, 'credentials_fetch_error');
+    }
+    
+    // If no credentials found in the shopify_credentials table, 
+    // use the credentials directly from the source
+    let storeCredentials = shopifyCredentials;
+    
+    if (!storeCredentials) {
+      console.log("No record found in shopify_credentials table, using credentials from source");
+      // Use the credentials directly from the source
+      storeCredentials = {
+        store_name: source.url || source.credentials.store_name,
+        api_token: source.credentials.api_token || source.credentials.access_token,
+        api_key: source.credentials.api_key || source.credentials.client_id,
+        id: source.id
+      };
     }
     
     // Validate required credentials
-    if (!shopifyCredentials.store_name || !shopifyCredentials.api_token) {
+    if (!storeCredentials.store_name || (!storeCredentials.api_token && !source.credentials.access_token)) {
       console.error("Missing required Shopify credentials:", {
-        hasStoreName: !!shopifyCredentials.store_name,
-        hasApiToken: !!shopifyCredentials.api_token
+        hasStoreName: !!storeCredentials.store_name,
+        hasApiToken: !!(storeCredentials.api_token || source.credentials.access_token)
       });
       
       return createErrorResponse({
         message: "Incomplete Shopify credentials (missing store name or API token)",
         details: {
-          has_store_name: !!shopifyCredentials.store_name,
-          has_api_token: !!shopifyCredentials.api_token
+          has_store_name: !!storeCredentials.store_name,
+          has_api_token: !!(storeCredentials.api_token || source.credentials.access_token)
         }
       }, 400, null, 'incomplete_credentials');
     }
     
-    console.log("Executing GraphQL query to Shopify store:", shopifyCredentials.store_name);
+    console.log("Executing GraphQL query to Shopify store:", storeCredentials.store_name);
     
     // Extract all available credentials
-    const clientId = shopifyCredentials.client_id || shopifyCredentials.api_key;
-    const clientSecret = shopifyCredentials.client_secret || shopifyCredentials.api_secret;
-    const apiToken = shopifyCredentials.api_token || shopifyCredentials.access_token;
-    const storeName = shopifyCredentials.store_name;
+    const clientId = storeCredentials.api_key || source.credentials.client_id;
+    const clientSecret = storeCredentials.api_secret || source.credentials.client_secret;
+    const apiToken = storeCredentials.api_token || source.credentials.access_token;
+    const storeName = storeCredentials.store_name;
     
     // Log available credentials (safely, without exposing actual values)
     console.log("Using credentials:", {
