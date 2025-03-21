@@ -1,11 +1,15 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { corsHeaders } from "../_shared/cors.ts";
+import { getProductionCorsHeaders } from "../_shared/cors.ts";
 import { handlePreviewRequest } from "./preview-handler.ts";
 import { handleExtractionRequest } from "./extraction-handler.ts";
 
 serve(async (req) => {
+  // Get the request origin for CORS
+  const origin = req.headers.get('origin');
+  const corsHeaders = getProductionCorsHeaders(origin);
+  
   // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -13,7 +17,6 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const origin = req.headers.get('origin');
     
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
