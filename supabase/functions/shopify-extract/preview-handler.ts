@@ -124,6 +124,18 @@ export async function handlePreviewRequest(requestData, supabase, corsHeaders) {
     const variables = { first: previewLimit };
     const apiVersion = "2023-10"; // Could be made configurable
     
+    // Verify that we have a valid query
+    if (!custom_query && !template_key) {
+      console.error("Missing query information, neither custom_query nor template_key was provided");
+      return createErrorResponse({
+        message: "Missing query - either custom_query or template_key must be provided",
+        details: { 
+          hasCustomQuery: !!custom_query,
+          hasTemplateKey: !!template_key
+        }
+      }, 400, null, 'missing_query');
+    }
+    
     // Log query for debugging
     if (custom_query) {
       console.log("Custom GraphQL query:", custom_query.substring(0, 200) + "...");
@@ -132,13 +144,48 @@ export async function handlePreviewRequest(requestData, supabase, corsHeaders) {
     }
     
     try {
+      // Import template query if template_key is provided and no custom_query
+      let query = custom_query;
+      if (!query && template_key) {
+        try {
+          const { getQueryTemplate } = await import("./query-templates.ts");
+          const template = getQueryTemplate(template_key);
+          if (!template || !template.query) {
+            return createErrorResponse({
+              message: `Template not found for key: ${template_key}`,
+              details: { provided_key: template_key }
+            }, 404, null, 'template_not_found');
+          }
+          query = template.query;
+        } catch (templateError) {
+          console.error("Error loading template:", templateError);
+          return createErrorResponse({
+            message: "Failed to load query template",
+            details: { error: templateError.message }
+          }, 500, null, 'template_load_error');
+        }
+      }
+      
+      // Final check to ensure we have a query
+      if (!query) {
+        console.error("No query available after processing");
+        return createErrorResponse({
+          message: "No GraphQL query available",
+          details: { 
+            hasCustomQuery: !!custom_query,
+            hasTemplateKey: !!template_key,
+            templateResolved: !!query
+          }
+        }, 400, null, 'query_resolution_failed');
+      }
+      
       // Execute Shopify GraphQL query with all available credentials
       const result = await executeShopifyQuery({
         shopName: storeName,
         apiToken,
         clientId,
         clientSecret,
-        query: custom_query,
+        query,
         variables,
         apiVersion,
         timeout: 15000 // 15 second timeout for preview
