@@ -35,8 +35,8 @@ export const useShopifyConnectionTest = () => {
     return defaultMessage;
   };
 
-  const testConnection = async (storeName: string, apiKey: string, apiToken: string) => {
-    if (!storeName || !apiToken) {
+  const testConnection = async (storeName: string, clientId: string, clientSecret: string, accessToken: string) => {
+    if (!storeName || !clientId || !clientSecret || !accessToken) {
       toast({
         title: "Missing fields",
         description: "Please fill in all required fields",
@@ -62,8 +62,9 @@ export const useShopifyConnectionTest = () => {
         body: {
           action: "test_connection",
           store_url: formattedStoreUrl,
-          api_key: apiKey,
-          api_token: apiToken,
+          client_id: clientId,
+          client_secret: clientSecret,
+          access_token: accessToken,
           user_id: user?.id // Pass user_id for logging
         },
       });
@@ -91,7 +92,7 @@ export const useShopifyConnectionTest = () => {
         // Provide more specific error messages
         let errorDescription = data.error;
         if (data.errorType === "auth_error") {
-          errorDescription = "Invalid API credentials. Please check your API token.";
+          errorDescription = "Invalid API credentials. Please check your client ID, client secret, or access token.";
         } else if (data.errorType === "store_not_found") {
           errorDescription = "Store not found. Please verify your store URL.";
         } else if (data.errorType === "permission_error") {

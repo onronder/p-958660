@@ -4,8 +4,9 @@ import { ShopifyCredential } from "../types/shopifyTypes";
 
 export const useShopifyFormState = () => {
   const [storeName, setStoreName] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [apiToken, setApiToken] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [accessToken, setAccessToken] = useState("");
   const [selectedCredential, setSelectedCredential] = useState<ShopifyCredential | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -13,8 +14,9 @@ export const useShopifyFormState = () => {
   useEffect(() => {
     if (selectedCredential) {
       setStoreName(selectedCredential.store_name);
-      setApiKey(selectedCredential.api_key);
-      setApiToken(selectedCredential.api_token);
+      setClientId(selectedCredential.client_id);
+      setClientSecret(selectedCredential.client_secret);
+      setAccessToken(selectedCredential.access_token);
       setIsEditMode(true);
     } else {
       setIsEditMode(false);
@@ -23,8 +25,9 @@ export const useShopifyFormState = () => {
 
   const resetForm = () => {
     setStoreName("");
-    setApiKey("");
-    setApiToken("");
+    setClientId("");
+    setClientSecret("");
+    setAccessToken("");
     setSelectedCredential(null);
     setIsEditMode(false);
   };
@@ -32,10 +35,12 @@ export const useShopifyFormState = () => {
   return {
     storeName,
     setStoreName,
-    apiKey,
-    setApiKey,
-    apiToken,
-    setApiToken,
+    clientId,
+    setClientId,
+    clientSecret,
+    setClientSecret,
+    accessToken,
+    setAccessToken,
     selectedCredential,
     setSelectedCredential,
     isEditMode,

@@ -11,10 +11,12 @@ export const useShopifyConnection = (onSuccess: () => void) => {
   const {
     storeName,
     setStoreName,
-    apiKey,
-    setApiKey,
-    apiToken,
-    setApiToken,
+    clientId,
+    setClientId,
+    clientSecret,
+    setClientSecret,
+    accessToken,
+    setAccessToken,
     selectedCredential,
     setSelectedCredential,
     isEditMode,
@@ -44,7 +46,7 @@ export const useShopifyConnection = (onSuccess: () => void) => {
   };
 
   const handleTestConnection = async () => {
-    await testConnection(storeName, apiKey, apiToken);
+    await testConnection(storeName, clientId, clientSecret, accessToken);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,8 +56,9 @@ export const useShopifyConnection = (onSuccess: () => void) => {
       // Update existing credentials
       const success = await updateCredentials(
         selectedCredential.id,
-        apiKey, 
-        apiToken, 
+        clientId, 
+        clientSecret, 
+        accessToken, 
         testResponseData, 
         testStatus === "success"
       );
@@ -67,8 +70,9 @@ export const useShopifyConnection = (onSuccess: () => void) => {
       // Create new credentials
       const success = await submitCredentials(
         storeName, 
-        apiKey, 
-        apiToken, 
+        clientId, 
+        clientSecret, 
+        accessToken, 
         testResponseData, 
         testStatus === "success"
       );
@@ -82,10 +86,12 @@ export const useShopifyConnection = (onSuccess: () => void) => {
   return {
     storeName,
     setStoreName,
-    apiKey,
-    setApiKey,
-    apiToken,
-    setApiToken,
+    clientId,
+    setClientId,
+    clientSecret,
+    setClientSecret,
+    accessToken,
+    setAccessToken,
     isSubmitting,
     isTesting,
     testStatus,

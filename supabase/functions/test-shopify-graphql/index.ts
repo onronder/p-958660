@@ -117,13 +117,43 @@ serve(async (req) => {
     
     // Extract credentials
     const credentials = source.credentials || {};
-    const shopName = credentials.store_url || source.url;
-    const apiToken = credentials.access_token || credentials.admin_api_token;
+    const shopName = source.url;
+    const clientId = credentials.client_id;
+    const clientSecret = credentials.client_secret;
+    const apiToken = credentials.access_token;
     
     if (!shopName) {
       console.error("Missing shop_name in source credentials");
       return new Response(
         JSON.stringify({ error: "Shop name is missing in source credentials" }),
+        { 
+          status: 400, 
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
+    }
+    
+    if (!clientId) {
+      console.error("Missing client_id in source credentials");
+      return new Response(
+        JSON.stringify({ error: "Client ID is missing in source credentials" }),
+        { 
+          status: 400, 
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
+    }
+    
+    if (!clientSecret) {
+      console.error("Missing client_secret in source credentials");
+      return new Response(
+        JSON.stringify({ error: "Client Secret is missing in source credentials" }),
         { 
           status: 400, 
           headers: {
@@ -163,7 +193,9 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': apiToken
+        'X-Shopify-Access-Token': apiToken,
+        'X-Shopify-Client-Id': clientId,
+        'X-Shopify-Client-Secret': clientSecret
       },
       body: JSON.stringify({ query })
     });

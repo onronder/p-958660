@@ -1,8 +1,9 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 Deno.serve(async (req) => {
   try {
-    const { action, source_id, store_url, api_key, api_token, user_id } = await req.json();
+    const { action, source_id, store_url, client_id, client_secret, access_token, user_id } = await req.json();
     
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
@@ -15,8 +16,9 @@ Deno.serve(async (req) => {
     if (action === "test_connection") {
       // If a source_id is provided, fetch source details first
       let storeUrlToUse = store_url;
-      let apiKeyToUse = api_key;
-      let apiTokenToUse = api_token;
+      let clientIdToUse = client_id;
+      let clientSecretToUse = client_secret;
+      let accessTokenToUse = access_token;
       let sourceData = null;
       
       if (source_id) {
@@ -46,10 +48,11 @@ Deno.serve(async (req) => {
         
         // Set URL and credentials from the source data
         storeUrlToUse = sourceData.url;
-        apiKeyToUse = credentials.api_key || credentials.apiKey;
-        apiTokenToUse = credentials.api_token || credentials.apiToken || credentials.access_token;
+        clientIdToUse = credentials.client_id;
+        clientSecretToUse = credentials.client_secret;
+        accessTokenToUse = credentials.access_token;
         
-        console.log(`Using source data - URL: ${storeUrlToUse}, Has API Key: ${!!apiKeyToUse}, Has API Token: ${!!apiTokenToUse}`);
+        console.log(`Using source data - URL: ${storeUrlToUse}, Has Client ID: ${!!clientIdToUse}, Has Client Secret: ${!!clientSecretToUse}, Has Access Token: ${!!accessTokenToUse}`);
       }
       
       // Ensure we have the required parameters
@@ -63,10 +66,30 @@ Deno.serve(async (req) => {
         );
       }
       
-      if (!apiTokenToUse) {
+      if (!clientIdToUse) {
         return new Response(
           JSON.stringify({ 
-            error: 'API token or access token is required',
+            error: 'Client ID is required',
+            errorType: 'missing_parameter' 
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (!clientSecretToUse) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Client Secret is required',
+            errorType: 'missing_parameter' 
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (!accessTokenToUse) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Access Token is required',
             errorType: 'missing_parameter' 
           }),
           { status: 400, headers: { 'Content-Type': 'application/json' } }
@@ -88,13 +111,9 @@ Deno.serve(async (req) => {
         const headers = new Headers();
         
         // Set auth headers based on what we have
-        if (apiKeyToUse && apiTokenToUse) {
-          // Set X-Shopify-Access-Token header for private app
-          headers.set('X-Shopify-Access-Token', apiTokenToUse);
-        } else if (apiTokenToUse) {
-          // If we only have an access token, use it as bearer token for OAuth flow
-          headers.set('Authorization', `Bearer ${apiTokenToUse}`);
-        }
+        headers.set('X-Shopify-Access-Token', accessTokenToUse);
+        headers.set('X-Shopify-Client-Id', clientIdToUse);
+        headers.set('X-Shopify-Client-Secret', clientSecretToUse);
         
         // Make the API request
         const response = await fetch(apiUrl, { headers });

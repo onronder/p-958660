@@ -11,6 +11,8 @@ export async function validateShopifySource(sourceId: string, supabase: any): Pr
   valid: boolean;
   error?: Response;
   storeUrl?: string;
+  clientId?: string;
+  clientSecret?: string;
   accessToken?: string;
 }> {
   console.log("Validating source ID:", sourceId);
@@ -50,12 +52,14 @@ export async function validateShopifySource(sourceId: string, supabase: any): Pr
 
   // Extract credentials
   const credentials = source.credentials || {};
-  const accessToken = credentials.api_token || credentials.access_token;
+  const clientId = credentials.client_id;
+  const clientSecret = credentials.client_secret;
+  const accessToken = credentials.access_token;
   const storeUrl = source.url;
   
-  if (!storeUrl || !accessToken) {
+  if (!storeUrl || !clientId || !clientSecret || !accessToken) {
     const error = new Response(
-      JSON.stringify({ error: "Missing Shopify store URL or access token" }),
+      JSON.stringify({ error: "Missing required Shopify credentials" }),
       { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -69,5 +73,11 @@ export async function validateShopifySource(sourceId: string, supabase: any): Pr
     ? storeUrl.replace(/^https?:\/\//, '') 
     : `${storeUrl}.myshopify.com`;
   
-  return { valid: true, storeUrl: formattedStoreUrl, accessToken };
+  return { 
+    valid: true, 
+    storeUrl: formattedStoreUrl, 
+    clientId,
+    clientSecret,
+    accessToken 
+  };
 }

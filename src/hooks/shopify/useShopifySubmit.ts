@@ -11,8 +11,9 @@ export const useShopifySubmit = (onSuccess: () => void) => {
 
   const submitCredentials = async (
     storeName: string, 
-    apiKey: string, 
-    apiToken: string,
+    clientId: string, 
+    clientSecret: string, 
+    accessToken: string,
     testResponseData: any,
     hasTestedSuccessfully: boolean
   ) => {
@@ -25,7 +26,7 @@ export const useShopifySubmit = (onSuccess: () => void) => {
       return false;
     }
 
-    if (!storeName || !apiKey || !apiToken) {
+    if (!storeName || !clientId || !clientSecret || !accessToken) {
       toast({
         title: "Missing fields",
         description: "Please fill in all required fields",
@@ -62,8 +63,9 @@ export const useShopifySubmit = (onSuccess: () => void) => {
           url: formattedStoreUrl,
           status: "Active",
           credentials: {
-            api_key: apiKey,
-            api_token: apiToken,
+            client_id: clientId,
+            client_secret: clientSecret,
+            access_token: accessToken,
             last_connection_status: true,
             last_connection_time: new Date().toISOString(),
             store_details: testResponseData
@@ -107,8 +109,9 @@ export const useShopifySubmit = (onSuccess: () => void) => {
 
   const updateCredentials = async (
     sourceId: string,
-    apiKey: string, 
-    apiToken: string,
+    clientId: string, 
+    clientSecret: string,
+    accessToken: string,
     testResponseData: any,
     hasTestedSuccessfully: boolean
   ) => {
@@ -121,7 +124,7 @@ export const useShopifySubmit = (onSuccess: () => void) => {
       return false;
     }
 
-    if (!apiKey || !apiToken) {
+    if (!clientId || !clientSecret || !accessToken) {
       toast({
         title: "Missing fields",
         description: "Please fill in all required fields",
@@ -156,8 +159,9 @@ export const useShopifySubmit = (onSuccess: () => void) => {
       // Update credentials with new values
       const updatedCredentials = {
         ...currentCreds,
-        api_key: apiKey,
-        api_token: apiToken,
+        client_id: clientId,
+        client_secret: clientSecret,
+        access_token: accessToken,
         last_connection_status: hasTestedSuccessfully ? true : currentCreds.last_connection_status,
         last_connection_time: hasTestedSuccessfully ? new Date().toISOString() : currentCreds.last_connection_time,
         store_details: testResponseData || currentCreds.store_details

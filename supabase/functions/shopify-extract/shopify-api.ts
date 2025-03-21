@@ -4,6 +4,8 @@
  */
 export async function executeShopifyQuery({
   shopName,
+  clientId,
+  clientSecret,
   apiToken,
   query,
   variables = {},
@@ -14,6 +16,16 @@ export async function executeShopifyQuery({
     if (!shopName) {
       console.error("Missing shopName in executeShopifyQuery");
       return { error: "Missing shop name", status: 400 };
+    }
+    
+    if (!clientId) {
+      console.error("Missing clientId in executeShopifyQuery");
+      return { error: "Missing client ID", status: 400 };
+    }
+    
+    if (!clientSecret) {
+      console.error("Missing clientSecret in executeShopifyQuery");
+      return { error: "Missing client secret", status: 400 };
     }
     
     if (!apiToken) {
@@ -40,7 +52,9 @@ export async function executeShopifyQuery({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': apiToken
+        'X-Shopify-Access-Token': apiToken,
+        'X-Shopify-Client-Id': clientId,
+        'X-Shopify-Client-Secret': clientSecret
       },
       body: JSON.stringify({
         query,

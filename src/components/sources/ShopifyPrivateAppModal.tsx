@@ -32,10 +32,12 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
   const {
     storeName,
     setStoreName,
-    apiKey,
-    setApiKey,
-    apiToken,
-    setApiToken,
+    clientId,
+    setClientId,
+    clientSecret,
+    setClientSecret,
+    accessToken,
+    setAccessToken,
     isSubmitting,
     isTesting,
     testStatus,
@@ -96,22 +98,32 @@ const ShopifyPrivateAppModal: React.FC<ShopifyPrivateAppModalProps> = ({
             />
 
             <ShopifyFormField
-              id="apiKey"
-              label="API Key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="API Key"
-              tooltip="The API Key from your Shopify Private App"
+              id="clientId"
+              label="Client ID"
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+              placeholder="Client ID"
+              tooltip="The Client ID from your Shopify App"
             />
 
             <ShopifyFormField
-              id="apiToken"
-              label="Admin API Access Token"
-              value={apiToken}
-              onChange={(e) => setApiToken(e.target.value)}
-              placeholder="Admin API Access Token"
+              id="clientSecret"
+              label="Client Secret"
+              value={clientSecret}
+              onChange={(e) => setClientSecret(e.target.value)}
+              placeholder="Client Secret"
               type="password"
-              tooltip="The Admin API Access Token from your Shopify Private App"
+              tooltip="The Client Secret from your Shopify App"
+            />
+
+            <ShopifyFormField
+              id="accessToken"
+              label="Access Token"
+              value={accessToken}
+              onChange={(e) => setAccessToken(e.target.value)}
+              placeholder="Access Token"
+              type="password"
+              tooltip="The Access Token from your Shopify Private App"
             />
 
             <ShopifyConnectionStatus

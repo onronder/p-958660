@@ -2,11 +2,11 @@
 import { useState } from 'react';
 import { useShopifySources } from './useShopifySources';
 import { useShopifyTestExecution } from './useShopifyTestExecution';
-import { TEST_QUERY_SIMPLE } from '../constants/queryTemplates';
-
-export { TEST_QUERY_SIMPLE, TEST_QUERY_PRODUCTS } from '../constants/queryTemplates';
+import { getQueryTemplates } from '../constants/queryTemplates';
 
 export const useShopifyTester = () => {
+  const [query, setQuery] = useState<string>(getQueryTemplates()[0].query);
+  
   const {
     sources,
     selectedSourceId,
@@ -14,7 +14,7 @@ export const useShopifyTester = () => {
     isLoadingSources,
     loadSources
   } = useShopifySources();
-
+  
   const {
     isExecuting,
     testOutput,
@@ -22,10 +22,10 @@ export const useShopifyTester = () => {
     downloadResults
   } = useShopifyTestExecution();
 
-  const [query, setQuery] = useState(TEST_QUERY_SIMPLE);
-
-  const executeQuery = () => {
-    executeDirectQuery(selectedSourceId, query);
+  const handleExecuteQuery = () => {
+    if (selectedSourceId) {
+      executeDirectQuery(selectedSourceId, query);
+    }
   };
 
   return {
@@ -38,7 +38,7 @@ export const useShopifyTester = () => {
     isExecuting,
     testOutput,
     loadSources,
-    executeDirectQuery: executeQuery,
+    executeDirectQuery: handleExecuteQuery,
     downloadResults
   };
 };
