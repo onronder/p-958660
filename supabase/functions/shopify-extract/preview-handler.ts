@@ -5,15 +5,10 @@ import { extractResults } from "./extraction-utils.ts";
 /**
  * Handles preview requests for Shopify queries 
  */
-export async function handlePreviewRequest({
-  user,
-  supabase,
-  source_id,
-  custom_query,
-  limit,
-  responseCorsHeaders
-}) {
+export async function handlePreviewRequest(requestData, supabase, corsHeaders) {
   try {
+    const { user, source_id, custom_query, template_key, limit = 5 } = requestData;
+    
     console.log("Processing preview request for source:", source_id);
     
     // Get source details
@@ -30,7 +25,7 @@ export async function handlePreviewRequest({
         JSON.stringify({ error: "Source not found or not authorized" }),
         { 
           status: 404, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
         }
       );
     }
@@ -41,7 +36,7 @@ export async function handlePreviewRequest({
         JSON.stringify({ error: "Only Shopify sources are supported currently" }),
         { 
           status: 400, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
         }
       );
     }
@@ -53,7 +48,7 @@ export async function handlePreviewRequest({
         JSON.stringify({ error: "Source credentials are missing or invalid" }),
         { 
           status: 400, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
         }
       );
     }
@@ -74,7 +69,7 @@ export async function handlePreviewRequest({
         JSON.stringify({ error: "Shopify credentials not found" }),
         { 
           status: 404, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
         }
       );
     }
@@ -90,7 +85,7 @@ export async function handlePreviewRequest({
         JSON.stringify({ error: "Incomplete Shopify credentials (missing store name or API token)" }),
         { 
           status: 400, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
         }
       );
     }
@@ -111,11 +106,16 @@ export async function handlePreviewRequest({
     });
     
     // Execute the query directly
-    const variables = { first: limit };
+    const previewLimit = limit || 5; // Ensure we have a limit for preview
+    const variables = { first: previewLimit };
     const apiVersion = "2023-10"; // Could be made configurable
     
     // Log query for debugging
-    console.log("GraphQL query:", custom_query);
+    if (custom_query) {
+      console.log("Custom GraphQL query:", custom_query);
+    } else if (template_key) {
+      console.log("Using template key:", template_key);
+    }
     
     // Execute Shopify GraphQL query with all available credentials
     const result = await executeShopifyQuery({
@@ -137,7 +137,7 @@ export async function handlePreviewRequest({
         }),
         { 
           status: result.status || 500, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
         }
       );
     }
@@ -147,7 +147,7 @@ export async function handlePreviewRequest({
         JSON.stringify({ error: "No data returned from Shopify API" }),
         { 
           status: 500, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
         }
       );
     }
@@ -156,15 +156,21 @@ export async function handlePreviewRequest({
     const results = extractResults(result.data);
     console.log("Successfully extracted results:", results.length);
     
+    // Generate a formatted sample for display
+    const sample = results.length > 0 
+      ? JSON.stringify(results.slice(0, Math.min(3, results.length)), null, 2)
+      : null;
+    
     return new Response(
       JSON.stringify({ 
         results,
         count: results.length,
-        preview: true
+        preview: true,
+        sample
       }),
       { 
         status: 200, 
-        headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+        headers: { "Content-Type": "application/json", ...corsHeaders } 
       }
     );
   } catch (error) {
@@ -173,7 +179,7 @@ export async function handlePreviewRequest({
       JSON.stringify({ error: error.message || "An unknown error occurred during preview" }),
       { 
         status: 500, 
-        headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+        headers: { "Content-Type": "application/json", ...corsHeaders } 
       }
     );
   }

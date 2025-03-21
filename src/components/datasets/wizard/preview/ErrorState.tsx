@@ -1,8 +1,9 @@
 
 import React from "react";
-import { AlertCircle, RefreshCw, Loader2 } from "lucide-react";
+import { AlertCircle, RefreshCw, Loader2, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ErrorStateProps {
   error: string;
@@ -11,6 +12,7 @@ interface ErrorStateProps {
 }
 
 const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry, isLoading }) => {
+  // Detect specific types of errors
   const isEdgeFunctionError = error.includes('Edge Function') || 
                               error.includes('Failed to fetch') || 
                               error.includes('timeout') ||
@@ -21,6 +23,10 @@ const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry, isLoading }) =>
                              error.includes('token') ||
                              error.includes('credentials') ||
                              error.includes('Shopify API');
+  
+  const isQueryError = error.includes('query') ||
+                       error.includes('GraphQL') ||
+                       error.includes('syntax');
   
   return (
     <Alert variant="destructive" className="mb-6">
@@ -56,7 +62,33 @@ const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry, isLoading }) =>
             </div>
           )}
           
-          <div className="flex justify-end mt-4">
+          {isQueryError && (
+            <div className="mt-4 bg-blue-50 p-3 rounded-md border border-blue-200 text-sm">
+              <p className="font-semibold mb-1">Query Error:</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Check your query syntax for errors</li>
+                <li>Verify that the GraphQL fields you're requesting exist</li>
+                <li>Try simplifying your query to identify problematic parts</li>
+                <li>Ensure your query follows Shopify's GraphQL API specifications</li>
+              </ol>
+            </div>
+          )}
+          
+          <div className="flex justify-between mt-4">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" disabled>
+                    <HelpCircle className="h-4 w-4 mr-1" />
+                    View Documentation
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Documentation coming soon</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
             <Button 
               onClick={onRetry} 
               disabled={isLoading}

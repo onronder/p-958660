@@ -1,53 +1,33 @@
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { executeShopifyQuery } from "./shopify-api.ts";
-import { extractResults } from "./extraction-utils.ts";
-import { getPredefinedQuery, getDependentQueryTemplate } from "./query-templates.ts";
-
-/**
- * Handles the main extraction process
- */
-export async function handleExtraction({
-  user,
-  supabase,
-  extraction_id,
-  preview_only = false,
-  limit = 250,
-  responseCorsHeaders
-}) {
+export async function handleExtraction(requestData, supabase, corsHeaders) {
   try {
-    // Get extraction details
-    const { data: extraction, error: extractionError } = await supabase
-      .from("extractions")
-      .select("*")
-      .eq("id", extraction_id)
-      .eq("user_id", user.id)
-      .single();
+    const { 
+      user, 
+      extraction_id, 
+      source_id, 
+      custom_query, 
+      template_key,
+      preview_only = false, 
+      limit = 250 
+    } = requestData;
     
-    if (extractionError || !extraction) {
-      return new Response(
-        JSON.stringify({ error: "Extraction not found or not authorized" }),
-        { 
-          status: 404, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-        }
-      );
-    }
+    console.log("Processing extraction request for source:", source_id);
     
     // Get source details
     const { data: source, error: sourceError } = await supabase
       .from("sources")
       .select("*")
-      .eq("id", extraction.source_id)
+      .eq("id", source_id)
       .eq("user_id", user.id)
       .single();
     
     if (sourceError || !source) {
+      console.error("Source error:", sourceError);
       return new Response(
         JSON.stringify({ error: "Source not found or not authorized" }),
         { 
           status: 404, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
         }
       );
     }
@@ -58,32 +38,45 @@ export async function handleExtraction({
         JSON.stringify({ error: "Only Shopify sources are supported currently" }),
         { 
           status: 400, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
         }
       );
     }
     
     // Get Shopify credentials
+    if (!source.credentials || !source.credentials.credential_id) {
+      console.error("Missing credential_id in source credentials:", source.credentials);
+      return new Response(
+        JSON.stringify({ error: "Source credentials are missing or invalid" }),
+        { 
+          status: 400, 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
+        }
+      );
+    }
+    
     const credentialId = source.credentials.credential_id;
+    console.log("Fetching credentials with ID:", credentialId);
+    
     const { data: shopifyCredentials, error: credentialsError } = await supabase
       .from("shopify_credentials")
       .select("*")
       .eq("id", credentialId)
-      .eq("user_id", user.id)
       .single();
     
     if (credentialsError || !shopifyCredentials) {
+      console.error("Credentials error:", credentialsError);
       return new Response(
         JSON.stringify({ error: "Shopify credentials not found" }),
         { 
           status: 404, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
         }
       );
     }
     
     // Update extraction status to running if not just a preview
-    if (!preview_only) {
+    if (!preview_only && extraction_id) {
       await supabase
         .from("extractions")
         .update({ 
@@ -95,49 +88,50 @@ export async function handleExtraction({
         .eq("id", extraction_id);
     }
     
-    let query = "";
-    let variables = { first: limit };
+    // Extract all available credentials
+    const clientId = shopifyCredentials.client_id || shopifyCredentials.api_key;
+    const clientSecret = shopifyCredentials.client_secret || shopifyCredentials.api_secret;
+    const apiToken = shopifyCredentials.api_token || shopifyCredentials.access_token;
     
-    // Determine which query to use based on extraction type
-    switch (extraction.extraction_type) {
-      case "custom":
-        query = extraction.custom_query || "";
-        break;
-      case "predefined":
-        query = getPredefinedQuery(extraction.template_name);
-        break;
-      case "dependent":
-        // For dependent queries, we'll need to implement more complex logic
-        // This is a placeholder for future implementation
-        query = getDependentQueryTemplate(extraction.template_name).primaryQuery;
-        break;
-      default:
-        return new Response(
-          JSON.stringify({ error: "Invalid extraction type" }),
-          { 
-            status: 400, 
-            headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-          }
-        );
+    // Log available credentials (safely, without exposing actual values)
+    console.log("Using credentials:", {
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+      hasApiToken: !!apiToken,
+      storeName: shopifyCredentials.store_name
+    });
+    
+    // Determine which query to use
+    let query = custom_query || "";
+    const apiVersion = "2023-10"; // Could be made configurable
+    
+    if (!query && template_key) {
+      // For predefined queries, we'd need to get the query from templates
+      // Implementation needed based on your template system
+      console.log("Using template key:", template_key);
+      // query = getQueryFromTemplate(template_key);
     }
     
     if (!query) {
       return new Response(
-        JSON.stringify({ error: "Failed to generate query" }),
+        JSON.stringify({ error: "No query provided and failed to generate query from template" }),
         { 
           status: 400, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
-          }
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
+        }
       );
     }
     
-    // Execute the query
-    const apiVersion = "2023-10"; // Could be made configurable
+    // Set variables with appropriate limit based on whether this is a preview
+    const variables = { first: preview_only ? Math.min(limit, 10) : limit };
     
-    // Execute Shopify GraphQL query
+    // Execute Shopify GraphQL query with all available credentials
+    const { executeShopifyQuery } = await import("./shopify-api.ts");
     const result = await executeShopifyQuery({
       shopName: shopifyCredentials.store_name,
-      apiToken: shopifyCredentials.api_token,
+      apiToken,
+      clientId,
+      clientSecret,
       query,
       variables,
       apiVersion
@@ -145,7 +139,7 @@ export async function handleExtraction({
     
     if (result.error) {
       // Update extraction status if not a preview
-      if (!preview_only) {
+      if (!preview_only && extraction_id) {
         await supabase
           .from("extractions")
           .update({ 
@@ -163,7 +157,7 @@ export async function handleExtraction({
         }),
         { 
           status: result.status || 500, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
         }
       );
     }
@@ -173,13 +167,20 @@ export async function handleExtraction({
         JSON.stringify({ error: "No data returned from Shopify API" }),
         { 
           status: 500, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
         }
       );
     }
     
-    // Extract results based on query type
+    // Extract results
+    const { extractResults } = await import("./extraction-utils.ts");
     const results = extractResults(result.data);
+    console.log("Successfully extracted results:", results.length);
+    
+    // Generate a formatted sample for display
+    const sample = results.length > 0 
+      ? JSON.stringify(results.slice(0, Math.min(3, results.length)), null, 2)
+      : null;
     
     // For preview only, just return the results
     if (preview_only) {
@@ -187,37 +188,41 @@ export async function handleExtraction({
         JSON.stringify({ 
           results,
           count: results.length,
-          preview: true
+          preview: true,
+          sample
         }),
         { 
           status: 200, 
-          headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+          headers: { "Content-Type": "application/json", ...corsHeaders } 
         }
       );
     }
     
-    // Update extraction with results
-    await supabase
-      .from("extractions")
-      .update({ 
-        status: "completed", 
-        progress: 100,
-        status_message: "Extraction completed successfully",
-        result_data: results,
-        record_count: results.length,
-        completed_at: new Date().toISOString()
-      })
-      .eq("id", extraction_id);
+    // Update extraction with results for complete extraction
+    if (extraction_id) {
+      await supabase
+        .from("extractions")
+        .update({ 
+          status: "completed", 
+          progress: 100,
+          status_message: "Extraction completed successfully",
+          result_data: results,
+          record_count: results.length,
+          completed_at: new Date().toISOString()
+        })
+        .eq("id", extraction_id);
+    }
     
     return new Response(
       JSON.stringify({ 
         results,
         count: results.length,
-        extraction_id
+        extraction_id,
+        sample
       }),
       { 
         status: 200, 
-        headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+        headers: { "Content-Type": "application/json", ...corsHeaders } 
       }
     );
   } catch (error) {
@@ -227,7 +232,7 @@ export async function handleExtraction({
       JSON.stringify({ error: error.message || "An unknown error occurred" }),
       { 
         status: 500, 
-        headers: { "Content-Type": "application/json", ...responseCorsHeaders } 
+        headers: { "Content-Type": "application/json", ...corsHeaders } 
       }
     );
   }

@@ -18,7 +18,7 @@ export const executePredefinedDataset = async (templateKey: string, sourceId: st
       source_id: sourceId,
       template_key: templateKey,
       preview_only: true,
-      limit: 10
+      limit: 5 // Set limit to 5 for preview
     });
     
     // Create the request promise with the edge function call
@@ -27,7 +27,7 @@ export const executePredefinedDataset = async (templateKey: string, sourceId: st
         source_id: sourceId,
         template_key: templateKey,
         preview_only: true,
-        limit: 10, // Set limit to 10 for preview
+        limit: 5, // Set limit to 5 for preview
         include_all_credentials: true // Signal to include all possible credentials
       }
     });
@@ -41,6 +41,16 @@ export const executePredefinedDataset = async (templateKey: string, sourceId: st
     return handleApiResponse(response, 'Predefined dataset');
   } catch (error: any) {
     devLogger.error('Dataset Preview API', 'Error executing predefined dataset', error);
-    return { error };
+    
+    // Format error message for better user experience
+    let errorMessage = error.message || 'Failed to execute predefined dataset';
+    
+    if (errorMessage.includes('timeout')) {
+      errorMessage = 'The query took too long to execute. Please try again later.';
+    } else if (errorMessage.includes('Edge Function') || errorMessage.includes('Failed to fetch')) {
+      errorMessage = 'Failed to connect to the Edge Function. Please check your network connection and try again.';
+    }
+    
+    return { error: errorMessage };
   }
 };

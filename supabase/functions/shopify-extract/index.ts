@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { handleExtraction } from "./extraction-handler.ts";
-import { handlePreview } from "./preview-handler.ts";
+import { handlePreviewRequest } from "./preview-handler.ts";
 import { createErrorResponse, createSuccessResponse, handleCorsPreflightRequest } from "./response-utils.ts";
 
 const corsHeaders = {
@@ -48,11 +48,34 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
+    // Get the user from the JWT token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return createErrorResponse({
+        message: "Missing Authorization header",
+      }, 401, origin);
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      return createErrorResponse({
+        message: "Invalid or expired token",
+        details: userError
+      }, 401, origin);
+    }
+    
+    // Add the user to the request data
+    requestData.user = user;
+    
     // Determine if this is a preview or a full extraction
     if (requestData.preview_only) {
-      return await handlePreview(requestData, supabase, origin);
+      console.log("Handling preview request");
+      return await handlePreviewRequest(requestData, supabase, corsHeaders);
     } else {
-      return await handleExtraction(requestData, supabase, origin);
+      console.log("Handling extraction request");
+      return await handleExtraction(requestData, supabase, corsHeaders);
     }
   } catch (error) {
     console.error("Error processing request:", error);

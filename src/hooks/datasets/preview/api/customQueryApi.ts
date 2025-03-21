@@ -23,7 +23,9 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
     // Log the request parameters
     logApiRequest('Shopify-extract custom query', {
       source_id: sourceId,
-      custom_query: customQuery
+      custom_query: customQuery,
+      preview_only: true,
+      limit: 5 // We specifically limit to 5 for preview
     });
     
     // Test connectivity to the edge function first
@@ -43,7 +45,7 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
         source_id: sourceId,
         custom_query_length: customQuery.length,
         preview_only: true,
-        limit: 10
+        limit: 5
       });
       
       const response = await supabase.functions.invoke("shopify-extract", {
@@ -52,7 +54,7 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
           source_id: sourceId,
           custom_query: customQuery,
           preview_only: true,
-          limit: 10
+          limit: 5 // We explicitly limit to 5 for preview
         }
       });
       
@@ -67,7 +69,8 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
         hasError: !!response.error,
         errorMessage: response.error?.message,
         dataType: response.data ? typeof response.data : 'undefined',
-        hasResults: response.data?.results?.length > 0
+        hasResults: response.data?.results?.length > 0,
+        hasSample: !!response.data?.sample
       });
       
       return response;
