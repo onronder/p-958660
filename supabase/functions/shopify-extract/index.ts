@@ -41,6 +41,8 @@ serve(async (req) => {
       has_custom_query: !!requestData.custom_query,
       has_template_name: !!requestData.template_name,
       has_template_key: !!requestData.template_key,
+      source_id: requestData.source_id,
+      limit: requestData.limit || 5
     }));
 
     // Create Supabase client
@@ -53,7 +55,7 @@ serve(async (req) => {
     if (!authHeader) {
       return createErrorResponse({
         message: "Missing Authorization header",
-      }, 401, origin);
+      }, 401, origin, 'authentication_error');
     }
     
     const token = authHeader.replace('Bearer ', '');
@@ -63,7 +65,7 @@ serve(async (req) => {
       return createErrorResponse({
         message: "Invalid or expired token",
         details: userError
-      }, 401, origin);
+      }, 401, origin, 'authentication_error');
     }
     
     // Add the user to the request data
@@ -80,12 +82,30 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error processing request:", error);
     
+    // Determine the error type for better client-side handling
+    let errorType = 'general_error';
+    let status = 500;
+    
+    if (error.message?.includes('timeout')) {
+      errorType = 'timeout_error';
+      status = 408;
+    } else if (error.message?.includes('payload') || error.message?.includes('too large')) {
+      errorType = 'payload_size_error';
+      status = 413;
+    } else if (error.message?.includes('fetch') || error.message?.includes('network')) {
+      errorType = 'network_error';
+      status = 503;
+    } else if (error.message?.includes('parse')) {
+      errorType = 'parse_error';
+      status = 400;
+    }
+    
     // Return a structured error response
     return createErrorResponse({
       message: `Failed to process Shopify extraction: ${error.message}`,
       stack: error.stack,
       timestamp: new Date().toISOString(),
       processingTime: Date.now() - requestStartTime
-    }, 500, origin);
+    }, status, origin, errorType);
   }
 });
