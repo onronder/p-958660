@@ -38,20 +38,26 @@ Deno.serve(async (req) => {
 
     console.log("Processing request for source_id:", source_id, "test_only:", test_only, "force_refresh:", force_refresh);
 
-    // Validate the Shopify source
+    // Validate the Shopify source and get credentials
     const sourceValidation = await validateShopifySource(source_id, supabase);
     if (!sourceValidation.valid) {
       return sourceValidation.error;
     }
 
-    const { storeUrl, accessToken } = sourceValidation;
+    // Extract all required credentials
+    const { 
+      storeUrl, 
+      accessToken, 
+      clientId, 
+      clientSecret 
+    } = sourceValidation;
 
     // Detect the current Shopify API version
     const apiVersion = await detectShopifyApiVersion(storeUrl, accessToken);
 
     // For test_only, we just verify if we can connect to Shopify's GraphQL API
     if (test_only) {
-      return await testShopifyConnection(storeUrl, accessToken, apiVersion);
+      return await testShopifyConnection(storeUrl, accessToken, apiVersion, clientId, clientSecret);
     }
     
     // Fetch and cache the schema

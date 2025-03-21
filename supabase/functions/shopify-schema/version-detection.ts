@@ -55,12 +55,16 @@ export async function detectShopifyApiVersion(
  * @param storeUrl Formatted Shopify store URL
  * @param accessToken Shopify access token 
  * @param apiVersion API version to use
+ * @param clientId Shopify client ID (optional)
+ * @param clientSecret Shopify client secret (optional)
  * @returns Response indicating test result
  */
 export async function testShopifyConnection(
   storeUrl: string,
   accessToken: string,
-  apiVersion: string
+  apiVersion: string,
+  clientId?: string,
+  clientSecret?: string
 ): Promise<Response> {
   try {
     // Simple query to verify API access
@@ -68,17 +72,41 @@ export async function testShopifyConnection(
       shop {
         name
         id
+        email
+        primaryDomain {
+          url
+        }
+        plan {
+          displayName
+          partnerDevelopment
+          shopifyPlus
+        }
       }
     }`;
     
     console.log(`Testing Shopify GraphQL connection to ${storeUrl} using API version: ${apiVersion}`);
     
+    // Prepare headers with all available credentials
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': accessToken
+    };
+    
+    // Add client ID and secret if available
+    if (clientId) {
+      headers['X-Shopify-Client-Id'] = clientId;
+    }
+    
+    if (clientSecret) {
+      headers['X-Shopify-Client-Secret'] = clientSecret;
+    }
+    
+    // Log headers for debugging (without exposing actual values)
+    console.log('Request headers:', Object.keys(headers));
+    
     const testResponse = await fetch(`https://${storeUrl}/admin/api/${apiVersion}/graphql.json`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': accessToken
-      },
+      headers,
       body: JSON.stringify({ query: testQuery })
     });
     

@@ -64,7 +64,6 @@ export function useConnectionTest() {
         toast({
           title: 'Connection Warning',
           description: `Source "${sourceData.name}" previously had connection issues. Testing again...`,
-          // Changed from 'warning' to 'default' to fix TS error
           variant: 'default',
         });
       }
@@ -72,11 +71,12 @@ export function useConnectionTest() {
       // Based on source type, test the connection using specific Edge Function
       if (sourceData.source_type === 'Shopify') {
         try {
-          // For Shopify, use the shopify-private Edge Function to test
-          const { data, error } = await supabase.functions.invoke("shopify-private", {
+          // For Shopify, use the shopify-schema Edge Function with test_only flag
+          // This ensures we use the same function for both testing and schema fetching
+          const { data, error } = await supabase.functions.invoke("shopify-schema", {
             body: {
-              action: "test_connection",
-              source_id: sourceId
+              source_id: sourceId,
+              test_only: true // This flag tells the function to only test connection
             }
           });
           
@@ -116,7 +116,7 @@ export function useConnectionTest() {
           return result;
         }
       } else {
-        // For other source types
+        // For other source types (leave existing code)
         // We'll check if we have minimum required credentials
         const hasCredentials = credentials && 
           typeof credentials === 'object' && 

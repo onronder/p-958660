@@ -58,14 +58,37 @@ export async function validateShopifySource(sourceId: string, supabase: any): Pr
 
   // Extract credentials
   const credentials = source.credentials || {};
-  const clientId = credentials.client_id;
-  const clientSecret = credentials.client_secret;
+  const clientId = credentials.client_id || credentials.api_key;
+  const clientSecret = credentials.client_secret || credentials.api_secret;
   const accessToken = credentials.access_token;
   const storeUrl = source.url;
   
-  if (!storeUrl || !clientId || !clientSecret || !accessToken) {
+  // Log available credentials for debugging (without exposing sensitive values)
+  console.log("Credentials check:", {
+    hasClientId: !!clientId,
+    hasClientSecret: !!clientSecret,
+    hasAccessToken: !!accessToken,
+    storeUrl: storeUrl
+  });
+  
+  if (!storeUrl) {
     const error = new Response(
-      JSON.stringify({ error: "Missing required Shopify credentials" }),
+      JSON.stringify({ error: "Missing store URL in source configuration" }),
+      { 
+        status: 400, 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getProductionCorsHeaders()
+        } 
+      }
+    );
+    return { valid: false, error };
+  }
+
+  // We need at least an access token for API access
+  if (!accessToken) {
+    const error = new Response(
+      JSON.stringify({ error: "Missing required Shopify access token" }),
       { 
         status: 400, 
         headers: { 
