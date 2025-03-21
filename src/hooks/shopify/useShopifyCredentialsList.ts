@@ -58,15 +58,16 @@ export const useShopifyCredentialsList = () => {
       }
 
       // Map sources to ShopifyCredential format for backward compatibility
-      const shopifySources = data?.map(source => {
+      const shopifySources: ShopifyCredential[] = data?.map(source => {
         // Cast credentials to a Record type before accessing properties
         const creds = source.credentials as Record<string, any> || {};
         
         return {
           id: source.id,
-          store_name: source.url,
-          api_key: creds.api_key || "",
-          api_token: creds.api_token || "",
+          store_name: source.url || '',
+          client_id: creds.client_id || '',
+          client_secret: creds.client_secret || '',
+          access_token: creds.access_token || '',
           last_connection_status: creds.last_connection_status || null,
           last_connection_time: creds.last_connection_time || null,
           created_at: source.created_at

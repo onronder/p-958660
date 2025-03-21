@@ -37,11 +37,21 @@ export const useShopifySources = () => {
       }
       
       if (data && data.length > 0) {
-        const shopifySources = data.map(source => ({
-          id: source.id,
-          name: source.name,
-          credentials: source.credentials
-        }));
+        const shopifySources: SourceOption[] = data.map(source => {
+          // Cast credentials to Record to safely access properties
+          const creds = source.credentials as Record<string, any> || {};
+          
+          return {
+            id: source.id,
+            name: source.name,
+            credentials: {
+              store_name: creds.store_name || '',
+              client_id: creds.client_id || '',
+              client_secret: creds.client_secret || '',
+              access_token: creds.access_token || ''
+            }
+          };
+        });
         
         setSources(shopifySources);
         devLogger.debug('shopify_api', 'Loaded sources', { count: shopifySources.length });
