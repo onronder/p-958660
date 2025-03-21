@@ -121,39 +121,22 @@ serve(async (req) => {
     const clientId = credentials.client_id;
     const clientSecret = credentials.client_secret;
     const apiToken = credentials.access_token;
+    // Source ID can be used as credential ID if not provided
+    const credentialId = credentials.credential_id || source_id;
+    
+    // Log credential availability without exposing values
+    console.log("Credential check:", {
+      hasShopName: !!shopName,
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+      hasApiToken: !!apiToken,
+      hasCredentialId: !!credentialId
+    });
     
     if (!shopName) {
       console.error("Missing shop_name in source credentials");
       return new Response(
         JSON.stringify({ error: "Shop name is missing in source credentials" }),
-        { 
-          status: 400, 
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders
-          }
-        }
-      );
-    }
-    
-    if (!clientId) {
-      console.error("Missing client_id in source credentials");
-      return new Response(
-        JSON.stringify({ error: "Client ID is missing in source credentials" }),
-        { 
-          status: 400, 
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders
-          }
-        }
-      );
-    }
-    
-    if (!clientSecret) {
-      console.error("Missing client_secret in source credentials");
-      return new Response(
-        JSON.stringify({ error: "Client Secret is missing in source credentials" }),
         { 
           status: 400, 
           headers: {
@@ -180,7 +163,7 @@ serve(async (req) => {
     
     // Ensure shop name is properly formatted
     const formattedShopName = shopName.includes('.myshopify.com') 
-      ? shopName 
+      ? shopName.replace(/^https?:\/\//, '')
       : `${shopName}.myshopify.com`;
       
     const apiVersion = '2023-10'; // Could be made configurable if needed
@@ -188,15 +171,20 @@ serve(async (req) => {
     
     console.log(`Executing Shopify GraphQL query to: ${shopifyUrl}`);
     
+    // Prepare headers with all available credentials
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': apiToken,
+    };
+    
+    // Add optional headers if available
+    if (clientId) headers['X-Shopify-Client-Id'] = clientId;
+    if (clientSecret) headers['X-Shopify-Client-Secret'] = clientSecret;
+    
     // Make the request to Shopify GraphQL API
     const shopifyResponse = await fetch(shopifyUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': apiToken,
-        'X-Shopify-Client-Id': clientId,
-        'X-Shopify-Client-Secret': clientSecret
-      },
+      headers,
       body: JSON.stringify({ query })
     });
     
@@ -257,7 +245,8 @@ serve(async (req) => {
         data: responseData,
         meta: {
           source_id: source_id,
-          shop_name: formattedShopName
+          shop_name: formattedShopName,
+          credential_id: credentialId // Include credential ID in response
         }
       }),
       { 

@@ -51,15 +51,25 @@ export async function executeShopifyQuery({
       setTimeout(() => reject(new Error(`Request timed out after ${timeout}ms`)), timeout);
     });
 
-    // Create the fetch request
+    // Create the fetch request with all available credentials
+    const headers = {
+      "Content-Type": "application/json",
+      "X-Shopify-Access-Token": apiToken,
+    };
+    
+    // Add client ID if available
+    if (clientId) {
+      headers["X-Shopify-Client-ID"] = clientId;
+    }
+    
+    // Add client secret if available (though not typically needed in headers)
+    if (clientSecret) {
+      headers["X-Shopify-Client-Secret"] = clientSecret;
+    }
+
     const fetchPromise = fetch(shopifyUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Access-Token": apiToken,
-        // Include additional credentials in headers if available
-        ...(clientId ? {"X-Shopify-Client-ID": clientId} : {}),
-      },
+      headers,
       body: JSON.stringify({ query, variables })
     });
 

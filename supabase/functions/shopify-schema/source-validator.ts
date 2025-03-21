@@ -14,6 +14,7 @@ export async function validateShopifySource(sourceId: string, supabase: any): Pr
   clientId?: string;
   clientSecret?: string;
   accessToken?: string;
+  credentialId?: string;
 }> {
   console.log("Validating source ID:", sourceId);
   
@@ -62,13 +63,16 @@ export async function validateShopifySource(sourceId: string, supabase: any): Pr
   const clientSecret = credentials.client_secret || credentials.api_secret;
   const accessToken = credentials.access_token;
   const storeUrl = source.url;
+  // Use source ID as credential ID if not provided
+  const credentialId = credentials.credential_id || source.id;
   
   // Log available credentials for debugging (without exposing sensitive values)
   console.log("Credentials check:", {
     hasClientId: !!clientId,
     hasClientSecret: !!clientSecret,
     hasAccessToken: !!accessToken,
-    storeUrl: storeUrl
+    storeUrl: storeUrl,
+    hasCredentialId: !!credentialId
   });
   
   if (!storeUrl) {
@@ -110,6 +114,7 @@ export async function validateShopifySource(sourceId: string, supabase: any): Pr
     storeUrl: formattedStoreUrl, 
     clientId,
     clientSecret,
-    accessToken 
+    accessToken,
+    credentialId
   };
 }
