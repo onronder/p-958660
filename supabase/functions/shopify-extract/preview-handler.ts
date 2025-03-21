@@ -1,7 +1,8 @@
 
-import { executeShopifyQuery } from "./shopify-api.ts";
-import { extractResults } from "./extraction-utils.ts";
 import { createErrorResponse, createSuccessResponse } from "./response-utils.ts";
+import { getShopifyCredentials } from "./services/credentials-service.ts";
+import { prepareQuery } from "./services/query-service.ts";
+import { executePreview } from "./services/preview-execution.ts";
 
 /**
  * Handles preview requests for Shopify queries 
@@ -36,292 +37,63 @@ export async function handlePreviewRequest(requestData, supabase, corsHeaders) {
       }, 404, null, 'source_not_found');
     }
     
-    // For Shopify sources, get the credentials
-    if (source.source_type.toLowerCase() !== "shopify") {
-      return createErrorResponse({
-        message: "Only Shopify sources are supported currently",
-        details: { provided_type: source.source_type }
-      }, 400, null, 'invalid_source_type');
+    // Get and validate Shopify credentials
+    const credentialsResult = await getShopifyCredentials(source, supabase);
+    if (!credentialsResult.success) {
+      return createErrorResponse(
+        credentialsResult.error,
+        credentialsResult.status,
+        null,
+        credentialsResult.code
+      );
     }
     
-    // Get Shopify credentials from the source
-    if (!source.credentials) {
-      console.error("Missing credentials in source:", source);
-      return createErrorResponse({
-        message: "Source credentials are missing or invalid",
-        details: { credential_info: "Missing credentials" }
-      }, 400, null, 'invalid_credentials');
-    }
-    
-    // Use source ID as credential ID if it's not provided in the credentials
-    const credentialId = source.credentials.credential_id || source.id;
-    console.log("Using credential ID:", credentialId);
-    
-    // Get Shopify credentials
-    const { data: shopifyCredentials, error: credentialsError } = await supabase
-      .from("shopify_credentials")
-      .select("*")
-      .eq("id", credentialId)
-      .maybeSingle(); // Use maybeSingle instead of single to handle cases where no record is found
-    
-    if (credentialsError) {
-      console.error("Credentials error:", credentialsError);
-      return createErrorResponse({
-        message: "Error fetching Shopify credentials",
-        details: credentialsError
-      }, 500, null, 'credentials_fetch_error');
-    }
-    
-    // If no credentials found in the shopify_credentials table, 
-    // use the credentials directly from the source
-    let storeCredentials = shopifyCredentials;
-    
-    if (!storeCredentials) {
-      console.log("No record found in shopify_credentials table, using credentials from source");
-      // Use the credentials directly from the source
-      storeCredentials = {
-        store_name: source.url || source.credentials.store_name,
-        api_token: source.credentials.api_token || source.credentials.access_token,
-        api_key: source.credentials.api_key || source.credentials.client_id,
-        id: source.id
-      };
-    }
-    
-    // Validate required credentials
-    if (!storeCredentials.store_name || (!storeCredentials.api_token && !source.credentials.access_token)) {
-      console.error("Missing required Shopify credentials:", {
-        hasStoreName: !!storeCredentials.store_name,
-        hasApiToken: !!(storeCredentials.api_token || source.credentials.access_token)
-      });
-      
-      return createErrorResponse({
-        message: "Incomplete Shopify credentials (missing store name or API token)",
-        details: {
-          has_store_name: !!storeCredentials.store_name,
-          has_api_token: !!(storeCredentials.api_token || source.credentials.access_token)
-        }
-      }, 400, null, 'incomplete_credentials');
-    }
-    
-    console.log("Executing GraphQL query to Shopify store:", storeCredentials.store_name);
-    
-    // Extract all available credentials
-    const clientId = storeCredentials.api_key || source.credentials.client_id;
-    const clientSecret = storeCredentials.api_secret || source.credentials.client_secret;
-    const apiToken = storeCredentials.api_token || source.credentials.access_token;
-    const storeName = storeCredentials.store_name;
-    
-    // Log available credentials (safely, without exposing actual values)
-    console.log("Using credentials:", {
-      hasClientId: !!clientId,
-      hasClientSecret: !!clientSecret,
-      hasApiToken: !!apiToken,
-      storeName
+    // Prepare the GraphQL query
+    const queryResult = await prepareQuery({
+      custom_query,
+      template_key,
+      limit
     });
     
-    // Execute the query directly
-    const previewLimit = Math.min(limit || 5, 5); // Strictly enforce 5 record limit for preview
-    const variables = { first: previewLimit };
-    const apiVersion = "2023-10"; // Could be made configurable
-    
-    // Verify that we have a valid query
-    if (!custom_query && !template_key) {
-      console.error("Missing query information, neither custom_query nor template_key was provided");
-      return createErrorResponse({
-        message: "Missing query - either custom_query or template_key must be provided",
-        details: { 
-          hasCustomQuery: !!custom_query,
-          hasTemplateKey: !!template_key
-        }
-      }, 400, null, 'missing_query');
+    if (!queryResult.success) {
+      return createErrorResponse(
+        queryResult.error,
+        queryResult.status,
+        null,
+        queryResult.code
+      );
     }
     
-    // Log query for debugging
-    if (custom_query) {
-      console.log("Custom GraphQL query:", custom_query.substring(0, 200) + "...");
-    } else if (template_key) {
-      console.log("Using template key:", template_key);
+    // Execute the preview request
+    const previewResult = await executePreview({
+      credentials: credentialsResult.credentials,
+      query: queryResult.query,
+      variables: queryResult.variables,
+      userId: user.id,
+      sourceId: source_id,
+      includeAllCredentials: include_all_credentials,
+      supabase,
+      startTime: previewStartTime,
+      timeout: 15000 // 15 second timeout for preview
+    });
+    
+    if (!previewResult.success) {
+      return createErrorResponse(
+        previewResult.error,
+        previewResult.status,
+        null,
+        previewResult.code
+      );
     }
     
-    try {
-      // Import template query if template_key is provided and no custom_query
-      let query = custom_query;
-      if (!query && template_key) {
-        try {
-          const { getQueryTemplate } = await import("./query-templates.ts");
-          const template = getQueryTemplate(template_key);
-          if (!template || !template.query) {
-            return createErrorResponse({
-              message: `Template not found for key: ${template_key}`,
-              details: { provided_key: template_key }
-            }, 404, null, 'template_not_found');
-          }
-          query = template.query;
-        } catch (templateError) {
-          console.error("Error loading template:", templateError);
-          return createErrorResponse({
-            message: "Failed to load query template",
-            details: { error: templateError.message }
-          }, 500, null, 'template_load_error');
-        }
-      }
-      
-      // Final check to ensure we have a query
-      if (!query) {
-        console.error("No query available after processing");
-        return createErrorResponse({
-          message: "No GraphQL query available",
-          details: { 
-            hasCustomQuery: !!custom_query,
-            hasTemplateKey: !!template_key,
-            templateResolved: !!query
-          }
-        }, 400, null, 'query_resolution_failed');
-      }
-      
-      // Execute Shopify GraphQL query with all available credentials
-      const result = await executeShopifyQuery({
-        shopName: storeName,
-        apiToken,
-        clientId,
-        clientSecret,
-        query,
-        variables,
-        apiVersion,
-        timeout: 15000 // 15 second timeout for preview
-      });
-      
-      if (result.error) {
-        console.error("Shopify API error:", result.status, result.error);
-        
-        // Log the error to Supabase
-        await supabase
-          .from("shopify_logs")
-          .insert([
-            {
-              user_id: user.id,
-              store_name: storeName,
-              error_message: result.error,
-              error_details: result.details,
-              api_key: clientId,
-              http_status: result.status
-            }
-          ]);
-        
-        return createErrorResponse({ 
-          message: result.error,
-          details: result.details
-        }, result.status || 500, null, 'shopify_api_error');
-      }
-      
-      if (!result.data) {
-        return createErrorResponse({
-          message: "No data returned from Shopify API",
-          details: { response_type: typeof result }
-        }, 500, null, 'empty_response');
-      }
-      
-      // Extract results
-      const results = extractResults(result.data);
-      console.log("Successfully extracted results:", results.length);
-      
-      // Generate a formatted sample for display
-      const sample = results.length > 0 
-        ? JSON.stringify(results.slice(0, Math.min(3, results.length)), null, 2)
-        : null;
-      
-      // Save a preview record in the database but don't wait for it to complete
-      if (include_all_credentials) {
-        try {
-          EdgeRuntime.waitUntil(supabase
-            .from("user_datasets")
-            .insert([
-              {
-                user_id: user.id,
-                source_id: source_id,
-                name: `Preview - ${new Date().toISOString().split('T')[0]}`,
-                description: "Preview dataset",
-                dataset_type: "preview",
-                status: "preview_generated",
-                query_params: {
-                  custom_query: !!custom_query,
-                  template_key: template_key || null,
-                  limit: previewLimit
-                },
-                record_count: results.length
-              }
-            ]));
-        } catch (dbError) {
-          // Just log but don't fail the request
-          console.error("Error saving preview dataset:", dbError);
-        }
-      }
-      
-      // Log a successful preview
-      EdgeRuntime.waitUntil(supabase
-        .from("shopify_logs")
-        .insert([
-          {
-            user_id: user.id,
-            store_name: storeName,
-            api_key: clientId,
-            error_message: null,
-            error_details: {
-              operation: "preview_generation",
-              record_count: results.length,
-              time_taken_ms: Date.now() - previewStartTime
-            }
-          }
-        ]));
-      
-      // Return the preview results
-      return createSuccessResponse({ 
-        results,
-        count: results.length,
-        preview: true,
-        sample
-      }, origin);
-    } catch (apiError) {
-      console.error("Preview API error:", apiError);
-      
-      // Handle specific error types
-      if (apiError.message?.includes('timeout')) {
-        return createErrorResponse({
-          message: "Request timed out",
-          details: { error: apiError.message }
-        }, 408, null, 'timeout');
-      }
-      
-      if (apiError.message?.includes('too large') || apiError.message?.includes('payload')) {
-        return createErrorResponse({
-          message: "Dataset too large for preview",
-          details: { error: apiError.message }
-        }, 413, null, 'size_limit_exceeded');
-      }
-      
-      // Log the error to Supabase
-      await supabase
-        .from("shopify_logs")
-        .insert([
-          {
-            user_id: user.id,
-            store_name: storeName,
-            error_message: apiError.message,
-            error_details: {
-              stack: apiError.stack,
-              cause: apiError.cause
-            },
-            api_key: clientId,
-            http_status: 500
-          }
-        ]);
-      
-      return createErrorResponse({
-        message: apiError.message || "An unknown error occurred during preview",
-        stack: apiError.stack,
-        cause: apiError.cause
-      }, 500, null, 'api_request_error');
-    }
+    // Return the preview results
+    return createSuccessResponse({ 
+      results: previewResult.results,
+      count: previewResult.count,
+      preview: true,
+      sample: previewResult.sample
+    }, null);
+    
   } catch (error) {
     console.error("Preview error:", error);
     return createErrorResponse({

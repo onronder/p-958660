@@ -41,6 +41,21 @@ serve(async (req) => {
       );
     }
     
+    // Special case for ping requests for connectivity tests
+    if (body.ping === true) {
+      return new Response(
+        JSON.stringify({ 
+          status: 'ok', 
+          message: 'Connection successful',
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          status: 200, 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders } 
+        }
+      );
+    }
+    
     // Add user information to request data
     const requestData = { ...body, user };
     
