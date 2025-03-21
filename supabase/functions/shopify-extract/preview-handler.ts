@@ -1,7 +1,7 @@
 
 import { executeShopifyQuery } from "./shopify-api.ts";
 import { extractResults } from "./extraction-utils.ts";
-import { createErrorResponse, createPayloadTooLargeResponse, createTimeoutResponse } from "./response-utils.ts";
+import { createErrorResponse, createSuccessResponse } from "./response-utils.ts";
 
 /**
  * Handles preview requests for Shopify queries 
@@ -45,18 +45,19 @@ export async function handlePreviewRequest(requestData, supabase, corsHeaders) {
     }
     
     // Get Shopify credentials from the source
-    if (!source.credentials || !source.credentials.credential_id) {
-      console.error("Missing credential_id in source credentials:", source.credentials);
+    if (!source.credentials) {
+      console.error("Missing credentials in source:", source);
       return createErrorResponse({
         message: "Source credentials are missing or invalid",
-        details: { credential_info: "Missing credential_id" }
+        details: { credential_info: "Missing credentials" }
       }, 400, null, 'invalid_credentials');
     }
     
-    // Get Shopify credentials
-    const credentialId = source.credentials.credential_id;
-    console.log("Fetching credentials with ID:", credentialId);
+    // Use source ID as credential ID if it's not provided in the credentials
+    const credentialId = source.credentials.credential_id || source.id;
+    console.log("Using credential ID:", credentialId);
     
+    // Get Shopify credentials
     const { data: shopifyCredentials, error: credentialsError } = await supabase
       .from("shopify_credentials")
       .select("*")
@@ -212,28 +213,28 @@ export async function handlePreviewRequest(requestData, supabase, corsHeaders) {
         ]));
       
       // Return the preview results
-      return new Response(
-        JSON.stringify({ 
-          results,
-          count: results.length,
-          preview: true,
-          sample
-        }),
-        { 
-          status: 200, 
-          headers: { "Content-Type": "application/json", ...corsHeaders } 
-        }
-      );
+      return createSuccessResponse({ 
+        results,
+        count: results.length,
+        preview: true,
+        sample
+      }, origin);
     } catch (apiError) {
       console.error("Preview API error:", apiError);
       
       // Handle specific error types
       if (apiError.message?.includes('timeout')) {
-        return createTimeoutResponse();
+        return createErrorResponse({
+          message: "Request timed out",
+          details: { error: apiError.message }
+        }, 408, null, 'timeout');
       }
       
       if (apiError.message?.includes('too large') || apiError.message?.includes('payload')) {
-        return createPayloadTooLargeResponse();
+        return createErrorResponse({
+          message: "Dataset too large for preview",
+          details: { error: apiError.message }
+        }, 413, null, 'size_limit_exceeded');
       }
       
       // Log the error to Supabase

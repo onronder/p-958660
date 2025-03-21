@@ -23,7 +23,7 @@ export function createSuccessResponse(data, origin = null) {
 /**
  * Create a standardized error response
  */
-export function createErrorResponse(error, status = 500, origin = null) {
+export function createErrorResponse(error, status = 500, origin = null, errorType = 'general_error') {
   const headers = {
     'Content-Type': 'application/json',
     ...(origin ? {'Access-Control-Allow-Origin': origin} : {}),
@@ -31,8 +31,16 @@ export function createErrorResponse(error, status = 500, origin = null) {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   };
   
+  // Format the error object to include detailed information
+  const errorResponse = {
+    error: typeof error === 'string' ? error : error.message || 'Unknown error',
+    error_type: errorType,
+    details: error.details || null,
+    timestamp: new Date().toISOString()
+  };
+  
   return new Response(
-    JSON.stringify({ error }),
+    JSON.stringify(errorResponse),
     { status, headers }
   );
 }
