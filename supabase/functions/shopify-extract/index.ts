@@ -5,6 +5,8 @@ import { getProductionCorsHeaders } from "../_shared/cors.ts";
 import { handlePreviewRequest } from "./preview-handler.ts";
 import { handleExtractionRequest } from "./extraction-handler.ts";
 
+console.log("shopify-extract function initialized");
+
 serve(async (req) => {
   console.log("shopify-extract function called:", req.url);
   

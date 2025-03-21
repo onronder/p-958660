@@ -1,6 +1,13 @@
 
 // CORS headers utility for Supabase Edge Functions
 
+// Export corsHeaders object for backward compatibility
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+};
+
 /**
  * Returns CORS headers for production environment
  */

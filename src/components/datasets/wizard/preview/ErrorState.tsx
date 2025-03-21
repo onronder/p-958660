@@ -16,7 +16,9 @@ const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry, isLoading }) =>
   const isEdgeFunctionError = error.includes('Edge Function') || 
                               error.includes('Failed to fetch') || 
                               error.includes('timeout') ||
-                              error.includes('connection');
+                              error.includes('connection') ||
+                              error.includes('404') ||
+                              error.includes('503');
   
   const isShopifyAuthError = error.includes('authentication') ||
                              error.includes('Access') ||
@@ -40,11 +42,12 @@ const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry, isLoading }) =>
             <div className="mt-4 bg-red-50 p-3 rounded-md border border-red-200 text-sm">
               <p className="font-semibold mb-1">Troubleshooting Steps:</p>
               <ol className="list-decimal list-inside space-y-1">
+                <li>Check that the Edge Functions are properly deployed (404 errors indicate missing functions)</li>
                 <li>Check your internet connection</li>
-                <li>Verify that the Supabase Edge Function is deployed</li>
-                <li>Ensure your session is valid (try signing out and back in)</li>
-                <li>Check the console logs for more details</li>
-                <li>The server may be temporarily unavailable, please try again in a moment</li>
+                <li>Verify that your session is valid (try signing out and back in)</li>
+                <li>If there are 404 or 503 errors, wait a few moments for the Edge Functions to initialize</li>
+                <li>Check the console logs for more detailed errors</li>
+                <li>Try refreshing the page and trying again</li>
               </ol>
             </div>
           )}

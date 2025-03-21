@@ -1,11 +1,22 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.2";
-import { corsHeaders } from "../_shared/cors.ts";
+
+// Define CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+};
+
+console.log("sources function initialized");
 
 serve(async (req) => {
+  console.log("sources function called:", req.url);
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log("Handling OPTIONS preflight request");
     return new Response(null, { 
       status: 204,
       headers: corsHeaders 
@@ -20,6 +31,7 @@ serve(async (req) => {
     // Extract JWT token from authorization header
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
+      console.error("Missing authorization header");
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -32,6 +44,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
+      console.error("Unauthorized: ", authError);
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -40,11 +53,13 @@ serve(async (req) => {
 
     const url = new URL(req.url);
     const path = url.pathname.split('/').pop();
+    console.log("Processing path:", path);
 
     // Get request body for non-GET requests
     let body = {};
     if (req.method !== 'GET') {
       body = await req.json();
+      console.log("Request body:", body);
     }
     
     // Handle different actions based on the request path and body
@@ -53,11 +68,14 @@ serve(async (req) => {
       let sourceId = body.sourceId;
       
       if (!sourceId) {
+        console.error("Source ID is required for restore");
         return new Response(
           JSON.stringify({ error: "Source ID is required" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      console.log("Restoring source:", sourceId);
 
       // Verify the source belongs to the user and is deleted
       const { data: source, error: sourceError } = await supabase
@@ -69,6 +87,7 @@ serve(async (req) => {
         .single();
 
       if (sourceError || !source) {
+        console.error("Source not found or not accessible:", sourceError);
         return new Response(
           JSON.stringify({ error: "Source not found or not accessible" }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -124,6 +143,7 @@ serve(async (req) => {
     }
 
     // Default: List active sources (not deleted)
+    console.log("Fetching active sources for user:", user.id);
     const { data: sources, error: listError } = await supabase
       .from('sources')
       .select('*')
