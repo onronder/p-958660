@@ -82,7 +82,8 @@ const Sources = () => {
     // and filter out soft-deleted sources
     const filteredSources = sources.filter(source => 
       !shopifyIds.includes(source.id) && 
-      source.source_type !== "Shopify"
+      source.source_type !== "Shopify" &&
+      !source.is_deleted
     );
     
     return filteredSources;

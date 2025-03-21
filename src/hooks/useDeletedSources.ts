@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Source, SourceStatus } from "@/types/source";
+import { Source } from "@/types/source";
 import { fetchDeletedSources, restoreSource } from "@/services/sourcesService";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,27 +10,28 @@ export const useDeletedSources = () => {
   const [deletedSources, setDeletedSources] = useState<Source[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
   const loadDeletedSources = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       
       if (!user) {
         return;
       }
       
       try {
-        // First try using the edge function
-        const sourcesData = await fetchDeletedSources(user.id);
-        setDeletedSources(sourcesData);
+        // First try using edge function
+        const deletedSourcesData = await fetchDeletedSources(user.id);
+        setDeletedSources(deletedSourcesData);
       } catch (edgeFunctionError) {
+        console.info("Falling back to direct Supabase query for deleted sources");
         console.error("Error fetching deleted sources from edge function:", edgeFunctionError);
         
-        // Fallback to direct Supabase query if the edge function fails
-        console.log("Falling back to direct Supabase query for deleted sources");
-        
+        // Fallback to direct Supabase query
         const { data, error } = await supabase
           .from('sources')
           .select('*')
@@ -41,20 +42,20 @@ export const useDeletedSources = () => {
           throw error;
         }
         
-        // Convert the data to match the expected Source type format
-        const formattedSources: Source[] = data?.map(source => ({
+        // Make sure the display shows the source status correctly
+        const formattedSources = data?.map(source => ({
           ...source,
-          status: "Deleted" as SourceStatus,
-          credentials: source.credentials as Record<string, any> || {}
+          status: "Deleted" as "Deleted", // Display as deleted even if actual status is "Inactive"
         })) || [];
         
         setDeletedSources(formattedSources);
       }
-    } catch (error) {
-      console.error("Error fetching deleted sources:", error);
+    } catch (fetchError) {
+      console.error("Error fetching deleted sources:", fetchError);
+      setError(fetchError instanceof Error ? fetchError : new Error("Failed to load deleted sources"));
       toast({
         title: "Error",
-        description: "Failed to load deleted sources. Please try again.",
+        description: "Failed to load deleted sources",
         variant: "destructive",
       });
     } finally {
@@ -62,31 +63,25 @@ export const useDeletedSources = () => {
     }
   };
 
-  useEffect(() => {
-    if (user) {
-      loadDeletedSources();
-    }
-  }, [user]);
-
   const handleRestoreSource = async (sourceId: string) => {
     try {
       setIsRestoring(true);
       
       try {
-        // First try using the edge function
+        // First try using edge function
         await restoreSource(sourceId);
       } catch (edgeFunctionError) {
         console.error("Error restoring source with edge function:", edgeFunctionError);
         
-        // Fallback to direct Supabase query
-        console.log("Falling back to direct Supabase update for restoring source");
+        // Fallback to direct Supabase update
+        console.info("Falling back to direct Supabase update for source restoration");
         
         const { error } = await supabase
           .from('sources')
           .update({ 
             is_deleted: false,
             deletion_marked_at: null,
-            status: 'Inactive'
+            status: 'Inactive'  // Set to Inactive when restoring (not "Active")
           })
           .eq('id', sourceId);
           
@@ -100,8 +95,8 @@ export const useDeletedSources = () => {
         description: "The source has been restored successfully.",
       });
       
-      // Refresh the list after restoration
-      loadDeletedSources();
+      // Update the local state by removing the restored source
+      setDeletedSources(prev => prev.filter(source => source.id !== sourceId));
     } catch (error) {
       console.error("Error restoring source:", error);
       toast({
@@ -114,10 +109,17 @@ export const useDeletedSources = () => {
     }
   };
 
+  useEffect(() => {
+    if (user) {
+      loadDeletedSources();
+    }
+  }, [user]);
+
   return {
     deletedSources,
     isLoading,
     isRestoring,
+    error,
     loadDeletedSources,
     handleRestoreSource
   };

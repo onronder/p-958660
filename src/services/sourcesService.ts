@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Source, SourceStatus } from "@/types/source";
 
@@ -46,7 +47,7 @@ export const deleteSource = async (sourceId: string) => {
     .update({ 
       is_deleted: true,
       deletion_marked_at: new Date().toISOString(),
-      status: 'Deleted'
+      status: 'Inactive'  // Changed from 'Deleted' to 'Inactive'
     })
     .eq('id', sourceId);
     

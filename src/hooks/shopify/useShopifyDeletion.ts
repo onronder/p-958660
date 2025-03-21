@@ -13,12 +13,13 @@ export const useShopifyDeletion = (credentialId: string, onRefresh: () => void) 
       setIsDeleting(true);
 
       // Use soft deletion by marking the source as deleted
+      // Use 'Inactive' instead of 'Deleted' for the status field
       const { error } = await supabase
         .from("sources")
         .update({ 
           is_deleted: true,
           deletion_marked_at: new Date().toISOString(),
-          status: 'Deleted'
+          status: 'Inactive'
         })
         .eq("id", credentialId);
 

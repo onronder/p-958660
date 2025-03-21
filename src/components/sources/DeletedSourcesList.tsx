@@ -1,20 +1,18 @@
 
 import React from "react";
+import { Source } from "@/types/source";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArchiveRestore, AlertCircle, RefreshCw } from "lucide-react";
-import { Source } from "@/types/source";
+import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { formatDate } from "@/services/sourcesService";
-import SourcesLoadingSkeleton from "@/components/SourcesLoadingSkeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface DeletedSourcesListProps {
   deletedSources: Source[];
   isLoading: boolean;
   isRestoring: boolean;
-  onRestoreSource: (sourceId: string) => void;
-  error?: Error | null;
-  onRetry?: () => void;
+  onRestoreSource: (sourceId: string) => Promise<void>;
+  error: Error | null;
+  onRetry: () => void;
 }
 
 const DeletedSourcesList: React.FC<DeletedSourcesListProps> = ({
@@ -26,86 +24,60 @@ const DeletedSourcesList: React.FC<DeletedSourcesListProps> = ({
   onRetry
 }) => {
   if (isLoading) {
-    return <SourcesLoadingSkeleton />;
+    return (
+      <div className="flex flex-col items-center justify-center py-6 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-2" />
+        <p className="text-muted-foreground">Loading deleted sources...</p>
+      </div>
+    );
   }
-  
+
   if (error) {
     return (
-      <Alert variant="destructive" className="mb-6">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error Loading Deleted Sources</AlertTitle>
-        <div className="flex flex-col space-y-2">
-          <AlertDescription>
-            {error.message || "Failed to load deleted sources"}
-          </AlertDescription>
-          {onRetry && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onRetry}
-              className="self-start mt-2"
-            >
-              <RefreshCw className="h-3 w-3 mr-2" /> Retry
-            </Button>
-          )}
-        </div>
-      </Alert>
+      <div className="flex flex-col items-center justify-center py-6 text-center">
+        <AlertTriangle className="h-8 w-8 text-amber-500 mb-2" />
+        <p className="text-muted-foreground mb-4">Failed to load deleted sources</p>
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Retry
+        </Button>
+      </div>
     );
   }
 
   if (deletedSources.length === 0) {
     return (
-      <Card className="p-6 text-center">
-        <div className="flex flex-col items-center justify-center p-4">
-          <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-xl font-medium mb-2">No Deleted Sources</h3>
-          <p className="text-muted-foreground">
-            There are no sources in the trash. Deleted sources will appear here for 30 days before being permanently removed.
-          </p>
-        </div>
-      </Card>
+      <div className="py-6 text-center">
+        <p className="text-muted-foreground">No deleted sources found</p>
+      </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {deletedSources.map((source) => (
-        <Card key={source.id} className="p-6 hover:shadow-md transition-shadow duration-200">
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold">{source.name}</h3>
-                <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                  Deleted
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground">{source.url}</p>
-            </div>
-            
-            <div className="space-y-2.5 mt-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Type:</span>
-                <span className="font-medium">{source.source_type}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Deleted On:</span>
-                <span className="font-medium">{formatDate(source.deletion_marked_at)}</span>
-              </div>
-            </div>
+    <div className="space-y-4">
+      {deletedSources.map(source => (
+        <Card key={source.id} className="p-4 flex items-center justify-between">
+          <div>
+            <h4 className="font-medium">{source.name}</h4>
+            <p className="text-sm text-muted-foreground">
+              Deleted: {formatDate(source.deletion_marked_at)}
+            </p>
           </div>
-          
-          <div className="mt-6 pt-4 border-t border-border">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full"
-              disabled={isRestoring}
-              onClick={() => onRestoreSource(source.id)}
-            >
-              <ArchiveRestore className="h-4 w-4 mr-2" />
-              Restore Source
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onRestoreSource(source.id)}
+            disabled={isRestoring}
+          >
+            {isRestoring ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Restoring...
+              </>
+            ) : (
+              "Restore"
+            )}
+          </Button>
         </Card>
       ))}
     </div>
