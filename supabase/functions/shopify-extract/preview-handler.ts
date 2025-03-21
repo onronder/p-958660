@@ -97,6 +97,19 @@ export async function handlePreviewRequest({
     
     console.log("Executing GraphQL query to Shopify store:", shopifyCredentials.store_name);
     
+    // Extract all available credentials
+    const clientId = shopifyCredentials.client_id || shopifyCredentials.api_key;
+    const clientSecret = shopifyCredentials.client_secret || shopifyCredentials.api_secret;
+    const apiToken = shopifyCredentials.api_token || shopifyCredentials.access_token;
+    
+    // Log available credentials (safely, without exposing actual values)
+    console.log("Using credentials:", {
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+      hasApiToken: !!apiToken,
+      storeName: shopifyCredentials.store_name
+    });
+    
     // Execute the query directly
     const variables = { first: limit };
     const apiVersion = "2023-10"; // Could be made configurable
@@ -104,10 +117,12 @@ export async function handlePreviewRequest({
     // Log query for debugging
     console.log("GraphQL query:", custom_query);
     
-    // Execute Shopify GraphQL query
+    // Execute Shopify GraphQL query with all available credentials
     const result = await executeShopifyQuery({
       shopName: shopifyCredentials.store_name,
-      apiToken: shopifyCredentials.api_token,
+      apiToken,
+      clientId,
+      clientSecret,
       query: custom_query,
       variables,
       apiVersion

@@ -75,8 +75,8 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
     
     // Execute with retry and timeout
     const response = await retryWithBackoff(
-      () => withTimeout(executeRequest(), 45000), // 45 second timeout with retries
-      3, // Maximum 3 retries
+      () => withTimeout(executeRequest(), 60000), // Extend timeout to 60 seconds
+      4, // Maximum 4 retries
       1000, // Start with 1 second delay 
       2 // Exponential factor
     );

@@ -27,12 +27,13 @@ export const executePredefinedDataset = async (templateKey: string, sourceId: st
         source_id: sourceId,
         template_key: templateKey,
         preview_only: true,
-        limit: 10
+        limit: 10, // Set limit to 10 for preview
+        include_all_credentials: true // Signal to include all possible credentials
       }
     });
     
-    // Execute with timeout
-    const response = await withTimeout(requestPromise);
+    // Execute with timeout - increase timeout to 60 seconds
+    const response = await withTimeout(requestPromise, 60000);
     
     // Log the response
     logApiResponse('Shopify-extract edge function', response);

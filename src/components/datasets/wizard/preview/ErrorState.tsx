@@ -13,7 +13,14 @@ interface ErrorStateProps {
 const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry, isLoading }) => {
   const isEdgeFunctionError = error.includes('Edge Function') || 
                               error.includes('Failed to fetch') || 
-                              error.includes('timeout');
+                              error.includes('timeout') ||
+                              error.includes('connection');
+  
+  const isShopifyAuthError = error.includes('authentication') ||
+                             error.includes('Access') ||
+                             error.includes('token') ||
+                             error.includes('credentials') ||
+                             error.includes('Shopify API');
   
   return (
     <Alert variant="destructive" className="mb-6">
@@ -31,7 +38,20 @@ const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry, isLoading }) =>
                 <li>Verify that the Supabase Edge Function is deployed</li>
                 <li>Ensure your session is valid (try signing out and back in)</li>
                 <li>Check the console logs for more details</li>
-                <li>If the issue persists, contact support</li>
+                <li>The server may be temporarily unavailable, please try again in a moment</li>
+              </ol>
+            </div>
+          )}
+          
+          {isShopifyAuthError && (
+            <div className="mt-4 bg-amber-50 p-3 rounded-md border border-amber-200 text-sm">
+              <p className="font-semibold mb-1">Shopify Authentication Issue:</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Verify that your Shopify credentials are correct and up-to-date</li>
+                <li>Ensure you have provided Client ID, Client Secret, and Access Token</li>
+                <li>Check that your access token has not expired</li>
+                <li>Verify that the store URL is correct</li>
+                <li>Confirm your API has access to the requested resources</li>
               </ol>
             </div>
           )}

@@ -18,16 +18,6 @@ export async function executeShopifyQuery({
       return { error: "Missing shop name", status: 400 };
     }
     
-    if (!clientId) {
-      console.error("Missing clientId in executeShopifyQuery");
-      return { error: "Missing client ID", status: 400 };
-    }
-    
-    if (!clientSecret) {
-      console.error("Missing clientSecret in executeShopifyQuery");
-      return { error: "Missing client secret", status: 400 };
-    }
-    
     if (!apiToken) {
       console.error("Missing apiToken in executeShopifyQuery");
       return { error: "Missing API token", status: 400 };
@@ -46,16 +36,27 @@ export async function executeShopifyQuery({
     const url = `https://${formattedShopName}/admin/api/${apiVersion}/graphql.json`;
     
     console.log(`Executing Shopify GraphQL query to: ${url}`);
+    console.log(`Using credentials - Client ID: ${clientId ? 'provided' : 'missing'}, Client Secret: ${clientSecret ? 'provided' : 'missing'}, API Token: ${apiToken ? 'provided' : 'missing'}`);
+    
+    // Prepare request headers with all available credentials
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': apiToken
+    };
+    
+    // Add optional authentication parameters if available
+    if (clientId) {
+      headers['X-Shopify-Client-Id'] = clientId;
+    }
+    
+    if (clientSecret) {
+      headers['X-Shopify-Client-Secret'] = clientSecret;
+    }
     
     // Make the request to Shopify GraphQL API
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': apiToken,
-        'X-Shopify-Client-Id': clientId,
-        'X-Shopify-Client-Secret': clientSecret
-      },
+      headers,
       body: JSON.stringify({
         query,
         variables
