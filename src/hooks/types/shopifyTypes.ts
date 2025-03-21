@@ -2,9 +2,9 @@
 export interface ShopifyCredential {
   id: string;
   store_name: string;
-  client_id: string;
-  client_secret: string;
-  access_token: string;
+  client_id?: string;
+  client_secret?: string;
+  access_token?: string;
   // Support for legacy fields
   api_key?: string;
   api_token?: string;

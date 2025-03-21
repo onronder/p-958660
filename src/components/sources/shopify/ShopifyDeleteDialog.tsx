@@ -30,8 +30,8 @@ const ShopifyDeleteDialog: React.FC<ShopifyDeleteDialogProps> = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will permanently delete the Shopify credential for {storeName}.
-            This action cannot be undone.
+            This will move the Shopify source "{storeName}" to the trash.
+            Sources in trash can be restored within 30 days, after which they will be permanently deleted.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -40,7 +40,7 @@ const ShopifyDeleteDialog: React.FC<ShopifyDeleteDialogProps> = ({
             onClick={onConfirmDelete}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            Delete
+            Move to Trash
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

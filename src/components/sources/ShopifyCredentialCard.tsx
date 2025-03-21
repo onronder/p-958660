@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -160,9 +161,12 @@ const ShopifyCredentialCard: React.FC<ShopifyCredentialCardProps> = ({
     name: credential.store_name,
     url: credential.store_name,
     credentials: {
+      // Include both new and legacy credential formats
       api_key: credential.api_key,
       api_token: credential.api_token,
       api_secret: credential.client_secret,
+      store_domain: credential.store_name,
+      // New credential format
       client_id: credential.client_id,
       client_secret: credential.client_secret,
       access_token: credential.access_token,
