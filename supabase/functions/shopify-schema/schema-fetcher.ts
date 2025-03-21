@@ -1,5 +1,5 @@
 
-import { corsHeaders } from "../_shared/cors.ts";
+import { getProductionCorsHeaders } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 /**
@@ -127,7 +127,10 @@ export async function fetchShopifySchema(
         }),
         { 
           status: 422, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...getProductionCorsHeaders()
+          } 
         }
       );
     }
@@ -165,7 +168,10 @@ export async function fetchShopifySchema(
         api_version: apiVersion
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getProductionCorsHeaders()
+        } 
       }
     );
   } catch (error) {
@@ -175,7 +181,10 @@ export async function fetchShopifySchema(
       JSON.stringify({ error: `Error fetching schema: ${error.message}` }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getProductionCorsHeaders()
+        } 
       }
     );
   }

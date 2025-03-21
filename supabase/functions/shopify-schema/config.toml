@@ -1,2 +1,6 @@
 
-project_id = "eovyjotxecnkqjylwdnj"
+# project_id = "eovyjotxecnkqjylwdnj"
+# Environment Variables
+import_map = "./import_map.json"
+[config]
+hashing_cost = 12

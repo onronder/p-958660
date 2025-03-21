@@ -1,15 +1,17 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { corsHeaders } from "../_shared/cors.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
+import { getProductionCorsHeaders } from '../_shared/cors.ts';
 import { validateShopifySource } from "./source-validator.ts";
 import { detectShopifyApiVersion, testShopifyConnection } from "./version-detection.ts";
 import { fetchShopifySchema } from "./schema-fetcher.ts";
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, {
+      status: 204,
+      headers: getProductionCorsHeaders(req.headers.get('origin'))
+    });
   }
 
   try {
@@ -26,7 +28,10 @@ serve(async (req) => {
         JSON.stringify({ error: "Source ID is required" }),
         { 
           status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...getProductionCorsHeaders(req.headers.get('origin'))
+          } 
         }
       );
     }
@@ -59,7 +64,10 @@ serve(async (req) => {
       JSON.stringify({ error: `Unexpected error: ${error.message}` }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getProductionCorsHeaders(req.headers.get('origin'))
+        } 
       }
     );
   }

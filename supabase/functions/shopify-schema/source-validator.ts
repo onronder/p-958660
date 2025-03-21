@@ -1,5 +1,5 @@
 
-import { corsHeaders } from "../_shared/cors.ts";
+import { getProductionCorsHeaders } from "../_shared/cors.ts";
 
 /**
  * Validates and extracts Shopify source details
@@ -30,7 +30,10 @@ export async function validateShopifySource(sourceId: string, supabase: any): Pr
       JSON.stringify({ error: "Source not found or could not be retrieved" }),
       { 
         status: 404, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getProductionCorsHeaders()
+        } 
       }
     );
     return { valid: false, error };
@@ -44,7 +47,10 @@ export async function validateShopifySource(sourceId: string, supabase: any): Pr
       JSON.stringify({ error: "Source is not a Shopify store" }),
       { 
         status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getProductionCorsHeaders()
+        } 
       }
     );
     return { valid: false, error };
@@ -62,7 +68,10 @@ export async function validateShopifySource(sourceId: string, supabase: any): Pr
       JSON.stringify({ error: "Missing required Shopify credentials" }),
       { 
         status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getProductionCorsHeaders()
+        } 
       }
     );
     return { valid: false, error };
