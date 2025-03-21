@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     }
     
     // Fetch and cache the schema
-    return await fetchShopifySchema(storeUrl, accessToken, apiVersion, source_id, supabase);
+    return await fetchShopifySchema(storeUrl, accessToken, apiVersion, source_id, supabase, force_refresh);
     
   } catch (error) {
     console.error("Unexpected error in shopify-schema function:", error);

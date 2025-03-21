@@ -1,9 +1,11 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, AlertTriangle, Check } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { RefreshCw, AlertTriangle, Check, InfoIcon, Clock } from "lucide-react";
 import { useSchemaCache } from "@/hooks/useSchemaCache";
 import { formatDistanceToNow } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 interface ShopifySchemaCacheStatusProps {
   sourceId: string;
@@ -75,23 +77,79 @@ const ShopifySchemaCacheStatus: React.FC<ShopifySchemaCacheStatusProps> = ({ sou
       </div>
     );
   };
+
+  // Calculate number of days since last refresh
+  const getDaysSinceRefresh = () => {
+    if (!sourceStatus.lastCached) return null;
+    
+    const lastCachedDate = new Date(sourceStatus.lastCached);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - lastCachedDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    
+    return diffDays;
+  };
+
+  const daysSinceRefresh = getDaysSinceRefresh();
   
   return (
-    <div className="flex items-center justify-between">
-      <div className="text-sm">
-        {getLastCachedText()}
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="text-sm">
+          {getLastCachedText()}
+        </div>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={sourceStatus.isCaching}
+          className="h-8 px-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${sourceStatus.isCaching ? 'animate-spin' : ''}`} />
+          <span className="ml-2">Refresh Schema</span>
+        </Button>
       </div>
       
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleRefresh}
-        disabled={sourceStatus.isCaching}
-        className="h-8 px-2"
-      >
-        <RefreshCw className={`h-4 w-4 ${sourceStatus.isCaching ? 'animate-spin' : ''}`} />
-        <span className="ml-2">Refresh Schema</span>
-      </Button>
+      {sourceStatus.lastCached && (
+        <Accordion type="single" collapsible className="border rounded-md">
+          <AccordionItem value="schema-details" className="border-0">
+            <AccordionTrigger className="py-2 px-3 text-xs">
+              <div className="flex items-center gap-2">
+                <InfoIcon className="h-3.5 w-3.5" />
+                <span>Schema details</span>
+                
+                {daysSinceRefresh !== null && daysSinceRefresh > 6 && (
+                  <Badge variant="outline" className="ml-2 bg-amber-50 text-amber-700 border-amber-200">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Schema refresh due
+                  </Badge>
+                )}
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-3 pb-2 text-xs text-muted-foreground">
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <span>API Version:</span>
+                  <span className="font-mono">{apiVersion || 'Unknown'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Last updated:</span>
+                  <span>{sourceStatus.lastCached ? new Date(sourceStatus.lastCached).toLocaleString() : 'Never'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Age:</span>
+                  <span>{daysSinceRefresh !== null ? `${daysSinceRefresh} days` : 'Unknown'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Auto-refresh:</span>
+                  <span>Every 7 days</span>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
     </div>
   );
 };

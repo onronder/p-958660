@@ -12,7 +12,9 @@ export async function detectShopifyApiVersion(
   accessToken: string
 ): Promise<string> {
   try {
-    // Call the admin GraphQL endpoint to get versions
+    console.log("Detecting latest Shopify API version for store:", storeUrl);
+    
+    // Call the admin API versions endpoint to get current versions
     const versionsResponse = await fetch(`https://${storeUrl}/admin/api/graphql/versions.json`, {
       headers: {
         'X-Shopify-Access-Token': accessToken
@@ -25,19 +27,22 @@ export async function detectShopifyApiVersion(
         versionsResponse.status, 
         await versionsResponse.text()
       );
-      return "2023-10"; // Default to a known stable version as fallback
+      // If we can't detect the version, use the current stable version
+      return "2023-10"; // Default fallback version
     }
     
     const versionsData = await versionsResponse.json();
     
     if (versionsData && versionsData.versions && versionsData.versions.length > 0) {
       // Use the latest supported version from Shopify's list
+      // The first version in the list is always the most recent
       const latestVersion = versionsData.versions[0];
-      console.log("Detected latest Shopify API version:", latestVersion);
+      console.log("✅ Detected latest Shopify API version:", latestVersion);
       return latestVersion;
     }
     
-    // Fallback to a known stable version
+    // Fallback to a known stable version if we can't parse the response
+    console.log("⚠️ Could not parse Shopify API versions, using fallback version");
     return "2023-10";
   } catch (error) {
     console.error("Error detecting Shopify API version:", error);
@@ -66,6 +71,8 @@ export async function testShopifyConnection(
       }
     }`;
     
+    console.log(`Testing Shopify GraphQL connection to ${storeUrl} using API version: ${apiVersion}`);
+    
     const testResponse = await fetch(`https://${storeUrl}/admin/api/${apiVersion}/graphql.json`, {
       method: 'POST',
       headers: {
@@ -77,6 +84,8 @@ export async function testShopifyConnection(
     
     if (!testResponse.ok) {
       const errorText = await testResponse.text();
+      console.error(`❌ Shopify API connection test failed (HTTP ${testResponse.status}):`, errorText);
+      
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -87,7 +96,7 @@ export async function testShopifyConnection(
           status: 400, 
           headers: { 
             'Content-Type': 'application/json',
-            ...getProductionCorsHeaders()
+            ...getProductionCorsHeaders(null)
           } 
         }
       );
@@ -96,6 +105,8 @@ export async function testShopifyConnection(
     const testData = await testResponse.json();
     
     if (testData.errors) {
+      console.error("❌ Shopify GraphQL query errors:", testData.errors);
+      
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -106,11 +117,13 @@ export async function testShopifyConnection(
           status: 400, 
           headers: { 
             'Content-Type': 'application/json',
-            ...getProductionCorsHeaders()
+            ...getProductionCorsHeaders(null)
           } 
         }
       );
     }
+    
+    console.log("✅ Successfully connected to Shopify GraphQL API");
     
     return new Response(
       JSON.stringify({ 
@@ -123,11 +136,13 @@ export async function testShopifyConnection(
         status: 200, 
         headers: { 
           'Content-Type': 'application/json',
-          ...getProductionCorsHeaders()
+          ...getProductionCorsHeaders(null)
         } 
       }
     );
   } catch (error) {
+    console.error("❌ Error testing Shopify connection:", error);
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
@@ -137,7 +152,7 @@ export async function testShopifyConnection(
         status: 500, 
         headers: { 
           'Content-Type': 'application/json',
-          ...getProductionCorsHeaders()
+          ...getProductionCorsHeaders(null)
         } 
       }
     );

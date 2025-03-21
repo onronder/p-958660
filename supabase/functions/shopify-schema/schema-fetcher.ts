@@ -1,6 +1,9 @@
 
 import { getProductionCorsHeaders } from "../_shared/cors.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+
+// Constants for cache management
+const CACHE_MAX_AGE_DAYS = 7; // 7 days cache expiration
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Fetches the GraphQL schema from Shopify
@@ -9,6 +12,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
  * @param apiVersion Detected API version
  * @param sourceId Source ID for caching
  * @param supabase Supabase client instance
+ * @param forceRefresh Force a refresh of the schema even if cached
  * @returns Response with schema data or error
  */
 export async function fetchShopifySchema(
@@ -16,10 +20,71 @@ export async function fetchShopifySchema(
   accessToken: string,
   apiVersion: string,
   sourceId: string,
-  supabase: any
+  supabase: any,
+  forceRefresh = false
 ): Promise<Response> {
   try {
-    console.log("Fetching fresh schema from Shopify using API version:", apiVersion);
+    // If not forcing a refresh, check the cache first
+    if (!forceRefresh) {
+      console.log("Checking schema cache for source ID:", sourceId);
+      
+      const { data: cachedSchema, error: cacheError } = await supabase
+        .from("schema_cache")
+        .select("schema, cached_at, api_version")
+        .eq("source_id", sourceId)
+        .order("cached_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (cacheError) {
+        console.warn("Error checking schema cache:", cacheError);
+      } else if (cachedSchema) {
+        const cacheDate = new Date(cachedSchema.cached_at);
+        const now = new Date();
+        const cacheAgeMs = now.getTime() - cacheDate.getTime();
+        const cacheAgeDays = cacheAgeMs / MS_PER_DAY;
+        
+        console.log(`Found cached schema from ${cacheDate.toISOString()} using API version ${cachedSchema.api_version}`);
+        console.log(`Cache age: ${cacheAgeDays.toFixed(2)} days (max age: ${CACHE_MAX_AGE_DAYS} days)`);
+        
+        // If cache is less than max age and the API version matches the current one, use it
+        if (cacheAgeDays < CACHE_MAX_AGE_DAYS && cachedSchema.api_version === apiVersion) {
+          console.log("✅ Using cached schema (still valid)");
+          
+          return new Response(
+            JSON.stringify({
+              success: true,
+              schema: cachedSchema.schema,
+              message: "Successfully retrieved cached Shopify GraphQL schema",
+              is_cached: true,
+              cached_at: cachedSchema.cached_at,
+              api_version: cachedSchema.api_version
+            }),
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                ...getProductionCorsHeaders(null)
+              }
+            }
+          );
+        }
+        
+        // Log reason for not using cache
+        if (cacheAgeDays >= CACHE_MAX_AGE_DAYS) {
+          console.log(`⚠️ Cached schema is too old (${cacheAgeDays.toFixed(2)} days), fetching fresh schema`);
+        } 
+        if (cachedSchema.api_version !== apiVersion) {
+          console.log(`⚠️ Cached schema API version (${cachedSchema.api_version}) does not match current API version (${apiVersion}), fetching fresh schema`);
+        }
+      } else {
+        console.log("No cached schema found, will fetch from Shopify");
+      }
+    } else {
+      console.log("Force refresh requested, bypassing cache");
+    }
+    
+    // Fetch fresh schema from Shopify
+    console.log(`Fetching fresh schema from Shopify using API version: ${apiVersion}`);
     
     // Introspection query to get the full schema
     const introspectionQuery = `
@@ -118,7 +183,7 @@ export async function fetchShopifySchema(
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Shopify API error during schema fetch:", response.status, errorText);
+      console.error("❌ Shopify API error during schema fetch:", response.status, errorText);
       
       return new Response(
         JSON.stringify({ 
@@ -129,7 +194,7 @@ export async function fetchShopifySchema(
           status: 422, 
           headers: { 
             'Content-Type': 'application/json',
-            ...getProductionCorsHeaders()
+            ...getProductionCorsHeaders(null)
           } 
         }
       );
@@ -153,9 +218,9 @@ export async function fetchShopifySchema(
       });
     
     if (upsertError) {
-      console.error("Error caching schema:", upsertError);
+      console.error("⚠️ Error caching schema:", upsertError);
     } else {
-      console.log("Schema cached successfully at", now, "with API version:", apiVersion);
+      console.log("✅ Schema cached successfully at", now, "with API version:", apiVersion);
     }
     
     return new Response(
@@ -170,12 +235,12 @@ export async function fetchShopifySchema(
       { 
         headers: { 
           'Content-Type': 'application/json',
-          ...getProductionCorsHeaders()
+          ...getProductionCorsHeaders(null)
         } 
       }
     );
   } catch (error) {
-    console.error("Error fetching Shopify schema:", error);
+    console.error("❌ Error fetching Shopify schema:", error);
     
     return new Response(
       JSON.stringify({ error: `Error fetching schema: ${error.message}` }),
@@ -183,7 +248,7 @@ export async function fetchShopifySchema(
         status: 500, 
         headers: { 
           'Content-Type': 'application/json',
-          ...getProductionCorsHeaders()
+          ...getProductionCorsHeaders(null)
         } 
       }
     );
