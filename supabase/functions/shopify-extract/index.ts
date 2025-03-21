@@ -6,17 +6,20 @@ import { handlePreviewRequest } from "./preview-handler.ts";
 import { handleExtractionRequest } from "./extraction-handler.ts";
 
 serve(async (req) => {
+  console.log("shopify-extract function called:", req.url);
+  
   // Get the request origin for CORS
   const origin = req.headers.get('origin');
   const corsHeaders = getProductionCorsHeaders(origin);
   
   // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
+    console.log("Handling OPTIONS preflight request");
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const url = new URL(req.url);
+    console.log("Processing request body");
     
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
@@ -25,6 +28,7 @@ serve(async (req) => {
     
     // Parse the request body
     const body = await req.json();
+    console.log("Request body parsed:", JSON.stringify(body));
     
     // Authenticate the request
     const authHeader = req.headers.get('authorization');
@@ -46,6 +50,7 @@ serve(async (req) => {
     
     // Special case for ping requests for connectivity tests
     if (body.ping === true) {
+      console.log("Handling ping request");
       return new Response(
         JSON.stringify({ 
           status: 'ok', 
@@ -64,8 +69,10 @@ serve(async (req) => {
     
     // Handle preview or full extraction
     if (requestData.preview_only === true) {
+      console.log("Handling preview request");
       return await handlePreviewRequest(requestData, supabase, corsHeaders);
     } else {
+      console.log("Handling extraction request");
       return await handleExtractionRequest(requestData, supabase, corsHeaders);
     }
   } catch (error) {

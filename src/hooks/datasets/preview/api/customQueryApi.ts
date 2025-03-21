@@ -48,32 +48,29 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
         limit: 5
       });
       
-      const response = await supabase.functions.invoke("shopify-extract", {
-        body: {
-          extraction_id: "preview",
-          source_id: sourceId,
-          custom_query: customQuery,
-          preview_only: true,
-          limit: 5 // We explicitly limit to 5 for preview
-        }
-      });
-      
-      // Log the response, safely accessing properties
-      logApiResponse('Shopify-extract custom query', response);
-      
-      // Log more detailed info for debugging, safely accessing status property
-      devLogger.debug('Dataset Preview API', 'Response details', {
-        // Fix: Use safer property access with 'in' operator
-        status: 'status' in response ? response.status : 'unknown',
-        hasData: !!response.data,
-        hasError: !!response.error,
-        errorMessage: response.error?.message,
-        dataType: response.data ? typeof response.data : 'undefined',
-        hasResults: response.data?.results?.length > 0,
-        hasSample: !!response.data?.sample
-      });
-      
-      return response;
+      try {
+        // Include all required parameters and be consistent with naming
+        const response = await supabase.functions.invoke("shopify-extract", {
+          body: {
+            extraction_id: "preview",
+            source_id: sourceId,
+            custom_query: customQuery,
+            preview_only: true,
+            limit: 5 // We explicitly limit to 5 for preview
+          }
+        });
+        
+        // Log the response details
+        devLogger.debug('Dataset Preview API', 'Raw response received', response);
+        
+        // Log the response, safely accessing properties
+        logApiResponse('Shopify-extract custom query', response);
+        
+        return response;
+      } catch (invokeError) {
+        devLogger.error('Dataset Preview API', 'Error invoking edge function', invokeError);
+        throw invokeError;
+      }
     };
     
     // Execute with retry and timeout
@@ -94,14 +91,9 @@ export const executeCustomQuery = async (sourceId: string, customQuery: string) 
       errorMessage = 'The query took too long to execute. Please try again or simplify your query.';
     } else if (errorMessage.includes('Edge Function') || errorMessage.includes('Failed to fetch')) {
       errorMessage = 'Failed to connect to the Edge Function. Please check your network connection and try again.';
+    } else if (errorMessage.includes('404')) {
+      errorMessage = 'The shopify-extract Edge Function could not be found. Please make sure it is deployed correctly.';
     }
-    
-    // Add more detailed guidance to help troubleshoot
-    errorMessage += ' If this issue persists, please check the following:';
-    errorMessage += '\n1. Ensure you have a stable internet connection';
-    errorMessage += '\n2. Verify your Shopify credentials are correct';
-    errorMessage += '\n3. Check if the Supabase Edge Function is deployed correctly';
-    errorMessage += '\n4. Review the developer logs for more detailed error information';
     
     return { error: errorMessage };
   }
